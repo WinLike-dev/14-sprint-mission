@@ -17,10 +17,7 @@ public class ServiceFactory {
     private ServiceFactory() {
         userService = new JCFUserService();
         channelService = new JCFChannelService();
-        messageService = new JCFMessageService(
-                userService,
-                channelService
-        );
+        messageService = new JCFMessageService(userService, channelService);
     }
 
     private static class LazyHolder {
