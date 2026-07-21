@@ -3,6 +3,7 @@ package com.sprint.mission.discodeit.entity;
 import lombok.Getter;
 
 import java.util.UUID;
+
 @Getter
 public class Channel {
 
@@ -27,5 +28,4 @@ public class Channel {
         this.description = description;
         this.updatedAt = System.currentTimeMillis();
     }
-
 }
