@@ -1,13 +1,13 @@
-package com.sprint.mission.discodeit.service.file;
+package com.sprint.mission.discodeit.repository.file;
 
-import com.sprint.mission.discodeit.entity.Channel;
-import com.sprint.mission.discodeit.entity.ChannelType;
-import com.sprint.mission.discodeit.service.ChannelService;
+import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.repository.CrudRepository;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.nio.file.DirectoryStream;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
@@ -16,71 +16,79 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-public class FileChannelService implements ChannelService {
+public class FileUserRepository implements CrudRepository<User> {
 
     private static final String FILE_EXTENSION = ".ser";
     private final Path directory;
 
-    public FileChannelService() {
-        directory = Path.of("data", "channels");
+    public FileUserRepository() {
+        directory = Path.of("data", "users");
 
         try {
             Files.createDirectories(directory);
         } catch (IOException exception) {
             throw new IllegalStateException(
-                    "채널 저장 디렉터리 준비에 실패했습니다.",
+                    "사용자 저장 디렉터리 준비에 실패했습니다.",
                     exception
             );
         }
     }
 
     @Override
-    public Channel createChannel(ChannelType type, String name, String description) {
-        Channel channel = new Channel(type, name, description);
+    public User create(User user) {
         Path filePath =
-                directory.resolve(channel.getId() + FILE_EXTENSION);
+                directory.resolve(user.getId() + FILE_EXTENSION);
 
         try (ObjectOutputStream outputStream =
                      new ObjectOutputStream(
-                             Files.newOutputStream(filePath)
+                             Files.newOutputStream(
+                                     filePath,
+                                     StandardOpenOption.CREATE_NEW,
+                                     StandardOpenOption.WRITE
+                             )
                      )) {
-            outputStream.writeObject(channel);
-            return channel;
+            outputStream.writeObject(user);
+            return user;
+        } catch (FileAlreadyExistsException exception) {
+            throw new IllegalStateException(
+                    "이미 존재하는 사용자입니다: " + user.getId(),
+                    exception
+            );
         } catch (IOException exception) {
             throw new IllegalStateException(
-                    "채널 생성 중 파일 처리에 실패했습니다.",
+                    "사용자 저장에 실패했습니다.",
                     exception
             );
         }
     }
 
     @Override
-    public Channel readChannel(UUID id) {
+    public User findById(UUID id) {
         Path filePath = directory.resolve(id + FILE_EXTENSION);
 
         try (ObjectInputStream inputStream =
                      new ObjectInputStream(
                              Files.newInputStream(filePath)
                      )) {
-            return (Channel) inputStream.readObject();
+            return (User) inputStream.readObject();
         } catch (NoSuchFileException exception) {
             throw new IllegalStateException(
-                    "채널 파일을 찾을 수 없습니다: " + id,
+                    "사용자 파일을 찾을 수 없습니다: " + id,
                     exception
             );
         } catch (IOException |
                  ClassNotFoundException |
                  ClassCastException exception) {
             throw new IllegalStateException(
-                    "채널 조회 중 파일 처리에 실패했습니다: " + id,
+                    "사용자 조회에 실패했습니다: " + id,
                     exception
             );
         }
     }
 
     @Override
-    public List<Channel> readAllChannels() {
-        List<Channel> channels = new ArrayList<>();
+    public List<User> findAll() {
+        List<User> users = new ArrayList<>();
 
         try (DirectoryStream<Path> filePaths =
                      Files.newDirectoryStream(
@@ -92,26 +100,25 @@ public class FileChannelService implements ChannelService {
                              new ObjectInputStream(
                                      Files.newInputStream(filePath)
                              )) {
-                    channels.add((Channel) inputStream.readObject());
+                    users.add((User) inputStream.readObject());
                 }
             }
         } catch (IOException |
                  ClassNotFoundException |
                  ClassCastException exception) {
             throw new IllegalStateException(
-                    "전체 채널 조회 중 파일 처리에 실패했습니다.",
+                    "전체 사용자 조회에 실패했습니다.",
                     exception
             );
         }
 
-        return List.copyOf(channels);
+        return users;
     }
 
     @Override
-    public void updateChannel(UUID id, String name, String description) {
-        Channel channel = readChannel(id);
-        channel.update(name, description);
-        Path filePath = directory.resolve(id + FILE_EXTENSION);
+    public User update(User user) {
+        Path filePath =
+                directory.resolve(user.getId() + FILE_EXTENSION);
 
         try (ObjectOutputStream outputStream =
                      new ObjectOutputStream(
@@ -121,34 +128,37 @@ public class FileChannelService implements ChannelService {
                                      StandardOpenOption.TRUNCATE_EXISTING
                              )
                      )) {
-            outputStream.writeObject(channel);
+            outputStream.writeObject(user);
+            return user;
         } catch (NoSuchFileException exception) {
             throw new IllegalStateException(
-                    "수정할 채널 파일을 찾을 수 없습니다: " + id,
+                    "수정할 사용자 파일을 찾을 수 없습니다: "
+                            + user.getId(),
                     exception
             );
         } catch (IOException exception) {
             throw new IllegalStateException(
-                    "채널 수정 중 파일 처리에 실패했습니다: " + id,
+                    "사용자 수정 결과 저장에 실패했습니다: "
+                            + user.getId(),
                     exception
             );
         }
     }
 
     @Override
-    public void deleteChannel(UUID id) {
+    public void deleteById(UUID id) {
         Path filePath = directory.resolve(id + FILE_EXTENSION);
 
         try {
             Files.delete(filePath);
         } catch (NoSuchFileException exception) {
             throw new IllegalStateException(
-                    "삭제할 채널 파일을 찾을 수 없습니다: " + id,
+                    "삭제할 사용자 파일을 찾을 수 없습니다: " + id,
                     exception
             );
         } catch (IOException exception) {
             throw new IllegalStateException(
-                    "채널 삭제 중 파일 처리에 실패했습니다: " + id,
+                    "사용자 삭제에 실패했습니다: " + id,
                     exception
             );
         }

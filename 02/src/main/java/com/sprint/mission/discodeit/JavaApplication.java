@@ -9,13 +9,15 @@ import com.sprint.mission.discodeit.service.ChannelService;
 import com.sprint.mission.discodeit.service.MessageService;
 import com.sprint.mission.discodeit.service.UserService;
 
-import java.util.NoSuchElementException;
 import java.util.UUID;
 
 public class JavaApplication {
 
     public static void main(String[] args) {
-        ServiceFactory factory = ServiceFactory.getInstance();
+        boolean fileMode = args.length > 0 && "file".equalsIgnoreCase(args[0]);
+        ServiceFactory factory = fileMode
+                ? ServiceFactory.createFileFactory()
+                : ServiceFactory.getInstance();
         UserService userService = factory.getUserService();
         ChannelService channelService = factory.getChannelService();
         MessageService messageService = factory.getMessageService();
@@ -27,22 +29,48 @@ public class JavaApplication {
         userService.updateUser(sender.getId(), "new-sender", "new@email.com", "5678");
         System.out.println(userService.readUser(sender.getId()).getUsername());
 
-        Channel channel = channelService.createChannel(ChannelType.PUBLIC, "general", "general channel");
+        Channel channel = channelService.createChannel(
+                ChannelType.PUBLIC,
+                "general",
+                "general channel"
+        );
         System.out.println(channelService.readChannel(channel.getId()).getName());
         System.out.println("채널 수: " + channelService.readAllChannels().size());
         channelService.updateChannel(channel.getId(), "notice", "notice channel");
         System.out.println(channelService.readChannel(channel.getId()).getName());
 
-        Message message = messageService.createMessage("hello", channel.getId(), sender.getId(), receiver.getId());
+        Message message = messageService.createMessage(
+                "hello",
+                channel.getId(),
+                sender.getId(),
+                receiver.getId()
+        );
         System.out.println(messageService.readMessage(message.getId()).getContent());
         System.out.println("메시지 수: " + messageService.readAllMessages().size());
         messageService.updateMessage(message.getId(), "hello, world");
         System.out.println(messageService.readMessage(message.getId()).getContent());
 
         try {
-            messageService.createMessage("invalid", channel.getId(), UUID.randomUUID(), receiver.getId());
-        } catch (NoSuchElementException e) {
-            System.out.println("연관 사용자 검증 성공: " + e.getMessage());
+            messageService.createMessage(
+                    "invalid",
+                    channel.getId(),
+                    UUID.randomUUID(),
+                    receiver.getId()
+            );
+        } catch (IllegalStateException exception) {
+            System.out.println("연관 사용자 검증 성공: " + exception.getMessage());
+        }
+
+        if (fileMode) {
+            ServiceFactory recreatedFactory = ServiceFactory.createFileFactory();
+            Message restoredMessage =
+                    recreatedFactory
+                            .getMessageService()
+                            .readMessage(message.getId());
+            System.out.println(
+                    "서비스 재생성 후 메시지: "
+                            + restoredMessage.getContent()
+            );
         }
 
         messageService.deleteMessage(message.getId());
@@ -53,6 +81,9 @@ public class JavaApplication {
         System.out.println("메시지 삭제 후: " + messageService.readAllMessages());
         System.out.println("채널 삭제 후: " + channelService.readAllChannels());
         System.out.println("사용자 삭제 후: " + userService.readAllUsers());
-        System.out.println("싱글톤 확인: " + (factory == ServiceFactory.getInstance()));
+
+        if (!fileMode) {
+            System.out.println("싱글톤 확인: " + (factory == ServiceFactory.getInstance()));
+        }
     }
 }

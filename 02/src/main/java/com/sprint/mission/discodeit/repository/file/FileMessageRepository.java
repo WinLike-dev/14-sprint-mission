@@ -1,39 +1,27 @@
-package com.sprint.mission.discodeit.service.file;
+package com.sprint.mission.discodeit.repository.file;
 
 import com.sprint.mission.discodeit.entity.Message;
-import com.sprint.mission.discodeit.service.ChannelService;
-import com.sprint.mission.discodeit.service.MessageService;
-import com.sprint.mission.discodeit.service.UserService;
+import com.sprint.mission.discodeit.repository.CrudRepository;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.nio.file.DirectoryStream;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Objects;
 import java.util.UUID;
 
-public class FileMessageService implements MessageService {
+public class FileMessageRepository implements CrudRepository<Message> {
 
     private static final String FILE_EXTENSION = ".ser";
-
-    // 설계: 메시지의 연관 관계 검증을 위해 서비스 계약에 의존하고 구체 구현체는 알지 않는다.
-    private final UserService userService;
-    private final ChannelService channelService;
     private final Path directory;
 
-    public FileMessageService(
-            UserService userService,
-            ChannelService channelService
-    ) {
-        this.userService = Objects.requireNonNull(userService);
-        this.channelService = Objects.requireNonNull(channelService);
+    public FileMessageRepository() {
         directory = Path.of("data", "messages");
 
         try {
@@ -47,44 +35,35 @@ public class FileMessageService implements MessageService {
     }
 
     @Override
-    public Message createMessage(
-            String content,
-            UUID channelId,
-        UUID senderId,
-        UUID receiverId
-    ) {
-        try {
-            channelService.readChannel(channelId);
-            userService.readUser(senderId);
-            userService.readUser(receiverId);
-        } catch (NoSuchElementException exception) {
-            throw new IllegalStateException(
-                    "메시지 연관 데이터를 찾을 수 없습니다.",
-                    exception
-            );
-        }
-
-        Message message =
-                new Message(content, channelId, senderId, receiverId);
+    public Message create(Message message) {
         Path filePath =
                 directory.resolve(message.getId() + FILE_EXTENSION);
 
         try (ObjectOutputStream outputStream =
                      new ObjectOutputStream(
-                             Files.newOutputStream(filePath)
+                             Files.newOutputStream(
+                                     filePath,
+                                     StandardOpenOption.CREATE_NEW,
+                                     StandardOpenOption.WRITE
+                             )
                      )) {
             outputStream.writeObject(message);
             return message;
+        } catch (FileAlreadyExistsException exception) {
+            throw new IllegalStateException(
+                    "이미 존재하는 메시지입니다: " + message.getId(),
+                    exception
+            );
         } catch (IOException exception) {
             throw new IllegalStateException(
-                    "메시지 생성 중 파일 처리에 실패했습니다.",
+                    "메시지 저장에 실패했습니다.",
                     exception
             );
         }
     }
 
     @Override
-    public Message readMessage(UUID id) {
+    public Message findById(UUID id) {
         Path filePath = directory.resolve(id + FILE_EXTENSION);
 
         try (ObjectInputStream inputStream =
@@ -101,14 +80,14 @@ public class FileMessageService implements MessageService {
                  ClassNotFoundException |
                  ClassCastException exception) {
             throw new IllegalStateException(
-                    "메시지 조회 중 파일 처리에 실패했습니다: " + id,
+                    "메시지 조회에 실패했습니다: " + id,
                     exception
             );
         }
     }
 
     @Override
-    public List<Message> readAllMessages() {
+    public List<Message> findAll() {
         List<Message> messages = new ArrayList<>();
 
         try (DirectoryStream<Path> filePaths =
@@ -128,19 +107,18 @@ public class FileMessageService implements MessageService {
                  ClassNotFoundException |
                  ClassCastException exception) {
             throw new IllegalStateException(
-                    "전체 메시지 조회 중 파일 처리에 실패했습니다.",
+                    "전체 메시지 조회에 실패했습니다.",
                     exception
             );
         }
 
-        return List.copyOf(messages);
+        return messages;
     }
 
     @Override
-    public void updateMessage(UUID id, String content) {
-        Message message = readMessage(id);
-        message.update(content);
-        Path filePath = directory.resolve(id + FILE_EXTENSION);
+    public Message update(Message message) {
+        Path filePath =
+                directory.resolve(message.getId() + FILE_EXTENSION);
 
         try (ObjectOutputStream outputStream =
                      new ObjectOutputStream(
@@ -151,21 +129,24 @@ public class FileMessageService implements MessageService {
                              )
                      )) {
             outputStream.writeObject(message);
+            return message;
         } catch (NoSuchFileException exception) {
             throw new IllegalStateException(
-                    "수정할 메시지 파일을 찾을 수 없습니다: " + id,
+                    "수정할 메시지 파일을 찾을 수 없습니다: "
+                            + message.getId(),
                     exception
             );
         } catch (IOException exception) {
             throw new IllegalStateException(
-                    "메시지 수정 중 파일 처리에 실패했습니다: " + id,
+                    "메시지 수정 결과 저장에 실패했습니다: "
+                            + message.getId(),
                     exception
             );
         }
     }
 
     @Override
-    public void deleteMessage(UUID id) {
+    public void deleteById(UUID id) {
         Path filePath = directory.resolve(id + FILE_EXTENSION);
 
         try {
@@ -177,7 +158,7 @@ public class FileMessageService implements MessageService {
             );
         } catch (IOException exception) {
             throw new IllegalStateException(
-                    "메시지 삭제 중 파일 처리에 실패했습니다: " + id,
+                    "메시지 삭제에 실패했습니다: " + id,
                     exception
             );
         }
