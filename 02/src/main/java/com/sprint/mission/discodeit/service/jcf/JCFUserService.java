@@ -18,8 +18,8 @@ public class JCFUserService implements UserService {
     }
 
     @Override
-    public User createUser(String name, String email, String password) {
-        User user = new User(name, email, password);
+    public User createUser(String username, String email, String password) {
+        User user = new User(username, email, password);
         userMap.put(user.getId(), user);
         return user;
     }
