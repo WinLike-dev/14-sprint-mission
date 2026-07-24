@@ -6,7 +6,7 @@ import java.io.Serializable;
 import java.util.UUID;
 
 @Getter
-public class User implements Serializable {
+public class User implements Identifiable, Serializable {
 
     // 문법: 명시적인 직렬화 버전은 클래스 변경 시 호환성 판단 기준이 된다.
     private static final long serialVersionUID = 1L;

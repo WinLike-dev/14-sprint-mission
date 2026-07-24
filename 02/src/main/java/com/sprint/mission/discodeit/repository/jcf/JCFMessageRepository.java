@@ -3,60 +3,44 @@ package com.sprint.mission.discodeit.repository.jcf;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.repository.CrudRepository;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 public class JCFMessageRepository implements CrudRepository<Message> {
 
-    private final Map<UUID, Message> data;
+    private final JCFObjectStore<Message> store;
 
     public JCFMessageRepository() {
-        data = new HashMap<>();
+        this(new JCFObjectStore<>("메시지"));
+    }
+
+    public JCFMessageRepository(JCFObjectStore<Message> store) {
+        this.store = Objects.requireNonNull(store);
     }
 
     @Override
     public Message create(Message message) {
-        if (data.containsKey(message.getId())) {
-            throw new IllegalStateException(
-                    "이미 존재하는 메시지입니다: " + message.getId()
-            );
-        }
-
-        data.put(message.getId(), message);
-        return message;
+        return store.create(message);
     }
 
     @Override
     public Message findById(UUID id) {
-        Message message = data.get(id);
-
-        if (message == null) {
-            throw new IllegalStateException(
-                    "메시지 데이터를 찾을 수 없습니다: " + id
-            );
-        }
-
-        return message;
+        return store.findById(id);
     }
 
     @Override
     public List<Message> findAll() {
-        return new ArrayList<>(data.values());
+        return store.findAll();
     }
 
     @Override
     public Message update(Message message) {
-        findById(message.getId());
-        data.put(message.getId(), message);
-        return message;
+        return store.update(message);
     }
 
     @Override
     public void deleteById(UUID id) {
-        findById(id);
-        data.remove(id);
+        store.deleteById(id);
     }
 }
