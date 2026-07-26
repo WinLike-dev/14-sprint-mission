@@ -4,86 +4,64 @@ import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.ChannelType;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.factory.FileServiceFactory;
+import com.sprint.mission.discodeit.factory.JCFServiceFactory;
 import com.sprint.mission.discodeit.factory.ServiceFactory;
 import com.sprint.mission.discodeit.service.ChannelService;
 import com.sprint.mission.discodeit.service.MessageService;
 import com.sprint.mission.discodeit.service.UserService;
 
-import java.util.UUID;
-
 public class JavaApplication {
 
-    public static void main(String[] args) {
-        boolean fileMode = args.length > 0 && "file".equalsIgnoreCase(args[0]);
-        ServiceFactory factory = fileMode
-                ? ServiceFactory.createFileFactory()
-                : ServiceFactory.getInstance();
-        UserService userService = factory.getUserService();
-        ChannelService channelService = factory.getChannelService();
-        MessageService messageService = factory.getMessageService();
-
-        User sender = userService.createUser("sender", "sender@email.com", "1234");
-        User receiver = userService.createUser("receiver", "receiver@email.com", "1234");
-        System.out.println(userService.readUser(sender.getId()).getUsername());
-        System.out.println("사용자 수: " + userService.readAllUsers().size());
-        userService.updateUser(sender.getId(), "new-sender", "new@email.com", "5678");
-        System.out.println(userService.readUser(sender.getId()).getUsername());
-
-        Channel channel = channelService.createChannel(
-                ChannelType.PUBLIC,
-                "general",
-                "general channel"
+    // 문법: static 메서드는 JavaApplication 객체를 만들지 않고 main에서 바로 호출할 수 있다.
+    static User setupUser(UserService userService) {
+        return userService.createUser(
+                "woody",
+                "woody@codeit.com",
+                "woody1234"
         );
-        System.out.println(channelService.readChannel(channel.getId()).getName());
-        System.out.println("채널 수: " + channelService.readAllChannels().size());
-        channelService.updateChannel(channel.getId(), "notice", "notice channel");
-        System.out.println(channelService.readChannel(channel.getId()).getName());
+    }
 
+    static Channel setupChannel(ChannelService channelService) {
+        return channelService.createChannel(
+                ChannelType.PUBLIC,
+                "공지",
+                "공지 채널입니다."
+        );
+    }
+
+    static void messageCreateTest(
+            MessageService messageService,
+            Channel channel,
+            User author,
+            User receiver
+    ) {
         Message message = messageService.createMessage(
-                "hello",
+                "안녕하세요.",
                 channel.getId(),
-                sender.getId(),
+                author.getId(),
                 receiver.getId()
         );
-        System.out.println(messageService.readMessage(message.getId()).getContent());
-        System.out.println("메시지 수: " + messageService.readAllMessages().size());
-        messageService.updateMessage(message.getId(), "hello, world");
-        System.out.println(messageService.readMessage(message.getId()).getContent());
+        System.out.println("메시지 생성: " + message.getId());
+    }
 
-        try {
-            messageService.createMessage(
-                    "invalid",
-                    channel.getId(),
-                    UUID.randomUUID(),
-                    receiver.getId()
-            );
-        } catch (IllegalStateException exception) {
-            System.out.println("연관 사용자 검증 성공: " + exception.getMessage());
-        }
+    public static void main(String[] args) {
+        // 서비스 초기화
+        boolean fileMode = args.length > 0 && "file".equalsIgnoreCase(args[0]);
+        // 패턴: 구성 루트는 저장 방식에 맞는 구체 팩토리만 선택한다.
+        ServiceFactory factory = fileMode
+                ? new FileServiceFactory()
+                : new JCFServiceFactory();
+        UserService userService = factory.createUserService();
+        ChannelService channelService = factory.createChannelService();
+        MessageService messageService = factory.createMessageService();
 
-        if (fileMode) {
-            ServiceFactory recreatedFactory = ServiceFactory.createFileFactory();
-            Message restoredMessage =
-                    recreatedFactory
-                            .getMessageService()
-                            .readMessage(message.getId());
-            System.out.println(
-                    "서비스 재생성 후 메시지: "
-                            + restoredMessage.getContent()
-            );
-        }
+        // 셋업
+        User author = setupUser(userService);
+        User receiver = userService.createUser("receiver", "receiver@email.com", "1234");
+        Channel channel = setupChannel(channelService);
 
-        messageService.deleteMessage(message.getId());
-        channelService.deleteChannel(channel.getId());
-        userService.deleteUser(sender.getId());
-        userService.deleteUser(receiver.getId());
-
-        System.out.println("메시지 삭제 후: " + messageService.readAllMessages());
-        System.out.println("채널 삭제 후: " + channelService.readAllChannels());
-        System.out.println("사용자 삭제 후: " + userService.readAllUsers());
-
-        if (!fileMode) {
-            System.out.println("싱글톤 확인: " + (factory == ServiceFactory.getInstance()));
-        }
+        // 테스트
+        messageCreateTest(messageService, channel, author, receiver);
     }
 }

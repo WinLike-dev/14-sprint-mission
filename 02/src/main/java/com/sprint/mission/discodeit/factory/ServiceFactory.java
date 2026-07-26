@@ -1,66 +1,15 @@
 package com.sprint.mission.discodeit.factory;
 
-import com.sprint.mission.discodeit.entity.Channel;
-import com.sprint.mission.discodeit.entity.Message;
-import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.repository.CrudRepository;
-import com.sprint.mission.discodeit.repository.file.FileChannelRepository;
-import com.sprint.mission.discodeit.repository.file.FileMessageRepository;
-import com.sprint.mission.discodeit.repository.file.FileUserRepository;
-import com.sprint.mission.discodeit.repository.jcf.JCFChannelRepository;
-import com.sprint.mission.discodeit.repository.jcf.JCFMessageRepository;
-import com.sprint.mission.discodeit.repository.jcf.JCFUserRepository;
 import com.sprint.mission.discodeit.service.ChannelService;
 import com.sprint.mission.discodeit.service.MessageService;
 import com.sprint.mission.discodeit.service.UserService;
-import com.sprint.mission.discodeit.service.basic.BasicChannelService;
-import com.sprint.mission.discodeit.service.basic.BasicMessageService;
-import com.sprint.mission.discodeit.service.basic.BasicUserService;
-import lombok.Getter;
 
-@Getter
-public class ServiceFactory {
+// 패턴: 추상 팩토리는 구체 서비스의 생성 과정과 Repository 연결을 호출 코드에서 숨긴다.
+public interface ServiceFactory {
 
-    private final UserService userService;
-    private final ChannelService channelService;
-    private final MessageService messageService;
+    UserService createUserService();
 
-    private ServiceFactory() {
-        this(
-                new JCFUserRepository(),
-                new JCFChannelRepository(),
-                new JCFMessageRepository()
-        );
-    }
+    ChannelService createChannelService();
 
-    private ServiceFactory(
-            CrudRepository<User> userRepository,
-            CrudRepository<Channel> channelRepository,
-            CrudRepository<Message> messageRepository
-    ) {
-        // 설계: Factory만 구체 Repository를 알고 서비스에는 제네릭 계약을 주입한다.
-        userService = new BasicUserService(userRepository);
-        channelService = new BasicChannelService(channelRepository);
-        messageService = new BasicMessageService(
-                messageRepository,
-                userRepository,
-                channelRepository
-        );
-    }
-
-    private static class LazyHolder {
-        private static final ServiceFactory INSTANCE = new ServiceFactory();
-    }
-
-    public static ServiceFactory getInstance() {
-        return LazyHolder.INSTANCE;
-    }
-
-    public static ServiceFactory createFileFactory() {
-        return new ServiceFactory(
-                new FileUserRepository(),
-                new FileChannelRepository(),
-                new FileMessageRepository()
-        );
-    }
+    MessageService createMessageService();
 }
