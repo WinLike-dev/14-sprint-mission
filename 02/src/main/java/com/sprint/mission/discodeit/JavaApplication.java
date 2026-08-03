@@ -13,7 +13,6 @@ import com.sprint.mission.discodeit.service.UserService;
 
 public class JavaApplication {
 
-    // 문법: static 메서드는 JavaApplication 객체를 만들지 않고 main에서 바로 호출할 수 있다.
     static User setupUser(UserService userService) {
         return userService.createUser(
                 "woody",
@@ -46,9 +45,7 @@ public class JavaApplication {
     }
 
     public static void main(String[] args) {
-        // 서비스 초기화
         boolean fileMode = args.length > 0 && "file".equalsIgnoreCase(args[0]);
-        // 패턴: 구성 루트는 저장 방식에 맞는 구체 팩토리만 선택한다.
         ServiceFactory factory = fileMode
                 ? new FileServiceFactory()
                 : new JCFServiceFactory();
@@ -56,12 +53,10 @@ public class JavaApplication {
         ChannelService channelService = factory.createChannelService();
         MessageService messageService = factory.createMessageService();
 
-        // 셋업
         User author = setupUser(userService);
         User receiver = userService.createUser("receiver", "receiver@email.com", "1234");
         Channel channel = setupChannel(channelService);
 
-        // 테스트
         messageCreateTest(messageService, channel, author, receiver);
     }
 }

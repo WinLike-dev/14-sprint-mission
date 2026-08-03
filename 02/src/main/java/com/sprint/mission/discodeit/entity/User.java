@@ -2,13 +2,15 @@ package com.sprint.mission.discodeit.entity;
 
 import lombok.Getter;
 
+import java.io.Serial;
 import java.io.Serializable;
+import java.util.Objects;
 import java.util.UUID;
 
 @Getter
 public class User implements Identifiable, Serializable {
 
-    // 문법: 명시적인 직렬화 버전은 클래스 변경 시 호환성 판단 기준이 된다.
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private final UUID id;
@@ -19,18 +21,63 @@ public class User implements Identifiable, Serializable {
     private String password;
 
     public User(String username, String email, String password) {
-        this.id = UUID.randomUUID();
-        this.createdAt = System.currentTimeMillis();
-        this.updatedAt = null;
-        this.username = username;
-        this.email = email;
-        this.password = password;
+        this(
+                UUID.randomUUID(),
+                System.currentTimeMillis(),
+                null,
+                username,
+                email,
+                password
+        );
     }
 
     public void update(String username, String email, String password) {
-        this.username = username;
-        this.email = email;
-        this.password = password;
+        String validatedUsername = requireNonBlank(username, "username");
+        String validatedEmail = requireNonBlank(email, "email");
+        String validatedPassword = requireNonBlank(password, "password");
+
+        this.username = validatedUsername;
+        this.email = validatedEmail;
+        this.password = validatedPassword;
         this.updatedAt = System.currentTimeMillis();
+    }
+
+    public User copy() {
+        return new User(
+                id,
+                createdAt,
+                updatedAt,
+                username,
+                email,
+                password
+        );
+    }
+
+    private User(
+            UUID id,
+            Long createdAt,
+            Long updatedAt,
+            String username,
+            String email,
+            String password
+    ) {
+        this.id = Objects.requireNonNull(id, "id는 null일 수 없습니다.");
+        this.createdAt = Objects.requireNonNull(
+                createdAt,
+                "createdAt은 null일 수 없습니다."
+        );
+        this.updatedAt = updatedAt;
+        this.username = requireNonBlank(username, "username");
+        this.email = requireNonBlank(email, "email");
+        this.password = requireNonBlank(password, "password");
+    }
+
+    private static String requireNonBlank(String value, String fieldName) {
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException(
+                    fieldName + "은(는) 비어 있을 수 없습니다."
+            );
+        }
+        return value;
     }
 }

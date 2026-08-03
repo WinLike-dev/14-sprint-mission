@@ -3,7 +3,10 @@ package com.sprint.mission.discodeit.service.basic;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Message;
 import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.repository.CrudRepository;
+import com.sprint.mission.discodeit.exception.EntityNotFoundException;
+import com.sprint.mission.discodeit.repository.ChannelRepository;
+import com.sprint.mission.discodeit.repository.MessageRepository;
+import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.MessageService;
 
 import java.util.List;
@@ -12,14 +15,14 @@ import java.util.UUID;
 
 public class BasicMessageService implements MessageService {
 
-    private final CrudRepository<Message> messageRepository;
-    private final CrudRepository<User> userRepository;
-    private final CrudRepository<Channel> channelRepository;
+    private final MessageRepository messageRepository;
+    private final UserRepository userRepository;
+    private final ChannelRepository channelRepository;
 
     public BasicMessageService(
-            CrudRepository<Message> messageRepository,
-            CrudRepository<User> userRepository,
-            CrudRepository<Channel> channelRepository
+            MessageRepository messageRepository,
+            UserRepository userRepository,
+            ChannelRepository channelRepository
     ) {
         this.messageRepository = Objects.requireNonNull(messageRepository);
         this.userRepository = Objects.requireNonNull(userRepository);
@@ -28,12 +31,16 @@ public class BasicMessageService implements MessageService {
 
     @Override
     public Message createMessage(String content, UUID channelId, UUID senderId, UUID receiverId) {
-        // 설계: 연관 데이터 존재 확인은 저장 기술과 무관한 비즈니스 규칙이다.
-        channelRepository.findById(channelId);
-        userRepository.findById(senderId);
-        userRepository.findById(receiverId);
+        validateMessageInput(content, channelId, senderId, receiverId);
+        validateRelatedEntities(channelId, senderId, receiverId);
 
-        Message message = new Message(content, channelId, senderId, receiverId);
+        Message message = new Message(
+                content,
+                channelId,
+                senderId,
+                receiverId
+        );
+
         return messageRepository.create(message);
     }
 
@@ -57,5 +64,37 @@ public class BasicMessageService implements MessageService {
     @Override
     public void deleteMessage(UUID id) {
         messageRepository.deleteById(id);
+    }
+
+    private void validateMessageInput(
+            String content,
+            UUID channelId,
+            UUID senderId,
+            UUID receiverId
+    ) {
+        if (content == null || content.isBlank()) {
+            throw new IllegalArgumentException(
+                    "content은(는) 비어 있을 수 없습니다."
+            );
+        }
+        Objects.requireNonNull(channelId, "channelId는 null일 수 없습니다.");
+        Objects.requireNonNull(senderId, "senderId는 null일 수 없습니다.");
+        Objects.requireNonNull(receiverId, "receiverId는 null일 수 없습니다.");
+    }
+
+    private void validateRelatedEntities(
+            UUID channelId,
+            UUID senderId,
+            UUID receiverId
+    ) {
+        if (channelRepository.existsById(channelId)) {
+            throw new EntityNotFoundException(Channel.class, channelId);
+        }
+        if (userRepository.existsById(senderId)) {
+            throw new EntityNotFoundException(User.class, senderId);
+        }
+        if (userRepository.existsById(receiverId)) {
+            throw new EntityNotFoundException(User.class, receiverId);
+        }
     }
 }

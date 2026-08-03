@@ -28,8 +28,10 @@ package "application" {
 }
 
 package "factory" {
-    class ServiceFactory
-    class LazyHolder <<private static>>
+    interface ServiceFactory
+    abstract class AbstractServiceFactory
+    class JCFServiceFactory
+    class FileServiceFactory
 }
 
 package "service" {
@@ -45,21 +47,24 @@ package "service.basic" {
 }
 
 package "repository" {
-    interface CrudRepository<T>
+    abstract class AbstractCrudRepository<T> <<Template Method>>
+    class UserRepository
+    class ChannelRepository
+    class MessageRepository
 }
 
-package "repository.jcf" {
-    class JCFObjectStore<T> <<final>>
-    class JCFMessageRepository
-    class JCFChannelRepository
-    class JCFUserRepository
+package "repository.objectStore" {
+    interface ObjectStore<T> <<Strategy Port>>
+    class JCFObjectStore<T>
+    class FileObjectStore<T>
 }
 
-package "repository.file" {
-    class FileObjectStore<T> <<final>>
-    class FileMessageRepository
-    class FileChannelRepository
-    class FileUserRepository
+package "exception" {
+    class EntityNotFoundException
+    class DuplicateEntityException
+    class StorageOperationException
+    class NoSuchElementException <<JDK>>
+    class RuntimeException <<JDK>>
 }
 
 package "entity" {
@@ -74,29 +79,52 @@ package "entity" {
 JavaApplication ..> UserService
 JavaApplication ..> ChannelService
 JavaApplication ..> MessageService
+JavaApplication ..> ServiceFactory
 
 ServiceFactory --> UserService
 ServiceFactory --> ChannelService
 ServiceFactory --> MessageService
+ServiceFactory <|.. AbstractServiceFactory
+AbstractServiceFactory <|-- JCFServiceFactory
+AbstractServiceFactory <|-- FileServiceFactory
 
 UserService <|.. BasicUserService
 ChannelService <|.. BasicChannelService
 MessageService <|.. BasicMessageService
 
-BasicUserService --> CrudRepository : User
-BasicChannelService --> CrudRepository : Channel
-BasicMessageService --> CrudRepository : Message / User / Channel
+BasicUserService --> UserRepository
+BasicChannelService --> ChannelRepository
+BasicMessageService --> MessageRepository
+BasicMessageService --> UserRepository
+BasicMessageService --> ChannelRepository
+BasicMessageService ..> EntityNotFoundException : missing relation
 
-CrudRepository <|.. JCFUserRepository : User
-CrudRepository <|.. JCFChannelRepository : Channel
-CrudRepository <|.. JCFMessageRepository : Message
-CrudRepository <|.. FileUserRepository : User
-CrudRepository <|.. FileChannelRepository : Channel
-CrudRepository <|.. FileMessageRepository : Message
+AbstractCrudRepository <|-- UserRepository : User
+AbstractCrudRepository <|-- ChannelRepository : Channel
+AbstractCrudRepository <|-- MessageRepository : Message
+AbstractCrudRepository --> ObjectStore : reads entities
+AbstractCrudRepository ..> EntityNotFoundException : absent
+AbstractCrudRepository ..> DuplicateEntityException : duplicate
+AbstractCrudRepository ..> StorageOperationException : storage failure
 
+ObjectStore <|.. JCFObjectStore
+ObjectStore <|.. FileObjectStore
+
+JCFServiceFactory ..> JCFObjectStore : selects
+FileServiceFactory ..> FileObjectStore : selects
+AbstractServiceFactory ..> ObjectStore : receives
+AbstractServiceFactory --> UserRepository : owns
+AbstractServiceFactory --> ChannelRepository : owns
+AbstractServiceFactory --> MessageRepository : owns
+
+ObjectStore ..> Identifiable : T extends
 JCFObjectStore ..> Identifiable : T extends
 FileObjectStore ..> Identifiable : T extends
 FileObjectStore ..> Serializable : T extends
+
+NoSuchElementException <|-- EntityNotFoundException
+RuntimeException <|-- DuplicateEntityException
+RuntimeException <|-- StorageOperationException
 
 Identifiable <|.. User
 Identifiable <|.. Channel
@@ -105,7 +133,7 @@ Serializable <|.. User
 Serializable <|.. Channel
 Serializable <|.. Message
 
-' 범위: 프로덕션 최상위 타입 22개 + 내부 LazyHolder + 외부 Serializable.
+' 범위: Repository가 CRUD 실패를 의미별 예외로 변환하고 ObjectStore는 checked 기술 예외를 throws로 전달한다.
 ' 관계선: 실제 인터페이스 호출, 주입, 구현, 제네릭 계약만 표시한다.
 
 @enduml
