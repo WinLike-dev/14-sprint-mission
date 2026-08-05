@@ -8,26 +8,20 @@ import com.sprint.mission.discodeit.repository.ChannelRepository;
 import com.sprint.mission.discodeit.repository.MessageRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.MessageService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
+@Service
+@RequiredArgsConstructor
 public class BasicMessageService implements MessageService {
 
     private final MessageRepository messageRepository;
     private final UserRepository userRepository;
     private final ChannelRepository channelRepository;
-
-    public BasicMessageService(
-            MessageRepository messageRepository,
-            UserRepository userRepository,
-            ChannelRepository channelRepository
-    ) {
-        this.messageRepository = Objects.requireNonNull(messageRepository);
-        this.userRepository = Objects.requireNonNull(userRepository);
-        this.channelRepository = Objects.requireNonNull(channelRepository);
-    }
 
     @Override
     public Message createMessage(String content, UUID channelId, UUID senderId, UUID receiverId) {
@@ -87,13 +81,13 @@ public class BasicMessageService implements MessageService {
             UUID senderId,
             UUID receiverId
     ) {
-        if (channelRepository.existsById(channelId)) {
+        if (!channelRepository.existsById(channelId)) {
             throw new EntityNotFoundException(Channel.class, channelId);
         }
-        if (userRepository.existsById(senderId)) {
+        if (!userRepository.existsById(senderId)) {
             throw new EntityNotFoundException(User.class, senderId);
         }
-        if (userRepository.existsById(receiverId)) {
+        if (!userRepository.existsById(receiverId)) {
             throw new EntityNotFoundException(User.class, receiverId);
         }
     }

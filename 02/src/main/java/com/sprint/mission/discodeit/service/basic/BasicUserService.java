@@ -3,12 +3,16 @@ package com.sprint.mission.discodeit.service.basic;
 import com.sprint.mission.discodeit.entity.User;
 import com.sprint.mission.discodeit.repository.UserRepository;
 import com.sprint.mission.discodeit.service.UserService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
+// Spring이 Service Bean을 찾고, Lombok이 final 의존성을 받는 생성자를 만든다.
+@Service
+@RequiredArgsConstructor
 public class BasicUserService implements UserService {
 
     private static final Pattern EMAIL_PATTERN = Pattern.compile(
@@ -16,10 +20,6 @@ public class BasicUserService implements UserService {
     );
 
     private final UserRepository userRepository;
-
-    public BasicUserService(UserRepository userRepository) {
-        this.userRepository = Objects.requireNonNull(userRepository);
-    }
 
     @Override
     public User createUser(String username, String email, String password) {
