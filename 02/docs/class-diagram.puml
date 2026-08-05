@@ -102,7 +102,7 @@ BasicMessageService ..> EntityNotFoundException : missing relation
 AbstractCrudRepository <|-- UserRepository : User
 AbstractCrudRepository <|-- ChannelRepository : Channel
 AbstractCrudRepository <|-- MessageRepository : Message
-AbstractCrudRepository --> ObjectStore : reads entities
+AbstractCrudRepository --> ObjectStore : loads entities
 AbstractCrudRepository ..> EntityNotFoundException : absent
 AbstractCrudRepository ..> DuplicateEntityException : duplicate
 AbstractCrudRepository ..> StorageOperationException : storage failure

@@ -29,12 +29,12 @@ public class BasicUserService implements UserService {
     }
 
     @Override
-    public User readUser(UUID id) {
+    public User loadUser(UUID id) {
         return userRepository.findById(id);
     }
 
     @Override
-    public List<User> readAllUsers() {
+    public List<User> loadAllUsers() {
         return userRepository.findAll();
     }
 

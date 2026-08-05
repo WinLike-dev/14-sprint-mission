@@ -9,9 +9,9 @@ public interface UserService {
 
     User createUser(String username, String email, String password);
 
-    User readUser(UUID id);
+    User loadUser(UUID id);
 
-    List<User> readAllUsers();
+    List<User> loadAllUsers();
 
     void updateUser(UUID id, String username, String email, String password);
 

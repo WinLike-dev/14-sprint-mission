@@ -193,7 +193,7 @@ if "$cygwin" || "$msys" ; then
         # NB: a `for` loop captures its iteration list before it begins, so
         # changing the positional parameters here affects neither the number of
         # iterations, nor the values presented in `arg`.
-        shift                   # remove old arg
+        shift                   # delete old arg
         set -- "$@" "$arg"      # push replacement arg
     done
 fi
@@ -221,11 +221,11 @@ fi
 
 # Use "xargs" to parse quoted args.
 #
-# With -n1 it outputs one arg per line, with the quotes and backslashes removed.
+# With -n1 it outputs one arg per line, with the quotes and backslashes deleted.
 #
 # In Bash we could simply go:
 #
-#   readarray ARGS < <( xargs -n1 <<<"$var" ) &&
+#   loadarray ARGS < <( xargs -n1 <<<"$var" ) &&
 #   set -- "${ARGS[@]}" "$@"
 #
 # but POSIX shell has neither arrays nor command substitution, so instead we

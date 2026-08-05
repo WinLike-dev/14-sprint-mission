@@ -9,9 +9,9 @@ public interface MessageService {
 
     Message createMessage(String content, UUID channelId, UUID senderId, UUID receiverId);
 
-    Message readMessage(UUID id);
+    Message loadMessage(UUID id);
 
-    List<Message> readAllMessages();
+    List<Message> loadAllMessages();
 
     void updateMessage(UUID id, String content);
 

@@ -45,12 +45,12 @@ public class BasicMessageService implements MessageService {
     }
 
     @Override
-    public Message readMessage(UUID id) {
+    public Message loadMessage(UUID id) {
         return messageRepository.findById(id);
     }
 
     @Override
-    public List<Message> readAllMessages() {
+    public List<Message> loadAllMessages() {
         return messageRepository.findAll();
     }
 

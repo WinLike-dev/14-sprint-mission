@@ -24,12 +24,12 @@ public class BasicChannelService implements ChannelService {
     }
 
     @Override
-    public Channel readChannel(UUID id) {
+    public Channel loadChannel(UUID id) {
         return channelRepository.findById(id);
     }
 
     @Override
-    public List<Channel> readAllChannels() {
+    public List<Channel> loadAllChannels() {
         return channelRepository.findAll();
     }
 

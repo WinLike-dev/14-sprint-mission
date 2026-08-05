@@ -10,9 +10,9 @@ public interface ChannelService {
 
     Channel createChannel(ChannelType type, String name, String description);
 
-    Channel readChannel(UUID id);
+    Channel loadChannel(UUID id);
 
-    List<Channel> readAllChannels();
+    List<Channel> loadAllChannels();
 
     void updateChannel(UUID id, String name, String description);
 

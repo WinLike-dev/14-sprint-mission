@@ -2,18 +2,17 @@ package com.sprint.mission.discodeit.repository.objectStore;
 
 import com.sprint.mission.discodeit.entity.Identifiable;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 public interface ObjectStore<T extends Identifiable> {
 
-    void write(T entity) throws IOException;
+    void save(T entity);
 
-    Optional<T> read(UUID id) throws IOException, ClassNotFoundException;
+    Optional<T> load(UUID id);
 
-    List<T> read() throws IOException, ClassNotFoundException;
+    List<T> load();
 
-    void remove(UUID id) throws IOException;
+    void delete(UUID id);
 }

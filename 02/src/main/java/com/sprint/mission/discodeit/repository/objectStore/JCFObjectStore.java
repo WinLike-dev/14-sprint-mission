@@ -23,18 +23,18 @@ public class JCFObjectStore<T extends Identifiable>
     }
 
     @Override
-    public void write(T entity) {
+    public void save(T entity) {
         data.put(entity.getId(), copy(entity));
     }
 
     @Override
-    public Optional<T> read(UUID id) {
+    public Optional<T> load(UUID id) {
         return Optional.ofNullable(data.get(id))
                 .map(this::copy);
     }
 
     @Override
-    public List<T> read() {
+    public List<T> load() {
         List<T> copies = new ArrayList<>();
         for (T entity : data.values()) {
             copies.add(copy(entity));
@@ -43,7 +43,7 @@ public class JCFObjectStore<T extends Identifiable>
     }
 
     @Override
-    public void remove(UUID id) {
+    public void delete(UUID id) {
         data.remove(id);
     }
 
