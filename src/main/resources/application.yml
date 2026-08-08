@@ -1,0 +1,7 @@
+spring:
+  application:
+    name: discodeit
+
+discodeit:
+  repository:
+    data-root: ${DISCODEIT_DATA_ROOT:data}
