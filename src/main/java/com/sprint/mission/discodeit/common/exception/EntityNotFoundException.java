@@ -11,4 +11,11 @@ public class EntityNotFoundException extends NoSuchElementException {
                         .formatted(entityType.getSimpleName(), id)
         );
     }
+
+    public EntityNotFoundException(Class<?> entityType, String criteria) {
+        super(
+                "엔티티를 찾을 수 없습니다. type=%s, criteria=%s"
+                        .formatted(entityType.getSimpleName(), criteria)
+        );
+    }
 }

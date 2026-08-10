@@ -7,6 +7,7 @@ import com.sprint.mission.discodeit.channel.dto.request.PrivateChannelCreateRequ
 import com.sprint.mission.discodeit.user.dto.request.UserCreateRequest;
 import com.sprint.mission.discodeit.channel.dto.response.ChannelDto;
 import com.sprint.mission.discodeit.message.dto.response.MessageDto;
+import com.sprint.mission.discodeit.readstatus.dto.response.ReadStatusDto;
 import com.sprint.mission.discodeit.user.dto.response.UserDto;
 import com.sprint.mission.discodeit.userstatus.dto.response.UserStatusDto;
 import com.sprint.mission.discodeit.common.exception.DuplicateRequestValueException;
@@ -18,6 +19,7 @@ import com.sprint.mission.discodeit.userstatus.repository.UserStatusRepository;
 import com.sprint.mission.discodeit.auth.service.AuthControllerService;
 import com.sprint.mission.discodeit.channel.service.ChannelControllerService;
 import com.sprint.mission.discodeit.message.service.MessageControllerService;
+import com.sprint.mission.discodeit.readstatus.service.ReadStatusControllerService;
 import com.sprint.mission.discodeit.user.service.UserControllerService;
 import com.sprint.mission.discodeit.userstatus.service.UserStatusControllerService;
 import org.junit.jupiter.api.Test;
@@ -50,6 +52,9 @@ class ServiceWorkflowTest {
 
     @Autowired
     private MessageControllerService messageControllerService;
+
+    @Autowired
+    private ReadStatusControllerService readStatusControllerService;
 
     @Autowired
     private UserStatusControllerService userStatusControllerService;
@@ -119,6 +124,18 @@ class ServiceWorkflowTest {
         assertEquals(1, message.attachmentIds().size());
         assertNotNull(channelControllerService.find(channel.id()).lastMessageAt());
 
+        ReadStatusDto foundReadStatus = readStatusControllerService.find(
+                author.id(), channel.id()
+        );
+        Instant beforeReadStatusUpdate = Instant.now();
+        ReadStatusDto updatedReadStatus = readStatusControllerService.updateLastReadAt(
+                author.id(), channel.id()
+        );
+        Instant afterReadStatusUpdate = Instant.now();
+        assertFalse(updatedReadStatus.lastReadAt().isBefore(foundReadStatus.lastReadAt()));
+        assertFalse(updatedReadStatus.lastReadAt().isBefore(beforeReadStatusUpdate));
+        assertFalse(updatedReadStatus.lastReadAt().isAfter(afterReadStatusUpdate));
+
         channelControllerService.delete(channel.id());
 
         assertTrue(messageRepository.findAll().isEmpty());
@@ -184,6 +201,16 @@ class ServiceWorkflowTest {
         assertThrows(
                 EntityNotFoundException.class,
                 () -> userStatusControllerService.update(missingUserId)
+        );
+    }
+
+    @Test
+    void missingReadStatusUsesEntityNotFoundException() {
+        assertThrows(
+                EntityNotFoundException.class,
+                () -> readStatusControllerService.find(
+                        UUID.randomUUID(), UUID.randomUUID()
+                )
         );
     }
 

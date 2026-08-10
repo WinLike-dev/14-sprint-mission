@@ -1,10 +1,9 @@
 package com.sprint.mission.discodeit.readstatus.service;
 
-import com.sprint.mission.discodeit.readstatus.dto.request.ReadStatusCreateRequest;
-import com.sprint.mission.discodeit.readstatus.dto.request.ReadStatusUpdateRequest;
 import com.sprint.mission.discodeit.readstatus.dto.response.ReadStatusDto;
 import com.sprint.mission.discodeit.readstatus.entity.ReadStatus;
 import com.sprint.mission.discodeit.common.exception.DuplicateAssociationException;
+import com.sprint.mission.discodeit.common.exception.EntityNotFoundException;
 import com.sprint.mission.discodeit.channel.repository.ChannelRepository;
 import com.sprint.mission.discodeit.readstatus.repository.ReadStatusRepository;
 import com.sprint.mission.discodeit.user.repository.UserRepository;
@@ -24,31 +23,36 @@ public class ReadStatusServiceImpl implements ReadStatusControllerService {
     private final ChannelRepository channelRepository;
 
     @Override
-    public ReadStatusDto create(ReadStatusCreateRequest request) {
-        ReadStatusCreateRequest target = Objects.requireNonNull(request);
-        userRepository.getById(target.userId());
-        channelRepository.getById(target.channelId());
+    public ReadStatusDto create(UUID userId, UUID channelId) {
+        Objects.requireNonNull(userId, "userId는 null일 수 없습니다.");
+        Objects.requireNonNull(
+                channelId,
+                "channelId는 null일 수 없습니다."
+        );
+        userRepository.getById(userId);
+        channelRepository.getById(channelId);
+
+        // 유저와 채널 id 모두 똑같은 놈 있는 지 체크
         if (readStatusRepository.findByUserIdAndChannelId(
-                target.userId(), target.channelId()
+                userId, channelId
         ).isPresent()) {
             throw new DuplicateAssociationException(
                     ReadStatus.class,
-                    "userId=%s, channelId=%s".formatted(target.userId(), target.channelId())
+                    associationContext(userId, channelId)
             );
         }
-        ReadStatus status = new ReadStatus(
-                target.userId(), target.channelId(), target.lastReadAt()
-        );
+        ReadStatus status = new ReadStatus(userId, channelId);
         return ReadStatusDto.from(readStatusRepository.create(status));
     }
 
     @Override
-    public ReadStatusDto find(UUID id) {
-        return ReadStatusDto.from(readStatusRepository.getById(id));
+    public ReadStatusDto find(UUID userId, UUID channelId) {
+        return ReadStatusDto.from(getByUserIdAndChannelId(userId, channelId));
     }
 
     @Override
     public List<ReadStatusDto> findAllByUserId(UUID userId) {
+        Objects.requireNonNull(userId, "userId는 null일 수 없습니다.");
         userRepository.getById(userId);
         return readStatusRepository.findAllByUserId(userId).stream()
                 .map(ReadStatusDto::from)
@@ -56,14 +60,32 @@ public class ReadStatusServiceImpl implements ReadStatusControllerService {
     }
 
     @Override
-    public ReadStatusDto update(UUID id, ReadStatusUpdateRequest request) {
-        ReadStatus status = readStatusRepository.getById(id);
-        status.update(Objects.requireNonNull(request).lastReadAt());
+    public ReadStatusDto updateLastReadAt(UUID userId, UUID channelId) {
+        ReadStatus status = getByUserIdAndChannelId(userId, channelId);
+        status.updateLastReadAt();
         return ReadStatusDto.from(readStatusRepository.update(status));
     }
 
     @Override
-    public void delete(UUID id) {
-        readStatusRepository.deleteById(id);
+    public void delete(UUID userId, UUID channelId) {
+        ReadStatus status = getByUserIdAndChannelId(userId, channelId);
+        readStatusRepository.deleteById(status.getId());
+    }
+
+    private ReadStatus getByUserIdAndChannelId(UUID userId, UUID channelId) {
+        Objects.requireNonNull(userId, "userId는 null일 수 없습니다.");
+        Objects.requireNonNull(
+                channelId,
+                "channelId는 null일 수 없습니다."
+        );
+        return readStatusRepository.findByUserIdAndChannelId(userId, channelId)
+                .orElseThrow(() -> new EntityNotFoundException(
+                        ReadStatus.class,
+                        associationContext(userId, channelId)
+                ));
+    }
+
+    private String associationContext(UUID userId, UUID channelId) {
+        return "userId=%s, channelId=%s".formatted(userId, channelId);
     }
 }

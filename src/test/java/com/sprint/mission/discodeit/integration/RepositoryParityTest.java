@@ -79,7 +79,7 @@ class RepositoryParityTest {
         );
         Channel channel = repositories.channels.create(Channel.privateChannel());
         ReadStatus readStatus = repositories.readStatuses.create(
-                new ReadStatus(user.getId(), channel.getId(), Instant.now())
+                new ReadStatus(user.getId(), channel.getId())
         );
         BinaryContent binary = repositories.binaries.create(
                 new BinaryContent("image.png", "image/png", new byte[]{1, 2, 3})

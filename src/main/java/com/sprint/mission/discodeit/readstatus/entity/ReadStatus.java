@@ -18,10 +18,10 @@ public class ReadStatus extends BaseEntity {
     private final UUID channelId;
     private Instant lastReadAt;
 
-    public ReadStatus(UUID userId, UUID channelId, Instant lastReadAt) {
+    public ReadStatus(UUID userId, UUID channelId) {
         this.userId = Objects.requireNonNull(userId, "userId는 null일 수 없습니다.");
         this.channelId = Objects.requireNonNull(channelId, "channelId는 null일 수 없습니다.");
-        this.lastReadAt = Objects.requireNonNull(lastReadAt, "lastReadAt은 null일 수 없습니다.");
+        this.lastReadAt = Instant.now();
     }
 
     private ReadStatus(
@@ -38,11 +38,13 @@ public class ReadStatus extends BaseEntity {
         this.lastReadAt = lastReadAt;
     }
 
-    public void update(Instant lastReadAt) {
-        this.lastReadAt = Objects.requireNonNull(lastReadAt, "lastReadAt은 null일 수 없습니다.");
+    // 설계: 읽은 시각은 외부 입력이 아니라 서버의 현재 시각으로 갱신한다.
+    public void updateLastReadAt() {
+        this.lastReadAt = Instant.now();
         markUpdated();
     }
 
+    // 이것도 JCF를 위해
     public ReadStatus copy() {
         return new ReadStatus(
                 getId(), getCreatedAt(), getUpdatedAt(), userId, channelId, lastReadAt

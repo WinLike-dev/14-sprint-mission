@@ -60,9 +60,8 @@ public class ChannelServiceImpl implements ChannelControllerService {
         Channel channel = channelRepository.create(Channel.privateChannel());
         List<ReadStatus> createdStatuses = new ArrayList<>();
         try {
-            Instant now = Instant.now();
             for (UUID userId : uniqueParticipantIds) {
-                ReadStatus status = new ReadStatus(userId, channel.getId(), now);
+                ReadStatus status = new ReadStatus(userId, channel.getId());
                 readStatusRepository.create(status);
                 createdStatuses.add(status);
             }
