@@ -22,7 +22,7 @@ import java.util.Objects;
 import java.util.UUID;
 
 @Service
-// DI: final 협력 객체를 받는 생성자를 Lombok이 만들고 Spring이 Repository/내부 역할 Bean을 주입한다.
+// final 협력 객체를 받는 생성자를 Lombok이 만들고 Spring이 Repository/내부 역할 Bean을 주입한다.
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserControllerService {
 
