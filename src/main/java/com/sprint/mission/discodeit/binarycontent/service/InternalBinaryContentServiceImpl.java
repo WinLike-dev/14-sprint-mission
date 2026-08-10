@@ -28,7 +28,7 @@ public class InternalBinaryContentServiceImpl implements InternalBinaryContentSe
     // 예외처리
     @Override
     public BinaryContentDto find(UUID id) {
-        return BinaryContentDto.from(binaryContentRepository.findById(id));
+        return BinaryContentDto.from(binaryContentRepository.getById(id));
     }
 
     @Override

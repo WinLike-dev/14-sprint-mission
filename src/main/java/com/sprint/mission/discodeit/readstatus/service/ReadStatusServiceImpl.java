@@ -26,8 +26,8 @@ public class ReadStatusServiceImpl implements ReadStatusControllerService {
     @Override
     public ReadStatusDto create(ReadStatusCreateRequest request) {
         ReadStatusCreateRequest target = Objects.requireNonNull(request);
-        userRepository.findById(target.userId());
-        channelRepository.findById(target.channelId());
+        userRepository.getById(target.userId());
+        channelRepository.getById(target.channelId());
         if (readStatusRepository.findByUserIdAndChannelId(
                 target.userId(), target.channelId()
         ).isPresent()) {
@@ -44,12 +44,12 @@ public class ReadStatusServiceImpl implements ReadStatusControllerService {
 
     @Override
     public ReadStatusDto find(UUID id) {
-        return ReadStatusDto.from(readStatusRepository.findById(id));
+        return ReadStatusDto.from(readStatusRepository.getById(id));
     }
 
     @Override
     public List<ReadStatusDto> findAllByUserId(UUID userId) {
-        userRepository.findById(userId);
+        userRepository.getById(userId);
         return readStatusRepository.findAllByUserId(userId).stream()
                 .map(ReadStatusDto::from)
                 .toList();
@@ -57,7 +57,7 @@ public class ReadStatusServiceImpl implements ReadStatusControllerService {
 
     @Override
     public ReadStatusDto update(UUID id, ReadStatusUpdateRequest request) {
-        ReadStatus status = readStatusRepository.findById(id);
+        ReadStatus status = readStatusRepository.getById(id);
         status.update(Objects.requireNonNull(request).lastReadAt());
         return ReadStatusDto.from(readStatusRepository.update(status));
     }

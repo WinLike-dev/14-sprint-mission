@@ -55,7 +55,7 @@ public class ChannelServiceImpl implements ChannelControllerService {
             throw new DuplicateRequestValueException(Channel.class, "participantIds");
         }
         // 멤버체크 exception
-        uniqueParticipantIds.forEach(userRepository::findById);
+        uniqueParticipantIds.forEach(userRepository::getById);
 
         Channel channel = channelRepository.create(Channel.privateChannel());
         List<ReadStatus> createdStatuses = new ArrayList<>();
@@ -81,12 +81,12 @@ public class ChannelServiceImpl implements ChannelControllerService {
 
     @Override
     public ChannelDto find(UUID id) {
-        return createResponse(channelRepository.findById(id));
+        return createResponse(channelRepository.getById(id));
     }
 
     @Override
     public List<ChannelDto> findAllByUserId(UUID userId) {
-        userRepository.findById(userId);
+        userRepository.getById(userId);
         // set을 이용해 채널 id 중복을 없게 하기 + 등록된 ReadStatus를 통해 userid로 channelId 찾기 -> channelDTO 반환
         Set<UUID> participatedChannelIds = readStatusRepository.findAllByUserId(userId).stream()
                 .map(ReadStatus::getChannelId)
@@ -100,7 +100,7 @@ public class ChannelServiceImpl implements ChannelControllerService {
 
     @Override
     public ChannelDto update(UUID id, ChannelUpdateRequest request) {
-        Channel channel = channelRepository.findById(id);
+        Channel channel = channelRepository.getById(id);
         ChannelUpdateRequest target = Objects.requireNonNull(request);
         channel.update(
                 target.name() == null ? channel.getName() : target.name(),
@@ -115,7 +115,7 @@ public class ChannelServiceImpl implements ChannelControllerService {
     // 뭔가 어디는 레포지토리를 해야하고 어디는 레포지토리 이용하면 안되고 이러면 체계가 없고 불안한 느낌 일관성 떨어지는
     // 그래도 다양한 도메인과의 비즈니스 규칙이면 레포지토리가 아닌 서비스를 이용한다고 생각하면 또 문제될 건 없을지도?
     public void delete(UUID id) {
-        channelRepository.findById(id);
+        channelRepository.getById(id);
         // 메세지만 서비스에 맡기는 이유는 cascade를 위해서
         internalMessageService.deleteAllByChannelId(id);
         readStatusRepository.deleteAllByChannelId(id);

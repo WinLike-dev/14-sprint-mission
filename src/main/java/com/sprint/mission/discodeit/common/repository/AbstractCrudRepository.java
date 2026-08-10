@@ -29,7 +29,7 @@ public abstract class AbstractCrudRepository<T extends Identifiable>
     }
 
     @Override
-    public final T findById(UUID id) {
+    public final T getById(UUID id) {
         return requireStored(Objects.requireNonNull(id));
     }
 

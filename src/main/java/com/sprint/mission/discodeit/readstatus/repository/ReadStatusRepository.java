@@ -9,30 +9,13 @@ import java.util.UUID;
 
 public interface ReadStatusRepository extends CrudRepository<ReadStatus> {
 
-    default List<ReadStatus> findAllByUserId(UUID userId) {
-        return findAll().stream()
-                .filter(status -> status.getUserId().equals(userId))
-                .toList();
-    }
+    List<ReadStatus> findAllByUserId(UUID userId);
 
-    default List<ReadStatus> findAllByChannelId(UUID channelId) {
-        return findAll().stream()
-                .filter(status -> status.getChannelId().equals(channelId))
-                .toList();
-    }
+    List<ReadStatus> findAllByChannelId(UUID channelId);
 
-    default Optional<ReadStatus> findByUserIdAndChannelId(UUID userId, UUID channelId) {
-        return findAll().stream()
-                .filter(status -> status.getUserId().equals(userId))
-                .filter(status -> status.getChannelId().equals(channelId))
-                .findFirst();
-    }
+    Optional<ReadStatus> findByUserIdAndChannelId(UUID userId, UUID channelId);
 
-    default void deleteAllByUserId(UUID userId) {
-        findAllByUserId(userId).forEach(status -> deleteById(status.getId()));
-    }
+    void deleteAllByUserId(UUID userId);
 
-    default void deleteAllByChannelId(UUID channelId) {
-        findAllByChannelId(channelId).forEach(status -> deleteById(status.getId()));
-    }
+    void deleteAllByChannelId(UUID channelId);
 }

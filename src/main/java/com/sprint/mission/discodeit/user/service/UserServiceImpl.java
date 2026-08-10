@@ -62,7 +62,7 @@ public class UserServiceImpl implements UserControllerService {
 
     @Override
     public UserDto find(UUID id) {
-        return createResponse(userRepository.findById(id));
+        return createResponse(userRepository.getById(id));
     }
 
     @Override
@@ -78,7 +78,7 @@ public class UserServiceImpl implements UserControllerService {
             UserUpdateRequest request,
             BinaryContentCreateRequest profile
     ) {
-        User user = userRepository.findById(id);
+        User user = userRepository.getById(id);
         UserUpdateRequest target = Objects.requireNonNull(request);
         validateUniqueFields(id, target.username(), target.email());
 
@@ -109,7 +109,7 @@ public class UserServiceImpl implements UserControllerService {
 
     @Override
     public void delete(UUID id) {
-        User user = userRepository.findById(id);
+        User user = userRepository.getById(id);
         internalUserStatusService.deleteByUserId(id);
         readStatusRepository.deleteAllByUserId(id);
         userRepository.deleteById(id);

@@ -11,7 +11,9 @@ public interface CrudRepository<T extends Identifiable> {
 
     T create(T entity);
 
-    T findById(UUID id);
+    // ID 단건 조회는 반드시 존재해야 하므로 get으로 필수 조회 계약을 드러낸다.
+    // 들어오는 ID에 대해 계약 상 존재 보장 조회를 보장했음을 정의했다 가정
+    T getById(UUID id);
 
     boolean existsById(UUID id);
 

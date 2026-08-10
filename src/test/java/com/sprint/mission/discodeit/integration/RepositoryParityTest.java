@@ -113,9 +113,9 @@ class RepositoryParityTest {
                 () -> repositories.users.findAll().add(user)
         );
 
-        byte[] loadedBytes = repositories.binaries.findById(binary.getId()).getBytes();
+        byte[] loadedBytes = repositories.binaries.getById(binary.getId()).getBytes();
         loadedBytes[0] = 9;
-        assertEquals(1, repositories.binaries.findById(binary.getId()).getBytes()[0]);
+        assertEquals(1, repositories.binaries.getById(binary.getId()).getBytes()[0]);
     }
 
     private Repositories jcfRepositories() {

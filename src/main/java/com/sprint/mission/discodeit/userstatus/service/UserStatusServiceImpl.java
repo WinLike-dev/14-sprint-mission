@@ -25,7 +25,7 @@ public class UserStatusServiceImpl
 
     @Override
     public UserStatusDto find(UUID id) {
-        return UserStatusDto.from(userStatusRepository.findById(id));
+        return UserStatusDto.from(userStatusRepository.getById(id));
     }
 
     @Override
@@ -35,7 +35,7 @@ public class UserStatusServiceImpl
 
     @Override
     public UserStatusDto update(UUID id, UserStatusUpdateRequest request) {
-        UserStatus status = userStatusRepository.findById(id);
+        UserStatus status = userStatusRepository.getById(id);
         status.update(Objects.requireNonNull(request).lastActiveAt());
         return UserStatusDto.from(userStatusRepository.update(status));
     }
@@ -50,7 +50,7 @@ public class UserStatusServiceImpl
 
     @Override
     public void createForUser(UUID userId) {
-        userRepository.findById(userId);
+        userRepository.getById(userId);
         if (userStatusRepository.findByUserId(userId).isPresent()) {
             throw new DuplicateAssociationException(UserStatus.class, "userId=" + userId);
         }

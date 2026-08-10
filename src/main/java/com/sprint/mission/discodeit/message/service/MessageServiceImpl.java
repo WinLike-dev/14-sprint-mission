@@ -30,8 +30,8 @@ public class MessageServiceImpl implements MessageControllerService, InternalMes
     @Override
     public MessageDto create(MessageCreateRequest request) {
         MessageCreateRequest target = Objects.requireNonNull(request);
-        channelRepository.findById(target.channelId());
-        userRepository.findById(target.authorId());
+        channelRepository.getById(target.channelId());
+        userRepository.getById(target.authorId());
 
         List<UUID> attachmentIds = createAttachments(target.attachments());
         Message message = new Message(
@@ -47,7 +47,7 @@ public class MessageServiceImpl implements MessageControllerService, InternalMes
 
     @Override
     public List<MessageDto> findAllByChannelId(UUID channelId) {
-        channelRepository.findById(channelId);
+        channelRepository.getById(channelId);
         return messageRepository.findAllByChannelId(channelId).stream()
                 .map(MessageDto::from)
                 .toList();
@@ -55,14 +55,14 @@ public class MessageServiceImpl implements MessageControllerService, InternalMes
 
     @Override
     public MessageDto update(UUID id, MessageUpdateRequest request) {
-        Message message = messageRepository.findById(id);
+        Message message = messageRepository.getById(id);
         message.update(Objects.requireNonNull(request).content());
         return MessageDto.from(messageRepository.update(message));
     }
 
     @Override
     public void delete(UUID id) {
-        deleteMessage(messageRepository.findById(id));
+        deleteMessage(messageRepository.getById(id));
     }
 
     @Override
