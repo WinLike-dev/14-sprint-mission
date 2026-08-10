@@ -6,6 +6,7 @@ import com.sprint.mission.discodeit.message.entity.Message;
 import com.sprint.mission.discodeit.readstatus.entity.ReadStatus;
 import com.sprint.mission.discodeit.user.entity.User;
 import com.sprint.mission.discodeit.userstatus.entity.UserStatus;
+import com.sprint.mission.discodeit.common.exception.EntityNotFoundException;
 import com.sprint.mission.discodeit.common.exception.StorageOperationException;
 import com.sprint.mission.discodeit.binarycontent.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.channel.repository.ChannelRepository;
@@ -36,8 +37,10 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class RepositoryParityTest {
 
@@ -94,11 +97,33 @@ class RepositoryParityTest {
         );
 
         assertEquals(user.getId(), repositories.users.findByUsername("woody").orElseThrow().getId());
+        assertTrue(repositories.users.existsByUsername("woody"));
+        assertTrue(repositories.users.existsByEmail("woody@example.com"));
+        assertFalse(repositories.users.existsByUsername("missing"));
+        assertFalse(repositories.users.existsByEmail("missing@example.com"));
         assertEquals(userStatus.getId(), repositories.userStatuses.findByUserId(user.getId()).orElseThrow().getId());
+        assertEquals(
+                List.of(readStatus.getId()),
+                repositories.readStatuses.findAllByUserId(user.getId()).stream()
+                        .map(ReadStatus::getId)
+                        .toList()
+        );
+        assertEquals(
+                List.of(readStatus.getId()),
+                repositories.readStatuses.findAllByChannelId(channel.getId()).stream()
+                        .map(ReadStatus::getId)
+                        .toList()
+        );
         assertEquals(readStatus.getId(), repositories.readStatuses
                 .findByUserIdAndChannelId(user.getId(), channel.getId())
                 .orElseThrow()
                 .getId());
+        assertEquals(
+                List.of(message.getId()),
+                repositories.messages.findAllByChannelId(channel.getId()).stream()
+                        .map(Message::getId)
+                        .toList()
+        );
         assertEquals(message.getId(), repositories.messages
                 .findLatestByChannelId(channel.getId())
                 .orElseThrow()
@@ -116,6 +141,25 @@ class RepositoryParityTest {
         byte[] loadedBytes = repositories.binaries.getById(binary.getId()).getBytes();
         loadedBytes[0] = 9;
         assertEquals(1, repositories.binaries.getById(binary.getId()).getBytes()[0]);
+        assertThrows(
+                EntityNotFoundException.class,
+                () -> repositories.users.getById(UUID.randomUUID())
+        );
+
+        repositories.messages.deleteAllByChannelId(channel.getId());
+        assertTrue(repositories.messages.findAllByChannelId(channel.getId()).isEmpty());
+
+        repositories.readStatuses.deleteAllByUserId(user.getId());
+        assertTrue(repositories.readStatuses.findAllByUserId(user.getId()).isEmpty());
+
+        repositories.readStatuses.create(
+                new ReadStatus(user.getId(), channel.getId())
+        );
+        repositories.readStatuses.deleteAllByChannelId(channel.getId());
+        assertTrue(repositories.readStatuses.findAllByChannelId(channel.getId()).isEmpty());
+
+        repositories.userStatuses.deleteByUserId(user.getId());
+        assertTrue(repositories.userStatuses.findByUserId(user.getId()).isEmpty());
     }
 
     private Repositories jcfRepositories() {
