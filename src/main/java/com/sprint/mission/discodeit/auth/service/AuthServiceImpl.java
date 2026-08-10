@@ -32,7 +32,10 @@ public class AuthServiceImpl implements AuthControllerService {
         UserStatus status = userStatusRepository.findByUserId(user.getId())
                 .orElseThrow(() -> new EntityNotFoundException(UserStatus.class, user.getId()));
 
-        // userStatus.updataLastSeenAt();
+        // 가장 최근 ActiveAt이 된 기간 업데이트
+        status.updateLastActiveAt();
+        userStatusRepository.update(status);
+
         // user 폴더의 Dto 생성 (user 내용 + 현재 온라인 인지 계산 결과)
         return UserDto.from(user, status.isOnline());
     }

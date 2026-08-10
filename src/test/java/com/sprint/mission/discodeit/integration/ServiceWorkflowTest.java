@@ -8,6 +8,7 @@ import com.sprint.mission.discodeit.user.dto.request.UserCreateRequest;
 import com.sprint.mission.discodeit.channel.dto.response.ChannelDto;
 import com.sprint.mission.discodeit.message.dto.response.MessageDto;
 import com.sprint.mission.discodeit.user.dto.response.UserDto;
+import com.sprint.mission.discodeit.userstatus.dto.response.UserStatusDto;
 import com.sprint.mission.discodeit.common.exception.DuplicateRequestValueException;
 import com.sprint.mission.discodeit.common.exception.EntityNotFoundException;
 import com.sprint.mission.discodeit.binarycontent.repository.BinaryContentRepository;
@@ -18,15 +19,18 @@ import com.sprint.mission.discodeit.auth.service.AuthControllerService;
 import com.sprint.mission.discodeit.channel.service.ChannelControllerService;
 import com.sprint.mission.discodeit.message.service.MessageControllerService;
 import com.sprint.mission.discodeit.user.service.UserControllerService;
+import com.sprint.mission.discodeit.userstatus.service.UserStatusControllerService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -46,6 +50,9 @@ class ServiceWorkflowTest {
 
     @Autowired
     private MessageControllerService messageControllerService;
+
+    @Autowired
+    private UserStatusControllerService userStatusControllerService;
 
     @Autowired
     private MessageRepository messageRepository;
@@ -72,9 +79,26 @@ class ServiceWorkflowTest {
                 null
         );
 
+        UserStatusDto foundStatus = userStatusControllerService.find(author.id());
+        assertEquals(author.id(), foundStatus.userId());
+
+        Instant beforeStatusUpdate = Instant.now();
+        UserStatusDto updatedStatus = userStatusControllerService.update(author.id());
+        Instant afterStatusUpdate = Instant.now();
+        assertEquals(author.id(), updatedStatus.userId());
+        assertFalse(updatedStatus.lastActiveAt().isBefore(beforeStatusUpdate));
+        assertFalse(updatedStatus.lastActiveAt().isAfter(afterStatusUpdate));
+
+        Instant beforeLogin = Instant.now();
         assertEquals(author.id(), authControllerService.login(
                 new LoginRequest("author", "password")
         ).id());
+        Instant afterLogin = Instant.now();
+        UserStatusDto loginStatus = UserStatusDto.from(
+                userStatusRepository.findByUserId(author.id()).orElseThrow()
+        );
+        assertFalse(loginStatus.lastActiveAt().isBefore(beforeLogin));
+        assertFalse(loginStatus.lastActiveAt().isAfter(afterLogin));
 
         ChannelDto channel = channelControllerService.createPrivate(
                 new PrivateChannelCreateRequest(List.of(author.id(), participant.id()))
@@ -146,6 +170,20 @@ class ServiceWorkflowTest {
                                 List.of()
                         )
                 )
+        );
+    }
+
+    @Test
+    void missingUserStatusUsesEntityNotFoundException() {
+        UUID missingUserId = UUID.randomUUID();
+
+        assertThrows(
+                EntityNotFoundException.class,
+                () -> userStatusControllerService.find(missingUserId)
+        );
+        assertThrows(
+                EntityNotFoundException.class,
+                () -> userStatusControllerService.update(missingUserId)
         );
     }
 

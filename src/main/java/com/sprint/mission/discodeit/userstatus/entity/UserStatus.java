@@ -37,8 +37,9 @@ public class UserStatus extends BaseEntity {
         this.lastActiveAt = lastActiveAt;
     }
 
-    public void update(Instant lastActiveAt) {
-        this.lastActiveAt = Objects.requireNonNull(lastActiveAt, "lastActiveAt은 null일 수 없습니다.");
+    // 설계: 마지막 활동 시각은 외부 입력으로 교체하지 않고 UserStatus가 현재 시각으로 갱신한다.
+    public void updateLastActiveAt() {
+        this.lastActiveAt = Instant.now();
         markUpdated();
     }
 
@@ -47,7 +48,9 @@ public class UserStatus extends BaseEntity {
     }
 
     public boolean isOnline(Instant now) {
+        // threshold는 현재 시각에 5분 빼기
         Instant threshold = Objects.requireNonNull(now).minus(ONLINE_WINDOW);
+        // 정확히 5분 전 인지 체크
         return !lastActiveAt.isBefore(threshold);
     }
 
