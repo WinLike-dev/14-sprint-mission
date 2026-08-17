@@ -4,4 +4,9 @@ spring:
 
 discodeit:
   repository:
+    # 저장소 구현체 선택: jcf | file
+    # 값을 바꾸면 Java 코드 수정 없이 저장 기술이 교체된다.
+    # 설정이 누락되면 file로 fallback하고, 허용되지 않은 값이면 기동 단계에서 실패한다(fail-fast).
+    type: ${DISCODEIT_REPOSITORY_TYPE:file}
+    # type=file 일 때 사용할 데이터 루트 경로. 누락 시 data로 fallback한다.
     data-root: ${DISCODEIT_DATA_ROOT:data}
