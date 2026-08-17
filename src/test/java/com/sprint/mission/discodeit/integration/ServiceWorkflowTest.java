@@ -1,27 +1,30 @@
 package com.sprint.mission.discodeit.integration;
 
-import com.sprint.mission.discodeit.binarycontent.dto.request.BinaryContentCreateRequest;
-import com.sprint.mission.discodeit.auth.dto.request.LoginRequest;
-import com.sprint.mission.discodeit.message.dto.request.MessageCreateRequest;
-import com.sprint.mission.discodeit.channel.dto.request.PrivateChannelCreateRequest;
-import com.sprint.mission.discodeit.user.dto.request.UserCreateRequest;
-import com.sprint.mission.discodeit.channel.dto.response.ChannelDto;
-import com.sprint.mission.discodeit.message.dto.response.MessageDto;
-import com.sprint.mission.discodeit.readstatus.dto.response.ReadStatusDto;
-import com.sprint.mission.discodeit.user.dto.response.UserDto;
-import com.sprint.mission.discodeit.userstatus.dto.response.UserStatusDto;
+import com.sprint.mission.discodeit.user.adapter.in.rest.user.dto.request.UserProfileCreateRequest;
+import com.sprint.mission.discodeit.message.adapter.in.rest.message.dto.request.MessageAttachmentCreateRequest;
+import com.sprint.mission.discodeit.user.adapter.in.rest.auth.dto.request.LoginRequest;
+import com.sprint.mission.discodeit.message.adapter.in.rest.message.dto.request.MessageCreateRequest;
+import com.sprint.mission.discodeit.channel.adapter.in.rest.channel.dto.request.PrivateChannelCreateRequest;
+import com.sprint.mission.discodeit.channel.adapter.in.rest.channel.dto.request.PublicChannelCreateRequest;
+import com.sprint.mission.discodeit.user.adapter.in.rest.user.dto.request.UserCreateRequest;
+import com.sprint.mission.discodeit.channel.adapter.in.rest.channel.dto.response.ChannelDto;
+import com.sprint.mission.discodeit.message.adapter.in.rest.message.dto.response.MessageDto;
+import com.sprint.mission.discodeit.channel.adapter.in.rest.readstatus.dto.response.ReadStatusDto;
+import com.sprint.mission.discodeit.user.adapter.in.rest.user.dto.response.UserDto;
+import com.sprint.mission.discodeit.user.adapter.in.rest.status.dto.response.UserStatusDto;
 import com.sprint.mission.discodeit.common.exception.DuplicateRequestValueException;
 import com.sprint.mission.discodeit.common.exception.EntityNotFoundException;
-import com.sprint.mission.discodeit.binarycontent.repository.BinaryContentRepository;
-import com.sprint.mission.discodeit.message.repository.MessageRepository;
-import com.sprint.mission.discodeit.readstatus.repository.ReadStatusRepository;
-import com.sprint.mission.discodeit.userstatus.repository.UserStatusRepository;
-import com.sprint.mission.discodeit.auth.service.AuthControllerService;
-import com.sprint.mission.discodeit.channel.service.ChannelControllerService;
-import com.sprint.mission.discodeit.message.service.MessageControllerService;
-import com.sprint.mission.discodeit.readstatus.service.ReadStatusControllerService;
-import com.sprint.mission.discodeit.user.service.UserControllerService;
-import com.sprint.mission.discodeit.userstatus.service.UserStatusControllerService;
+import com.sprint.mission.discodeit.channel.domain.readstatus.exception.ReadStatusCreationNotAllowedException;
+import com.sprint.mission.discodeit.content.application.port.out.BinaryContentRepository;
+import com.sprint.mission.discodeit.message.application.port.out.MessageRepository;
+import com.sprint.mission.discodeit.channel.application.port.out.ReadStatusRepository;
+import com.sprint.mission.discodeit.user.application.port.out.UserStatusRepository;
+import com.sprint.mission.discodeit.user.application.auth.AuthControllerService;
+import com.sprint.mission.discodeit.channel.application.channel.ChannelControllerService;
+import com.sprint.mission.discodeit.message.application.message.MessageControllerService;
+import com.sprint.mission.discodeit.channel.application.readstatus.ReadStatusControllerService;
+import com.sprint.mission.discodeit.user.application.user.UserControllerService;
+import com.sprint.mission.discodeit.user.application.status.UserStatusControllerService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -34,6 +37,7 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -75,7 +79,7 @@ class ServiceWorkflowTest {
     void userChannelMessageLifecycleUsesInternalCollaborators() {
         UserDto author = userControllerService.create(
                 new UserCreateRequest("author", "author@example.com", "password"),
-                new BinaryContentCreateRequest(
+                new UserProfileCreateRequest(
                         "profile.png", "image/png", new byte[]{1, 2, 3}
                 )
         );
@@ -115,7 +119,7 @@ class ServiceWorkflowTest {
                         "hello",
                         channel.id(),
                         author.id(),
-                        List.of(new BinaryContentCreateRequest(
+                        List.of(new MessageAttachmentCreateRequest(
                                 "attachment.txt", "text/plain", new byte[]{4, 5}
                         ))
                 )
@@ -215,12 +219,94 @@ class ServiceWorkflowTest {
     }
 
     @Test
+    void privateChannelReadStatusCannotBeCreatedOutsideChannelCreation() {
+        String suffix = UUID.randomUUID().toString().substring(0, 8);
+        UserDto participant = userControllerService.create(
+                new UserCreateRequest(
+                        "private-member-" + suffix,
+                        "private-member-" + suffix + "@example.com",
+                        "password"
+                ),
+                null
+        );
+        ChannelDto channel = channelControllerService.createPrivate(
+                new PrivateChannelCreateRequest(List.of(participant.id()))
+        );
+
+        try {
+            assertThrows(
+                    ReadStatusCreationNotAllowedException.class,
+                    () -> readStatusControllerService.create(participant.id(), channel.id())
+            );
+        } finally {
+            channelControllerService.delete(channel.id());
+            userControllerService.delete(participant.id());
+        }
+    }
+
+    @Test
+    void deletingUserRemovesReadStatusesThroughDomainEvent() {
+        String suffix = UUID.randomUUID().toString().substring(0, 8);
+        UserDto user = userControllerService.create(
+                new UserCreateRequest(
+                        "event-user-" + suffix,
+                        "event-user-" + suffix + "@example.com",
+                        "password"
+                ),
+                null
+        );
+        ChannelDto channel = channelControllerService.createPublic(
+                new PublicChannelCreateRequest(
+                        "event-channel-" + suffix,
+                        "event cleanup test"
+                )
+        );
+        readStatusControllerService.create(user.id(), channel.id());
+
+        userControllerService.delete(user.id());
+
+        assertTrue(readStatusRepository.findAllByUserId(user.id()).isEmpty());
+        channelControllerService.delete(channel.id());
+    }
+
+    @Test
+    void deletingLastMessageUpdatesChannelProjectionThroughDomainEvent() {
+        String suffix = UUID.randomUUID().toString().substring(0, 8);
+        UserDto author = userControllerService.create(
+                new UserCreateRequest(
+                        "event-author-" + suffix,
+                        "event-author-" + suffix + "@example.com",
+                        "password"
+                ),
+                null
+        );
+        ChannelDto channel = channelControllerService.createPublic(
+                new PublicChannelCreateRequest(
+                        "message-event-" + suffix,
+                        "message projection test"
+                )
+        );
+        MessageDto message = messageControllerService.create(
+                new MessageCreateRequest(
+                        "event message", channel.id(), author.id(), List.of()
+                )
+        );
+        assertNotNull(channelControllerService.find(channel.id()).lastMessageAt());
+
+        messageControllerService.delete(message.id());
+
+        assertNull(channelControllerService.find(channel.id()).lastMessageAt());
+        channelControllerService.delete(channel.id());
+        userControllerService.delete(author.id());
+    }
+
+    @Test
     void invalidUserEmailCleansUpCreatedProfile() {
         assertThrows(
                 IllegalArgumentException.class,
                 () -> userControllerService.create(
                         new UserCreateRequest("invalid-email-user", "invalid-email", "password"),
-                        new BinaryContentCreateRequest(
+                        new UserProfileCreateRequest(
                                 "profile.png", "image/png", new byte[]{1, 2, 3}
                         )
                 )
