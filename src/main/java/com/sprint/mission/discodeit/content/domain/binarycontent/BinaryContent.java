@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.content.domain.binarycontent;
 
+import com.sprint.mission.discodeit.common.exception.InvalidValueException;
 import com.sprint.mission.discodeit.common.entity.Identifiable;
 import lombok.Getter;
 
@@ -64,7 +65,7 @@ public final class BinaryContent implements Identifiable, Serializable {
     // 문자열이 null이거나 공백만 있으면 예외를 던지는 유효성 검증 헬퍼 메서드
     private static String requireNonBlank(String value, String fieldName) {
         if (value == null || value.isBlank()) {
-            throw new IllegalArgumentException(fieldName + "은(는) 비어 있을 수 없습니다.");
+            throw new InvalidValueException(fieldName + "은(는) 비어 있을 수 없습니다.");
         }
         return value;
     }

@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.channel.domain.channel;
 
+import com.sprint.mission.discodeit.common.exception.InvalidValueException;
 import com.sprint.mission.discodeit.common.entity.BaseEntity;
 import com.sprint.mission.discodeit.channel.domain.channel.exception.UnsupportedChannelOperationException;
 import lombok.Getter;
@@ -95,12 +96,12 @@ public class Channel extends BaseEntity {
     private static void validateFields(ChannelType type, String name, String description) {
         if (type == ChannelType.PRIVATE) {
             if (name != null || description != null) {
-                throw new IllegalArgumentException("PRIVATE 채널은 name과 description을 가질 수 없습니다.");
+                throw new InvalidValueException("PRIVATE 채널은 name과 description을 가질 수 없습니다.");
             }
             return;
         }
         if (name == null || name.isBlank()) {
-            throw new IllegalArgumentException("PUBLIC 채널의 name은 비어 있을 수 없습니다.");
+            throw new InvalidValueException("PUBLIC 채널의 name은 비어 있을 수 없습니다.");
         }
         Objects.requireNonNull(description, "PUBLIC 채널의 description은 null일 수 없습니다.");
     }

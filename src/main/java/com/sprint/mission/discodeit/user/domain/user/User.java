@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.user.domain.user;
 
+import com.sprint.mission.discodeit.common.exception.InvalidValueException;
 import com.sprint.mission.discodeit.common.entity.BaseEntity;
 import lombok.Getter;
 
@@ -88,7 +89,7 @@ public class User extends BaseEntity {
     // 값이 null이거나 빈 문자열이면 예외를 던진다. 필수 입력 값 검증용.
     private static String requireNonBlank(String value, String fieldName) {
         if (value == null || value.isBlank()) {
-            throw new IllegalArgumentException(fieldName + "은(는) 비어 있을 수 없습니다.");
+            throw new InvalidValueException(fieldName + "은(는) 비어 있을 수 없습니다.");
         }
         return value;
     }
@@ -97,7 +98,7 @@ public class User extends BaseEntity {
     private static String requireValidEmail(String email) {
         String value = requireNonBlank(email, "email");
         if (!EMAIL_PATTERN.matcher(value).matches()) {
-            throw new IllegalArgumentException("email 형식이 올바르지 않습니다.");
+            throw new InvalidValueException("email 형식이 올바르지 않습니다.");
         }
         return value;
     }
