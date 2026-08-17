@@ -25,12 +25,21 @@ import com.sprint.mission.discodeit.message.application.message.MessageControlle
 import com.sprint.mission.discodeit.channel.application.readstatus.ReadStatusControllerService;
 import com.sprint.mission.discodeit.user.application.user.UserControllerService;
 import com.sprint.mission.discodeit.user.application.status.UserStatusControllerService;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
@@ -44,6 +53,50 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @SpringBootTest
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 class ServiceWorkflowTest {
+
+    // 이 테스트는 저장소가 비어 있다고 단언한다.
+    // application.yml의 기본 경로를 그대로 쓰면 프로젝트 루트 data/에 실제 파일을 쓰게 되고,
+    // 그 단언은 "지금 data/가 비어 있다"는 외부 상태에 기대게 된다.
+    // 이전 실행이 중간에 실패해 파일이 남으면 다음 실행이 함께 깨진다.
+    // @DirtiesContext는 Spring Context만 새로 만들 뿐 디스크의 파일은 지우지 않으므로,
+    // 저장 경로 자체를 테스트 전용 임시 디렉터리로 돌려놓는다.
+    private static final Path TEST_DATA_ROOT = createTestDataRoot();
+
+    @DynamicPropertySource
+    static void overrideDataRoot(DynamicPropertyRegistry registry) {
+        registry.add("discodeit.repository.data-root", TEST_DATA_ROOT::toString);
+    }
+
+    // 컨텍스트를 다시 만들어도 파일은 남으므로 테스트마다 저장 공간을 비운다.
+    @BeforeEach
+    void clearStorage() throws IOException {
+        deleteRecursively(TEST_DATA_ROOT);
+        Files.createDirectories(TEST_DATA_ROOT);
+    }
+
+    @AfterAll
+    static void removeStorage() throws IOException {
+        deleteRecursively(TEST_DATA_ROOT);
+    }
+
+    private static Path createTestDataRoot() {
+        try {
+            return Files.createTempDirectory("discodeit-service-workflow-");
+        } catch (IOException exception) {
+            throw new UncheckedIOException(exception);
+        }
+    }
+
+    private static void deleteRecursively(Path root) throws IOException {
+        if (!Files.exists(root)) {
+            return;
+        }
+        try (var paths = Files.walk(root)) {
+            for (Path path : paths.sorted(Comparator.reverseOrder()).toList()) {
+                Files.deleteIfExists(path);
+            }
+        }
+    }
 
     @Autowired
     private UserControllerService userControllerService;
