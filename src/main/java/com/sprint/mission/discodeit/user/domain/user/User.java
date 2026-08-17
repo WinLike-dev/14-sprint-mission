@@ -54,11 +54,16 @@ public class User extends BaseEntity {
         this.profileId = profileId;
     }
 
-    // 사용자 정보를 수정한다. null로 들어온 필드는 기존 값을 유지한다.
+    // 사용자 정보를 수정한다. 전달된 값을 그대로 반영한다.
+    // Channel.update, Message.update와 같은 계약이다. 같은 이름의 update가 엔티티마다
+    // 다른 의미를 가지면 호출자가 매번 어느 규칙인지 확인해야 하므로 하나로 맞췄다.
+    // "값이 없으면 기존 유지"라는 부분 수정 해석은 요청을 아는 application 계층이 담당한다.
     public void update(String username, String email, String password, UUID profileId) {
-        String nextUsername = username == null ? this.username : requireNonBlank(username, "username");
-        String nextEmail = email == null ? this.email : requireValidEmail(email);
-        String nextPassword = password == null ? this.password : requireNonBlank(password, "password");
+        // 검증을 모두 통과한 뒤에 대입한다.
+        // 대입과 검증을 섞으면 중간에 예외가 났을 때 일부 필드만 바뀐 상태가 남는다.
+        String nextUsername = requireNonBlank(username, "username");
+        String nextEmail = requireValidEmail(email);
+        String nextPassword = requireNonBlank(password, "password");
 
         this.username = nextUsername;
         this.email = nextEmail;
