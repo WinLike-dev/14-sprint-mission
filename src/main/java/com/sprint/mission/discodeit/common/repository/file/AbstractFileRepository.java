@@ -65,6 +65,12 @@ public abstract class AbstractFileRepository<T extends Identifiable & Serializab
         }
     }
 
+    // 저장 파일이 있는지만 확인한다. 역직렬화하지 않는다.
+    @Override
+    protected final boolean contains(UUID id) {
+        return Files.exists(filePath(id));
+    }
+
     @Override
     protected final List<T> readAll() {
         List<T> entities = new ArrayList<>();
