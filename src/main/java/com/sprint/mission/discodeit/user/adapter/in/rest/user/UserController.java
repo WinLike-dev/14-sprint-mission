@@ -18,7 +18,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URI;
@@ -40,10 +39,9 @@ public class UserController {
     // 201과 함께 Location으로 만들어진 리소스의 위치를 알려준다.
     @PostMapping
     public ResponseEntity<UserDto> create(
-            @Valid @RequestBody UserCreateRequest request,
-            @RequestParam(required = false) UserProfileCreateRequest profile
+            @Valid @RequestBody UserCreateRequest request
     ) {
-        UserDto created = UserDto.from(userService.create(toCreateCommand(request, profile)));
+        UserDto created = UserDto.from(userService.create(toCreateCommand(request)));
         return ResponseEntity.created(URI.create("/api/users/" + created.id())).body(created);
     }
 
@@ -65,10 +63,9 @@ public class UserController {
     @PutMapping("/{id}")
     public ResponseEntity<UserDto> update(
             @PathVariable UUID id,
-            @Valid @RequestBody UserUpdateRequest request,
-            @RequestParam(required = false) UserProfileCreateRequest profile
+            @Valid @RequestBody UserUpdateRequest request
     ) {
-        return ResponseEntity.ok(UserDto.from(userService.update(id, toUpdateCommand(request, profile))));
+        return ResponseEntity.ok(UserDto.from(userService.update(id, toUpdateCommand(request))));
     }
 
     // DELETE /api/users/{id} - 사용자를 삭제한다. 성공 시 204(No Content) 응답.
@@ -80,27 +77,21 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 
-    private CreateUserCommand toCreateCommand(
-            UserCreateRequest request,
-            UserProfileCreateRequest profile
-    ) {
+    private CreateUserCommand toCreateCommand(UserCreateRequest request) {
         return new CreateUserCommand(
                 request.username(),
                 request.email(),
                 request.password(),
-                toProfileCommand(profile)
+                toProfileCommand(request.profile())
         );
     }
 
-    private UpdateUserCommand toUpdateCommand(
-            UserUpdateRequest request,
-            UserProfileCreateRequest profile
-    ) {
+    private UpdateUserCommand toUpdateCommand(UserUpdateRequest request) {
         return new UpdateUserCommand(
                 request.username(),
                 request.email(),
                 request.password(),
-                toProfileCommand(profile)
+                toProfileCommand(request.profile())
         );
     }
 

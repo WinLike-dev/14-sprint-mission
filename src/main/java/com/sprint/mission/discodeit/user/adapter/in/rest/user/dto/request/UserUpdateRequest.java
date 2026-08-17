@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.user.adapter.in.rest.user.dto.request;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -20,6 +21,10 @@ public record UserUpdateRequest(
 
         @Pattern(regexp = ".*\\S.*", message = "password는 공백일 수 없습니다.")
         @Size(min = 4, max = 100, message = "password는 4자 이상 100자 이하여야 합니다.")
-        String password
+        String password,
+
+        // 없으면 기존 프로필을 유지한다. 값이 있으면 내부 필드까지 함께 검증한다.
+        @Valid
+        UserProfileCreateRequest profile
 ) {
 }
