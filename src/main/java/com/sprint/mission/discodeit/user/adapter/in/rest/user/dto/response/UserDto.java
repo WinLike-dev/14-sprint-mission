@@ -1,14 +1,14 @@
 package com.sprint.mission.discodeit.user.adapter.in.rest.user.dto.response;
 
-import com.sprint.mission.discodeit.user.domain.user.User;
+import com.sprint.mission.discodeit.user.application.user.dto.UserResult;
 
 import java.time.Instant;
 import java.util.UUID;
 
 /**
- * 사용자 정보 응답 DTO.
- * User 엔티티의 핵심 정보와 온라인 여부를 합쳐서 클라이언트에 반환한다.
- * password는 포함하지 않아 보안을 유지한다.
+ * 사용자 HTTP 응답 DTO.
+ * 유스케이스 결과(UserResult)를 JSON 필드로만 옮긴다.
+ * password 제외와 online 합치기는 UserResult가 이미 끝낸 규칙이다.
  */
 public record UserDto(
         UUID id,
@@ -17,19 +17,17 @@ public record UserDto(
         String username,
         String email,
         UUID profileId,
-        boolean online       // 현재 온라인 상태인지 여부
+        boolean online
 ) {
-    // 문법: static 팩토리 메서드는 DTO 생성 규칙을 객체 생성 지점 한 곳에 모은다.
-    // User 엔티티와 온라인 여부를 받아 DTO를 생성한다.
-    public static UserDto from(User user, boolean online) {
+    public static UserDto from(UserResult result) {
         return new UserDto(
-                user.getId(),
-                user.getCreatedAt(),
-                user.getUpdatedAt(),
-                user.getUsername(),
-                user.getEmail(),
-                user.getProfileId(),
-                online
+                result.id(),
+                result.createdAt(),
+                result.updatedAt(),
+                result.username(),
+                result.email(),
+                result.profileId(),
+                result.online()
         );
     }
 }

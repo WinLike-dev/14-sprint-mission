@@ -4,7 +4,7 @@ import java.util.UUID;
 
 /**
  * 메시지 모듈이 작성자 존재 여부를 확인할 때 쓰는 outbound 포트.
- * 구현은 adapter.out의 MessageUserAcl이 user 모듈 API를 호출한다.
+ * 구현은 adapter.out의 MessageUserAclAdapter가 user 모듈 API를 호출한다.
  */
 public interface MessageAuthorReader {
 

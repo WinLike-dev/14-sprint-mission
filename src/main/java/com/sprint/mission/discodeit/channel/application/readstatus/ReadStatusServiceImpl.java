@@ -46,9 +46,8 @@ public class ReadStatusServiceImpl implements ReadStatusControllerService {
         }
 
         // 유저와 채널 id 모두 똑같은 놈 있는 지 체크 (같은 조합이 이미 있으면 중복 예외 발생)
-        if (readStatusRepository.findByUserIdAndChannelId(
-                userId, channelId
-        ).isPresent()) {
+        // 필요한 건 존재 여부뿐이라 객체를 만들지 않는 exists로 묻는다.
+        if (readStatusRepository.existsByUserIdAndChannelId(userId, channelId)) {
             throw new DuplicateAssociationException(
                     ReadStatus.class,
                     associationContext(userId, channelId)

@@ -5,8 +5,11 @@ import com.sprint.mission.discodeit.channel.adapter.in.rest.readstatus.dto.respo
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -26,7 +29,7 @@ public class ReadStatusController {
     private final ReadStatusControllerService readStatusService; // 실제 비즈니스 로직을 처리하는 서비스
 
     // POST /api/read-statuses?userId=xxx&channelId=yyy - 읽음 상태 생성
-    @RequestMapping(method = RequestMethod.POST)
+    @PostMapping
     public ResponseEntity<ReadStatusDto> create(
             @RequestParam UUID userId,
             @RequestParam UUID channelId
@@ -35,7 +38,7 @@ public class ReadStatusController {
     }
 
     // GET /api/read-statuses/find?userId=xxx&channelId=yyy - 특정 읽음 상태 조회
-    @RequestMapping(value = "/find", method = RequestMethod.GET)
+    @GetMapping("/find")
     public ResponseEntity<ReadStatusDto> find(
             @RequestParam UUID userId,
             @RequestParam UUID channelId
@@ -44,13 +47,13 @@ public class ReadStatusController {
     }
 
     // GET /api/read-statuses?userId=xxx - 사용자의 모든 읽음 상태 조회
-    @RequestMapping(method = RequestMethod.GET)
+    @GetMapping
     public ResponseEntity<List<ReadStatusDto>> findAllByUserId(@RequestParam UUID userId) {
         return ResponseEntity.ok(readStatusService.findAllByUserId(userId));
     }
 
     // PUT /api/read-statuses?userId=xxx&channelId=yyy - 마지막 읽음 시각 갱신
-    @RequestMapping(method = RequestMethod.PUT)
+    @PutMapping
     public ResponseEntity<ReadStatusDto> updateLastReadAt(
             @RequestParam UUID userId,
             @RequestParam UUID channelId
@@ -59,7 +62,7 @@ public class ReadStatusController {
     }
 
     // DELETE /api/read-statuses?userId=xxx&channelId=yyy - 읽음 상태 삭제
-    @RequestMapping(method = RequestMethod.DELETE)
+    @DeleteMapping
     public ResponseEntity<Void> delete(
             @RequestParam UUID userId,
             @RequestParam UUID channelId

@@ -4,7 +4,7 @@ import java.util.UUID;
 
 /**
  * 메시지 모듈이 채널 존재 여부를 확인할 때 쓰는 outbound 포트.
- * 구현은 adapter.out의 ChannelAcl이 channel 모듈 API를 호출한다.
+ * 구현은 adapter.out의 MessageChannelAclAdapter가 channel 모듈 API를 호출한다.
  */
 public interface MessageChannelReader {
 

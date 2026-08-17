@@ -1,16 +1,16 @@
 package com.sprint.mission.discodeit.integration;
 
-import com.sprint.mission.discodeit.user.adapter.in.rest.user.dto.request.UserProfileCreateRequest;
 import com.sprint.mission.discodeit.message.adapter.in.rest.message.dto.request.MessageAttachmentCreateRequest;
 import com.sprint.mission.discodeit.user.adapter.in.rest.auth.dto.request.LoginRequest;
 import com.sprint.mission.discodeit.message.adapter.in.rest.message.dto.request.MessageCreateRequest;
 import com.sprint.mission.discodeit.channel.adapter.in.rest.channel.dto.request.PrivateChannelCreateRequest;
 import com.sprint.mission.discodeit.channel.adapter.in.rest.channel.dto.request.PublicChannelCreateRequest;
-import com.sprint.mission.discodeit.user.adapter.in.rest.user.dto.request.UserCreateRequest;
 import com.sprint.mission.discodeit.channel.adapter.in.rest.channel.dto.response.ChannelDto;
 import com.sprint.mission.discodeit.message.adapter.in.rest.message.dto.response.MessageDto;
 import com.sprint.mission.discodeit.channel.adapter.in.rest.readstatus.dto.response.ReadStatusDto;
-import com.sprint.mission.discodeit.user.adapter.in.rest.user.dto.response.UserDto;
+import com.sprint.mission.discodeit.user.application.user.dto.CreateUserCommand;
+import com.sprint.mission.discodeit.user.application.user.dto.UserProfileCommand;
+import com.sprint.mission.discodeit.user.application.user.dto.UserResult;
 import com.sprint.mission.discodeit.user.adapter.in.rest.status.dto.response.UserStatusDto;
 import com.sprint.mission.discodeit.common.exception.DuplicateRequestValueException;
 import com.sprint.mission.discodeit.common.exception.EntityNotFoundException;
@@ -77,15 +77,16 @@ class ServiceWorkflowTest {
 
     @Test
     void userChannelMessageLifecycleUsesInternalCollaborators() {
-        UserDto author = userControllerService.create(
-                new UserCreateRequest("author", "author@example.com", "password"),
-                new UserProfileCreateRequest(
-                        "profile.png", "image/png", new byte[]{1, 2, 3}
+        UserResult author = userControllerService.create(
+                new CreateUserCommand(
+                        "author",
+                        "author@example.com",
+                        "password",
+                        new UserProfileCommand("profile.png", "image/png", new byte[]{1, 2, 3})
                 )
         );
-        UserDto participant = userControllerService.create(
-                new UserCreateRequest("participant", "participant@example.com", "password"),
-                null
+        UserResult participant = userControllerService.create(
+                new CreateUserCommand("participant", "participant@example.com", "password", null)
         );
 
         UserStatusDto foundStatus = userStatusControllerService.find(author.id());
@@ -156,13 +157,13 @@ class ServiceWorkflowTest {
     @Test
     void duplicatePrivateChannelParticipantsUseRequestValueException() {
         String suffix = UUID.randomUUID().toString().substring(0, 8);
-        UserDto participant = userControllerService.create(
-                new UserCreateRequest(
+        UserResult participant = userControllerService.create(
+                new CreateUserCommand(
                         "participant-" + suffix,
                         "participant-" + suffix + "@example.com",
-                        "password"
-                ),
-                null
+                        "password",
+                        null
+                )
         );
 
         try {
@@ -221,13 +222,13 @@ class ServiceWorkflowTest {
     @Test
     void privateChannelReadStatusCannotBeCreatedOutsideChannelCreation() {
         String suffix = UUID.randomUUID().toString().substring(0, 8);
-        UserDto participant = userControllerService.create(
-                new UserCreateRequest(
+        UserResult participant = userControllerService.create(
+                new CreateUserCommand(
                         "private-member-" + suffix,
                         "private-member-" + suffix + "@example.com",
-                        "password"
-                ),
-                null
+                        "password",
+                        null
+                )
         );
         ChannelDto channel = channelControllerService.createPrivate(
                 new PrivateChannelCreateRequest(List.of(participant.id()))
@@ -247,13 +248,13 @@ class ServiceWorkflowTest {
     @Test
     void deletingUserRemovesReadStatusesThroughDomainEvent() {
         String suffix = UUID.randomUUID().toString().substring(0, 8);
-        UserDto user = userControllerService.create(
-                new UserCreateRequest(
+        UserResult user = userControllerService.create(
+                new CreateUserCommand(
                         "event-user-" + suffix,
                         "event-user-" + suffix + "@example.com",
-                        "password"
-                ),
-                null
+                        "password",
+                        null
+                )
         );
         ChannelDto channel = channelControllerService.createPublic(
                 new PublicChannelCreateRequest(
@@ -272,13 +273,13 @@ class ServiceWorkflowTest {
     @Test
     void deletingLastMessageUpdatesChannelProjectionThroughDomainEvent() {
         String suffix = UUID.randomUUID().toString().substring(0, 8);
-        UserDto author = userControllerService.create(
-                new UserCreateRequest(
+        UserResult author = userControllerService.create(
+                new CreateUserCommand(
                         "event-author-" + suffix,
                         "event-author-" + suffix + "@example.com",
-                        "password"
-                ),
-                null
+                        "password",
+                        null
+                )
         );
         ChannelDto channel = channelControllerService.createPublic(
                 new PublicChannelCreateRequest(
@@ -305,9 +306,11 @@ class ServiceWorkflowTest {
         assertThrows(
                 IllegalArgumentException.class,
                 () -> userControllerService.create(
-                        new UserCreateRequest("invalid-email-user", "invalid-email", "password"),
-                        new UserProfileCreateRequest(
-                                "profile.png", "image/png", new byte[]{1, 2, 3}
+                        new CreateUserCommand(
+                                "invalid-email-user",
+                                "invalid-email",
+                                "password",
+                                new UserProfileCommand("profile.png", "image/png", new byte[]{1, 2, 3})
                         )
                 )
         );

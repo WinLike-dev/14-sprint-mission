@@ -19,9 +19,11 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * 채널 비즈니스 로직의 실제 구현 클래스.
@@ -84,17 +86,32 @@ public class ChannelServiceImpl implements ChannelControllerService {
     }
 
     // 사용자가 볼 수 있는 모든 채널을 조회 (PUBLIC 채널 전체 + 참여 중인 PRIVATE 채널)
+    // 채널마다 참여자를 다시 조회하면 목록 한 번이 조회 C회로 늘어나므로(N+1),
+    // ReadStatus를 한 번만 읽어 참여 채널 판별과 참여자 목록 조립에 함께 사용한다.
     @Override
     public List<ChannelDto> findAllByUserId(UUID userId) {
         userReader.requireExists(userId);
-        // set을 이용해 채널 id 중복을 없게 하기 + 등록된 ReadStatus를 통해 userid로 channelId 찾기 -> channelDTO 반환
-        Set<UUID> participatedChannelIds = readStatusRepository.findAllByUserId(userId).stream()
+
+        List<ReadStatus> allStatuses = readStatusRepository.findAll();
+        // 채널별 참여자 목록 (PRIVATE 채널 응답 조립용)
+        Map<UUID, List<UUID>> participantIdsByChannelId = allStatuses.stream()
+                .collect(Collectors.groupingBy(
+                        ReadStatus::getChannelId,
+                        Collectors.mapping(ReadStatus::getUserId, Collectors.toList())
+                ));
+        // set을 이용해 채널 id 중복을 없게 하기 + 등록된 ReadStatus를 통해 userid로 channelId 찾기
+        Set<UUID> participatedChannelIds = allStatuses.stream()
+                .filter(status -> status.getUserId().equals(userId))
                 .map(ReadStatus::getChannelId)
-                .collect(java.util.stream.Collectors.toSet());
+                .collect(Collectors.toSet());
+
         return channelRepository.findAll().stream()
                 .filter(channel -> channel.getType() == ChannelType.PUBLIC
                         || participatedChannelIds.contains(channel.getId()))
-                .map(this::createResponse)
+                .map(channel -> createResponse(
+                        channel,
+                        participantIdsByChannelId.getOrDefault(channel.getId(), List.of())
+                ))
                 .toList();
     }
 
@@ -113,8 +130,6 @@ public class ChannelServiceImpl implements ChannelControllerService {
     }
 
     @Override
-    // 뭔가 어디는 레포지토리를 해야하고 어디는 레포지토리 이용하면 안되고 이러면 체계가 없고 불안한 느낌 일관성 떨어지는
-    // 그래도 다양한 도메인과의 비즈니스 규칙이면 레포지토리가 아닌 서비스를 이용한다고 생각하면 또 문제될 건 없을지도?
     public void delete(UUID id) {
         channelRepository.getById(id);
         readStatusRepository.deleteAllByChannelId(id);
@@ -122,15 +137,24 @@ public class ChannelServiceImpl implements ChannelControllerService {
         Events.raise(new ChannelDeletedEvent(id));
     }
 
-    // Channel 엔티티를 ChannelDto로 변환하는 헬퍼 메서드
+    // 단건 조회 경로: 해당 채널의 ReadStatus만 조회한다.
     private ChannelDto createResponse(Channel channel) {
-        // private면 참여자 ID 받고 public이면 빈값을 보낸다.
         List<UUID> participantIds = channel.getType() == ChannelType.PRIVATE
                 ? readStatusRepository.findAllByChannelId(channel.getId()).stream()
                 .map(ReadStatus::getUserId)
                 .toList()
                 : List.of();
-        return ChannelDto.from(channel, participantIds);
+        return createResponse(channel, participantIds);
+    }
+
+    // Channel 엔티티를 ChannelDto로 변환하는 헬퍼 메서드.
+    // 조회 전략은 호출 경로에 따라 다르지만 변환 규칙은 이 메서드 한 벌로 유지한다.
+    private ChannelDto createResponse(Channel channel, List<UUID> participantIds) {
+        // private면 참여자 ID 받고 public이면 빈값을 보낸다.
+        return ChannelDto.from(
+                channel,
+                channel.getType() == ChannelType.PRIVATE ? participantIds : List.of()
+        );
     }
 
     // 정리(cleanup) 작업 중 발생한 예외를 원본 예외에 억제(suppressed) 예외로 추가하는 유틸 메서드

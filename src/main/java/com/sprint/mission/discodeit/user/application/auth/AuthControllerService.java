@@ -1,7 +1,7 @@
 package com.sprint.mission.discodeit.user.application.auth;
 
 import com.sprint.mission.discodeit.user.adapter.in.rest.auth.dto.request.LoginRequest;
-import com.sprint.mission.discodeit.user.adapter.in.rest.user.dto.response.UserDto;
+import com.sprint.mission.discodeit.user.application.user.dto.UserResult;
 
 /**
  * 인증(Authentication) 관련 비즈니스 로직의 애플리케이션 서비스 인터페이스.
@@ -11,5 +11,5 @@ import com.sprint.mission.discodeit.user.adapter.in.rest.user.dto.response.UserD
 public interface AuthControllerService {
 
     // 사용자 이름과 비밀번호로 로그인을 시도하고, 성공하면 사용자 정보를 반환한다.
-    UserDto login(LoginRequest request);
+    UserResult login(LoginRequest request);
 }

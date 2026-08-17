@@ -4,9 +4,9 @@ import com.sprint.mission.discodeit.content.application.binarycontent.ContentCon
 import com.sprint.mission.discodeit.content.adapter.in.rest.binarycontent.dto.response.BinaryContentDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -26,13 +26,13 @@ public class BinaryContentController {
     private final ContentControllerService contentService;
 
     // GET /api/binary-contents/{id} - 단일 바이너리 콘텐츠를 ID로 조회한다
-    @RequestMapping(value = "/{id}", method = RequestMethod.GET)
+    @GetMapping("/{id}")
     public ResponseEntity<BinaryContentDto> find(@PathVariable UUID id) {
         return ResponseEntity.ok(contentService.find(id));
     }
 
     // GET /api/binary-contents?ids=...&ids=... - 여러 ID로 바이너리 콘텐츠를 한 번에 조회한다
-    @RequestMapping(method = RequestMethod.GET)
+    @GetMapping
     public ResponseEntity<List<BinaryContentDto>> findAllByIdIn(@RequestParam List<UUID> ids) {
         return ResponseEntity.ok(contentService.findAllByIdIn(ids));
     }

@@ -4,7 +4,7 @@ import java.util.UUID;
 
 /**
  * 메시지 첨부파일 생성/삭제를 위한 outbound 포트.
- * 구현은 adapter.out의 MessageContentAcl이 content 모듈 API를 호출한다.
+ * 구현은 adapter.out의 MessageContentAclAdapter가 content 모듈 API를 호출한다.
  */
 public interface MessageContentManager {
 

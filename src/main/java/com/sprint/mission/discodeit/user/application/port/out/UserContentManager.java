@@ -4,7 +4,7 @@ import java.util.UUID;
 
 /**
  * 사용자 프로필 이미지 생성/삭제를 위한 outbound 포트.
- * 구현은 adapter.out의 UserContentAcl이 content 모듈 API를 호출한다.
+ * 구현은 adapter.out의 UserContentAclAdapter가 content 모듈 API를 호출한다.
  */
 public interface UserContentManager {
 

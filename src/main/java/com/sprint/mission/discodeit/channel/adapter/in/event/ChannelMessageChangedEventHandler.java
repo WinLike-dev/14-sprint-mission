@@ -19,6 +19,7 @@ public class ChannelMessageChangedEventHandler {
     // Spring의 @EventListener로 ChannelMessageChangedEvent를 수신하여 처리
     @EventListener
     public void handle(ChannelMessageChangedEvent event) {
+        // 가장 최신 메세지의 시각을 채널에 넣어주기
         activityService.updateLastMessageAt(event.channelId(), event.lastMessageAt());
     }
 }

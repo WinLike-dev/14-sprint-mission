@@ -10,12 +10,12 @@ import org.springframework.stereotype.Component;
 import java.util.UUID;
 
 /**
- * MessageContentManager outbound 포트의 어댑터.
+ * MessageContentManager outbound 포트의 ACL 어댑터.
  * MessageContentData를 content 모듈의 BinaryContentPayload로 바꿔 노출 API를 호출한다.
  */
 @Component
 @RequiredArgsConstructor
-public class MessageContentAcl implements MessageContentManager {
+public class MessageContentAclAdapter implements MessageContentManager {
 
     private final ContentInternalApi contentInternalApi; // Content 모듈이 제공하는 내부 API
 

@@ -19,6 +19,7 @@ public class UserDeletedEventHandler {
     // Spring의 @EventListener로 UserDeletedEvent를 수신하여 처리
     @EventListener
     public void handle(UserDeletedEvent event) {
+        // 유저 삭제 시 ReadStatus 삭제
         cleanupService.deleteAllByUserId(event.userId());
     }
 }

@@ -8,12 +8,12 @@ import org.springframework.stereotype.Component;
 import java.util.UUID;
 
 /**
- * MessageChannelReader outbound 포트의 어댑터.
+ * MessageChannelReader outbound 포트의 ACL 어댑터.
  * channel 모듈의 노출 API를 호출하고, 메시지 모듈이 channel 구현에 직접 의존하지 않게 막는다.
  */
 @Component
 @RequiredArgsConstructor
-public class ChannelAcl implements MessageChannelReader {
+public class MessageChannelAclAdapter implements MessageChannelReader {
 
     private final ChannelInternalApi channelInternalApi; // 채널 모듈이 제공하는 내부 API
 
