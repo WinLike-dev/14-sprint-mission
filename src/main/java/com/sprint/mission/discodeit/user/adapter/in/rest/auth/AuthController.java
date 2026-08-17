@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.user.adapter.in.rest.auth;
 
+import jakarta.validation.Valid;
 import com.sprint.mission.discodeit.user.application.auth.AuthControllerService;
 import com.sprint.mission.discodeit.user.adapter.in.rest.auth.dto.request.LoginRequest;
 import com.sprint.mission.discodeit.user.adapter.in.rest.user.dto.response.UserDto;
@@ -23,7 +24,7 @@ public class AuthController {
 
     // POST /api/auth/login - 로그인 요청을 받아 인증 서비스에 위임한다.
     @PostMapping("/login")
-    public ResponseEntity<UserDto> login(@RequestBody LoginRequest request) {
+    public ResponseEntity<UserDto> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(UserDto.from(authService.login(request)));
     }
 }

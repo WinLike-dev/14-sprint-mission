@@ -1,5 +1,7 @@
 package com.sprint.mission.discodeit.channel.adapter.in.rest.channel;
 
+import java.net.URI;
+import jakarta.validation.Valid;
 import com.sprint.mission.discodeit.channel.application.channel.ChannelControllerService;
 import com.sprint.mission.discodeit.channel.adapter.in.rest.channel.dto.request.ChannelUpdateRequest;
 import com.sprint.mission.discodeit.channel.adapter.in.rest.channel.dto.request.PrivateChannelCreateRequest;
@@ -35,14 +37,20 @@ public class ChannelController {
 
     // POST /api/channels/public - 공개 채널 생성
     @PostMapping("/public")
-    public ResponseEntity<ChannelDto> createPublic(@RequestBody PublicChannelCreateRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(channelService.createPublic(request));
+    public ResponseEntity<ChannelDto> createPublic(
+            @Valid @RequestBody PublicChannelCreateRequest request
+    ) {
+        ChannelDto created = channelService.createPublic(request);
+        return ResponseEntity.created(URI.create("/api/channels/" + created.id())).body(created);
     }
 
     // POST /api/channels/private - 비공개(DM) 채널 생성
     @PostMapping("/private")
-    public ResponseEntity<ChannelDto> createPrivate(@RequestBody PrivateChannelCreateRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(channelService.createPrivate(request));
+    public ResponseEntity<ChannelDto> createPrivate(
+            @Valid @RequestBody PrivateChannelCreateRequest request
+    ) {
+        ChannelDto created = channelService.createPrivate(request);
+        return ResponseEntity.created(URI.create("/api/channels/" + created.id())).body(created);
     }
 
     // GET /api/channels/{id} - 채널 단건 조회
@@ -61,7 +69,7 @@ public class ChannelController {
     @PutMapping("/{id}")
     public ResponseEntity<ChannelDto> update(
             @PathVariable UUID id,
-            @RequestBody ChannelUpdateRequest request
+            @Valid @RequestBody ChannelUpdateRequest request
     ) {
         return ResponseEntity.ok(channelService.update(id, request));
     }

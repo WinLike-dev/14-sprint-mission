@@ -1,12 +1,20 @@
 package com.sprint.mission.discodeit.channel.adapter.in.rest.channel.dto.request;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+
 /**
  * 공개 채널 생성 요청 DTO.
- * 클라이언트가 공개 채널을 만들 때 보내는 JSON 데이터를 담는 객체이다.
- * record를 사용하면 불변 객체가 자동으로 만들어진다 (getter, equals, hashCode, toString 자동 생성).
- *
- * @param name        채널 이름 (필수)
- * @param description 채널 설명 (필수)
+ * PUBLIC 채널은 이름과 설명을 반드시 갖는다는 도메인 규칙을 경계에서 먼저 확인한다.
  */
-public record PublicChannelCreateRequest(String name, String description) {
+public record PublicChannelCreateRequest(
+        @NotBlank(message = "name은 필수입니다.")
+        @Size(max = 100, message = "name은 100자를 넘을 수 없습니다.")
+        String name,
+
+        @NotNull(message = "description은 필수입니다.")
+        @Size(max = 500, message = "description은 500자를 넘을 수 없습니다.")
+        String description
+) {
 }

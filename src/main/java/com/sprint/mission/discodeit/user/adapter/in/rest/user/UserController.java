@@ -8,8 +8,8 @@ import com.sprint.mission.discodeit.user.adapter.in.rest.user.dto.request.UserCr
 import com.sprint.mission.discodeit.user.adapter.in.rest.user.dto.request.UserProfileCreateRequest;
 import com.sprint.mission.discodeit.user.adapter.in.rest.user.dto.request.UserUpdateRequest;
 import com.sprint.mission.discodeit.user.adapter.in.rest.user.dto.response.UserDto;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 
@@ -35,14 +36,15 @@ public class UserController {
 
     private final UserControllerService userService;
 
-    // POST /api/users - 새 사용자를 생성한다. 성공 시 201(Created) 응답.
+    // POST /api/users - 새 사용자를 생성한다.
+    // 201과 함께 Location으로 만들어진 리소스의 위치를 알려준다.
     @PostMapping
     public ResponseEntity<UserDto> create(
-            @RequestBody UserCreateRequest request,
+            @Valid @RequestBody UserCreateRequest request,
             @RequestParam(required = false) UserProfileCreateRequest profile
     ) {
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(UserDto.from(userService.create(toCreateCommand(request, profile))));
+        UserDto created = UserDto.from(userService.create(toCreateCommand(request, profile)));
+        return ResponseEntity.created(URI.create("/api/users/" + created.id())).body(created);
     }
 
     // GET /api/users/{id} - 특정 사용자를 ID로 조회한다.
@@ -63,7 +65,7 @@ public class UserController {
     @PutMapping("/{id}")
     public ResponseEntity<UserDto> update(
             @PathVariable UUID id,
-            @RequestBody UserUpdateRequest request,
+            @Valid @RequestBody UserUpdateRequest request,
             @RequestParam(required = false) UserProfileCreateRequest profile
     ) {
         return ResponseEntity.ok(UserDto.from(userService.update(id, toUpdateCommand(request, profile))));

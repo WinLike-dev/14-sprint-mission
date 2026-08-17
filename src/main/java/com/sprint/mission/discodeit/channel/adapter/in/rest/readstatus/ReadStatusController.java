@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.channel.adapter.in.rest.readstatus;
 
+import java.net.URI;
 import com.sprint.mission.discodeit.channel.application.readstatus.ReadStatusControllerService;
 import com.sprint.mission.discodeit.channel.adapter.in.rest.readstatus.dto.response.ReadStatusDto;
 import lombok.RequiredArgsConstructor;
@@ -34,7 +35,12 @@ public class ReadStatusController {
             @RequestParam UUID userId,
             @RequestParam UUID channelId
     ) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(readStatusService.create(userId, channelId));
+        ReadStatusDto created = readStatusService.create(userId, channelId);
+        return ResponseEntity
+                .created(URI.create(
+                        "/api/read-statuses/find?userId=" + userId + "&channelId=" + channelId
+                ))
+                .body(created);
     }
 
     // GET /api/read-statuses/find?userId=xxx&channelId=yyy - 특정 읽음 상태 조회

@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -19,6 +20,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 
 import java.time.Instant;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -80,6 +82,18 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.BAD_REQUEST, e.getMessage());
     }
 
+    // Bean Validation 실패 -> 400. 어떤 필드가 왜 틀렸는지 필드 단위로 알려준다.
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<Map<String, Object>> handleValidationFailure(MethodArgumentNotValidException e) {
+        List<Map<String, String>> fieldErrors = e.getBindingResult().getFieldErrors().stream()
+                .map(error -> Map.of(
+                        "field", error.getField(),
+                        "message", String.valueOf(error.getDefaultMessage())
+                ))
+                .toList();
+        return buildResponse(HttpStatus.BAD_REQUEST, "요청 값이 올바르지 않습니다.", fieldErrors);
+    }
+
     // 경로 변수나 쿼리 파라미터의 타입이 맞지 않을 때 -> 400.
     // 내부 변환 예외 메시지를 그대로 노출하지 않고 어떤 값이 문제인지만 알린다.
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
@@ -122,13 +136,24 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, INTERNAL_MESSAGE);
     }
 
-    // 에러 응답 JSON 본문을 공통 형식으로 생성하는 헬퍼 메서드
     private ResponseEntity<Map<String, Object>> buildResponse(HttpStatus status, String message) {
+        return buildResponse(status, message, null);
+    }
+
+    // 에러 응답 JSON 본문을 공통 형식으로 생성하는 헬퍼 메서드
+    private ResponseEntity<Map<String, Object>> buildResponse(
+            HttpStatus status,
+            String message,
+            List<Map<String, String>> fieldErrors
+    ) {
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("timestamp", Instant.now().toString()); // 에러 발생 시각
         body.put("status", status.value());              // HTTP 상태 코드 숫자 (예: 404)
         body.put("error", status.getReasonPhrase());     // HTTP 상태 코드 이름 (예: "Not Found")
         body.put("message", message);                    // 구체적인 에러 메시지
+        if (fieldErrors != null && !fieldErrors.isEmpty()) {
+            body.put("fieldErrors", fieldErrors);        // 필드 단위 검증 실패 목록
+        }
         return ResponseEntity.status(status).body(body);
     }
 }

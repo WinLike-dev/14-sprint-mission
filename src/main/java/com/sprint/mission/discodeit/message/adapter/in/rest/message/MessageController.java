@@ -1,5 +1,7 @@
 package com.sprint.mission.discodeit.message.adapter.in.rest.message;
 
+import java.net.URI;
+import jakarta.validation.Valid;
 import com.sprint.mission.discodeit.message.application.message.MessageControllerService;
 import com.sprint.mission.discodeit.message.adapter.in.rest.message.dto.request.MessageCreateRequest;
 import com.sprint.mission.discodeit.message.adapter.in.rest.message.dto.request.MessageUpdateRequest;
@@ -34,8 +36,11 @@ public class MessageController {
 
     // POST /api/messages - 새 메시지를 생성하고 201 Created를 반환한다
     @PostMapping
-    public ResponseEntity<MessageDto> create(@RequestBody MessageCreateRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(messageService.create(request));
+    public ResponseEntity<MessageDto> create(
+            @Valid @RequestBody MessageCreateRequest request
+    ) {
+        MessageDto created = messageService.create(request);
+        return ResponseEntity.created(URI.create("/api/messages/" + created.id())).body(created);
     }
 
     // GET /api/messages?channelId=... - 특정 채널의 모든 메시지를 조회한다
@@ -48,7 +53,7 @@ public class MessageController {
     @PutMapping("/{id}")
     public ResponseEntity<MessageDto> update(
             @PathVariable UUID id,
-            @RequestBody MessageUpdateRequest request
+            @Valid @RequestBody MessageUpdateRequest request
     ) {
         return ResponseEntity.ok(messageService.update(id, request));
     }
