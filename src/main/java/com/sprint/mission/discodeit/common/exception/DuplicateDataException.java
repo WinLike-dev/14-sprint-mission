@@ -1,12 +1,14 @@
 package com.sprint.mission.discodeit.common.exception;
 
 /**
- * 데이터 중복과 관련된 모든 예외의 부모(추상) 클래스.
- * 이 클래스를 직접 사용하지 않고, 구체적인 하위 클래스를 통해 중복의 종류를 구분한다.
- * 예: 필드 값 중복(DuplicateFieldValueException), 엔티티 중복(DuplicateEntityException) 등.
+ * 이미 저장된 데이터와 충돌해서 요청을 처리할 수 없을 때 사용하는 예외.
  *
- * 추상 클래스로 만든 이유: 중복 예외들을 하나의 타입으로 묶어서
- * GlobalExceptionHandler에서 한꺼번에 처리(409 Conflict)할 수 있게 하기 위함이다.
+ * 이 계열은 "지금 저장소에 그 값이 있다"는 사실 때문에 실패한다.
+ * 같은 요청이라도 기존 데이터가 달라지면 성공할 수 있다.
+ *
+ * 요청 안에서만 발생하는 중복(DuplicateRequestValueException)이나
+ * 식별자 생성 결함(DuplicateEntityException)은 성격이 달라 이 계열에 두지 않는다.
+ * 이름에 Duplicate가 들어간다고 같은 상태로 응답하지는 않는다.
  */
 public abstract class DuplicateDataException extends RuntimeException {
 

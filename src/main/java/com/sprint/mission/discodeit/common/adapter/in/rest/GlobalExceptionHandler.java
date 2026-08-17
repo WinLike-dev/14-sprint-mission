@@ -1,7 +1,6 @@
 package com.sprint.mission.discodeit.common.adapter.in.rest;
 
-import com.sprint.mission.discodeit.channel.domain.channel.exception.UnsupportedChannelOperationException;
-import com.sprint.mission.discodeit.channel.domain.readstatus.exception.ReadStatusCreationNotAllowedException;
+import com.sprint.mission.discodeit.common.exception.ConflictingStateException;
 import com.sprint.mission.discodeit.common.exception.DuplicateDataException;
 import com.sprint.mission.discodeit.common.exception.EntityNotFoundException;
 import com.sprint.mission.discodeit.common.exception.InvalidValueException;
@@ -12,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -48,9 +48,16 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.NOT_FOUND, e.getMessage());
     }
 
-    // 중복 데이터가 존재할 때 -> 409 Conflict 응답
+    // 이미 저장된 데이터와 충돌할 때 -> 409 Conflict 응답
     @ExceptionHandler(DuplicateDataException.class)
     public ResponseEntity<Map<String, Object>> handleDuplicateData(DuplicateDataException e) {
+        return buildResponse(HttpStatus.CONFLICT, e.getMessage());
+    }
+
+    // 요청은 올바르지만 대상의 현재 상태가 허용하지 않을 때 -> 409 Conflict 응답.
+    // 400으로 답하면 요청을 이해하지 못했다는 뜻이 되어 원인을 잘못 가리킨다.
+    @ExceptionHandler(ConflictingStateException.class)
+    public ResponseEntity<Map<String, Object>> handleConflictingState(ConflictingStateException e) {
         return buildResponse(HttpStatus.CONFLICT, e.getMessage());
     }
 
@@ -58,22 +65,6 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AuthenticationFailedException.class)
     public ResponseEntity<Map<String, Object>> handleAuthenticationFailed(AuthenticationFailedException e) {
         return buildResponse(HttpStatus.UNAUTHORIZED, e.getMessage());
-    }
-
-    // 채널에서 지원하지 않는 작업을 시도했을 때 -> 400 Bad Request 응답
-    @ExceptionHandler(UnsupportedChannelOperationException.class)
-    public ResponseEntity<Map<String, Object>> handleUnsupportedChannelOperation(
-            UnsupportedChannelOperationException e
-    ) {
-        return buildResponse(HttpStatus.BAD_REQUEST, e.getMessage());
-    }
-
-    // 읽기 상태 생성이 허용되지 않을 때 -> 400 Bad Request 응답
-    @ExceptionHandler(ReadStatusCreationNotAllowedException.class)
-    public ResponseEntity<Map<String, Object>> handleReadStatusCreationNotAllowed(
-            ReadStatusCreationNotAllowedException e
-    ) {
-        return buildResponse(HttpStatus.BAD_REQUEST, e.getMessage());
     }
 
     // 도메인 규칙을 만족하지 못한 값 -> 400. 호출자가 고칠 수 있는 실패이므로 메시지를 그대로 전달한다.
@@ -133,6 +124,26 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, Object>> handleIllegalArgument(IllegalArgumentException e) {
         log.error("처리되지 않은 잘못된 인자입니다.", e);
+        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, INTERNAL_MESSAGE);
+    }
+
+    /**
+     * 위에서 걸리지 않은 나머지 예외를 받는다.
+     * 이게 없으면 미처리 예외가 Spring 기본 형식으로 나가서 응답 형태가 두 가지가 된다.
+     *
+     * 다만 전부 500으로 덮으면 안 된다. 405나 415처럼 Spring이 이미 의미에 맞는 상태를
+     * 정해 둔 예외까지 서버 오류로 바꿔버리기 때문이다.
+     * 그런 예외는 ErrorResponse로 자기 상태를 알고 있으므로, 상태는 그대로 두고
+     * 본문 형태만 우리 것으로 맞춘다. 정말 예상 못 한 예외만 500으로 처리한다.
+     */
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Map<String, Object>> handleUnexpected(Exception e) {
+        if (e instanceof ErrorResponse errorResponse) {
+            HttpStatus status = HttpStatus.valueOf(errorResponse.getStatusCode().value());
+            String detail = errorResponse.getBody().getDetail();
+            return buildResponse(status, detail == null ? status.getReasonPhrase() : detail);
+        }
+        log.error("처리되지 않은 예외입니다.", e);
         return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, INTERNAL_MESSAGE);
     }
 
