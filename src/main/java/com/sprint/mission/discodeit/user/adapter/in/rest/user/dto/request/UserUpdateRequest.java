@@ -12,16 +12,16 @@ import jakarta.validation.constraints.Size;
  * (@Email, @Pattern, @Size는 모두 null을 통과시킨다)
  */
 public record UserUpdateRequest(
-        @Pattern(regexp = ".*\\S.*", message = "username은 공백일 수 없습니다.")
-        @Size(max = 50, message = "username은 50자를 넘을 수 없습니다.")
-        String username,
+        @Pattern(regexp = ".*\\S.*", message = "newUsername은 공백일 수 없습니다.")
+        @Size(max = 50, message = "newUsername은 50자를 넘을 수 없습니다.")
+        String newUsername,
 
-        @Email(message = "email 형식이 올바르지 않습니다.")
-        String email,
+        @Email(message = "newEmail 형식이 올바르지 않습니다.")
+        String newEmail,
 
-        @Pattern(regexp = ".*\\S.*", message = "password는 공백일 수 없습니다.")
-        @Size(min = 4, max = 100, message = "password는 4자 이상 100자 이하여야 합니다.")
-        String password,
+        @Pattern(regexp = ".*\\S.*", message = "newPassword는 공백일 수 없습니다.")
+        @Size(min = 4, max = 100, message = "newPassword는 4자 이상 100자 이하여야 합니다.")
+        String newPassword,
 
         // 없으면 기존 프로필을 유지한다. 값이 있으면 내부 필드까지 함께 검증한다.
         @Valid

@@ -3,7 +3,7 @@ package com.sprint.mission.discodeit.channel.adapter.in.rest.channel;
 import java.net.URI;
 import jakarta.validation.Valid;
 import com.sprint.mission.discodeit.channel.application.channel.ChannelControllerService;
-import com.sprint.mission.discodeit.channel.adapter.in.rest.channel.dto.request.ChannelUpdateRequest;
+import com.sprint.mission.discodeit.channel.adapter.in.rest.channel.dto.request.PublicChannelUpdateRequest;
 import com.sprint.mission.discodeit.channel.adapter.in.rest.channel.dto.request.PrivateChannelCreateRequest;
 import com.sprint.mission.discodeit.channel.adapter.in.rest.channel.dto.request.PublicChannelCreateRequest;
 import com.sprint.mission.discodeit.channel.adapter.in.rest.channel.dto.response.ChannelDto;
@@ -13,8 +13,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -53,31 +53,25 @@ public class ChannelController {
         return ResponseEntity.created(URI.create("/api/channels/" + created.id())).body(created);
     }
 
-    // GET /api/channels/{id} - 채널 단건 조회
-    @GetMapping("/{id}")
-    public ResponseEntity<ChannelDto> find(@PathVariable UUID id) {
-        return ResponseEntity.ok(channelService.find(id));
-    }
-
     // GET /api/channels?userId=xxx - 사용자가 접근 가능한 모든 채널 목록 조회
     @GetMapping
     public ResponseEntity<List<ChannelDto>> findAllByUserId(@RequestParam UUID userId) {
         return ResponseEntity.ok(channelService.findAllByUserId(userId));
     }
 
-    // PUT /api/channels/{id} - 채널 정보 수정 (PUBLIC 채널만 가능)
-    @PutMapping("/{id}")
+    // PATCH /api/channels/{channelId} - 채널 정보 수정 (PUBLIC 채널만 가능)
+    @PatchMapping("/{channelId}")
     public ResponseEntity<ChannelDto> update(
-            @PathVariable UUID id,
-            @Valid @RequestBody ChannelUpdateRequest request
+            @PathVariable UUID channelId,
+            @Valid @RequestBody PublicChannelUpdateRequest request
     ) {
-        return ResponseEntity.ok(channelService.update(id, request));
+        return ResponseEntity.ok(channelService.update(channelId, request));
     }
 
-    // DELETE /api/channels/{id} - 채널 삭제 (관련 ReadStatus도 함께 삭제됨)
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable UUID id) {
-        channelService.delete(id);
+    // DELETE /api/channels/{channelId} - 채널 삭제 (관련 ReadStatus도 함께 삭제됨)
+    @DeleteMapping("/{channelId}")
+    public ResponseEntity<Void> delete(@PathVariable UUID channelId) {
+        channelService.delete(channelId);
         return ResponseEntity.noContent().build();
     }
 }

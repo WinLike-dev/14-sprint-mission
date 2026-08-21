@@ -80,7 +80,7 @@ public class MessageServiceImpl implements MessageControllerService {
     @Override
     public MessageDto update(UUID id, MessageUpdateRequest request) {
         Message message = messageRepository.getById(id);
-        message.update(Objects.requireNonNull(request).content());
+        message.update(Objects.requireNonNull(request).newContent());
         return MessageDto.from(messageRepository.update(message));
     }
 

@@ -16,24 +16,24 @@ import java.util.UUID;
 /**
  * 바이너리 콘텐츠 REST inbound 어댑터.
  * 조회만 HTTP로 열고, 생성/삭제는 content 모듈의 노출 API를 통해서만 받는다.
- * 엔드포인트: /api/binary-contents
+ * 엔드포인트: /api/binaryContents
  */
 @RestController
-@RequestMapping("/api/binary-contents")
+@RequestMapping("/api/binaryContents")
 @RequiredArgsConstructor
 public class BinaryContentController {
 
     private final ContentControllerService contentService;
 
-    // GET /api/binary-contents/{id} - 단일 바이너리 콘텐츠를 ID로 조회한다
-    @GetMapping("/{id}")
-    public ResponseEntity<BinaryContentDto> find(@PathVariable UUID id) {
-        return ResponseEntity.ok(contentService.find(id));
+    // GET /api/binaryContents/{binaryContentId} - 단일 바이너리 콘텐츠를 ID로 조회한다
+    @GetMapping("/{binaryContentId}")
+    public ResponseEntity<BinaryContentDto> find(@PathVariable UUID binaryContentId) {
+        return ResponseEntity.ok(contentService.find(binaryContentId));
     }
 
-    // GET /api/binary-contents?ids=...&ids=... - 여러 ID로 바이너리 콘텐츠를 한 번에 조회한다
+    // GET /api/binaryContents?binaryContentIds=...&binaryContentIds=... - 여러 ID로 바이너리 콘텐츠를 한 번에 조회한다
     @GetMapping
-    public ResponseEntity<List<BinaryContentDto>> findAllByIdIn(@RequestParam List<UUID> ids) {
-        return ResponseEntity.ok(contentService.findAllByIdIn(ids));
+    public ResponseEntity<List<BinaryContentDto>> findAllByIdIn(@RequestParam List<UUID> binaryContentIds) {
+        return ResponseEntity.ok(contentService.findAllByIdIn(binaryContentIds));
     }
 }

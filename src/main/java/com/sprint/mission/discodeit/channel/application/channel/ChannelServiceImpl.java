@@ -1,6 +1,6 @@
 package com.sprint.mission.discodeit.channel.application.channel;
 
-import com.sprint.mission.discodeit.channel.adapter.in.rest.channel.dto.request.ChannelUpdateRequest;
+import com.sprint.mission.discodeit.channel.adapter.in.rest.channel.dto.request.PublicChannelUpdateRequest;
 import com.sprint.mission.discodeit.channel.adapter.in.rest.channel.dto.request.PrivateChannelCreateRequest;
 import com.sprint.mission.discodeit.channel.adapter.in.rest.channel.dto.request.PublicChannelCreateRequest;
 import com.sprint.mission.discodeit.channel.adapter.in.rest.channel.dto.response.ChannelDto;
@@ -117,14 +117,14 @@ public class ChannelServiceImpl implements ChannelControllerService {
 
     // 채널 정보 수정 (요청에 없는 필드는 기존 값 유지)
     @Override
-    public ChannelDto update(UUID id, ChannelUpdateRequest request) {
+    public ChannelDto update(UUID id, PublicChannelUpdateRequest request) {
         Channel channel = channelRepository.getById(id);
-        ChannelUpdateRequest target = Objects.requireNonNull(request);
+        PublicChannelUpdateRequest target = Objects.requireNonNull(request);
         channel.update(
-                target.name() == null ? channel.getName() : target.name(),
-                target.description() == null
+                target.newName() == null ? channel.getName() : target.newName(),
+                target.newDescription() == null
                         ? channel.getDescription()
-                        : target.description()
+                        : target.newDescription()
         );
         return createResponse(channelRepository.update(channel));
     }

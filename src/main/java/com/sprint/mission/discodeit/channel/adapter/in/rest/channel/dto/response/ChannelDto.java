@@ -13,14 +13,12 @@ import java.util.UUID;
  * 도메인 엔티티(Channel)를 직접 노출하지 않고, 필요한 정보만 담아서 반환한다.
  */
 public record ChannelDto(
-        UUID id,              // 채널 고유 ID
-        Instant createdAt,    // 채널 생성 시각
-        Instant updatedAt,    // 채널 마지막 수정 시각
-        ChannelType type,     // 채널 유형 (PUBLIC / PRIVATE)
-        String name,          // 채널 이름 (PRIVATE은 null)
-        String description,   // 채널 설명 (PRIVATE은 null)
-        Instant lastMessageAt, // 마지막 메시지 시각
-        List<UUID> participantIds // 참여자 ID 목록 (PUBLIC은 빈 리스트)
+        UUID id,                   // 채널 고유 ID
+        ChannelType type,          // 채널 유형 (PUBLIC / PRIVATE)
+        String name,               // 채널 이름 (PRIVATE은 null)
+        String description,        // 채널 설명 (PRIVATE은 null)
+        List<UUID> participantIds, // 참여자 ID 목록 (PUBLIC은 빈 리스트)
+        Instant lastMessageAt      // 마지막 메시지 시각
 ) {
     // 참여자 목록을 불변 리스트로 복사하여, 외부에서 수정하는 것을 방지
     public ChannelDto {
@@ -34,13 +32,11 @@ public record ChannelDto(
     ) {
         return new ChannelDto(
                 channel.getId(),
-                channel.getCreatedAt(),
-                channel.getUpdatedAt(),
                 channel.getType(),
                 channel.getName(),
                 channel.getDescription(),
-                channel.getLastMessageAt(),
-                participantIds
+                participantIds,
+                channel.getLastMessageAt()
         );
     }
 }

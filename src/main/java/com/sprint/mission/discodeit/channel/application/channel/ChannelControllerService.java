@@ -1,6 +1,6 @@
 package com.sprint.mission.discodeit.channel.application.channel;
 
-import com.sprint.mission.discodeit.channel.adapter.in.rest.channel.dto.request.ChannelUpdateRequest;
+import com.sprint.mission.discodeit.channel.adapter.in.rest.channel.dto.request.PublicChannelUpdateRequest;
 import com.sprint.mission.discodeit.channel.adapter.in.rest.channel.dto.request.PrivateChannelCreateRequest;
 import com.sprint.mission.discodeit.channel.adapter.in.rest.channel.dto.request.PublicChannelCreateRequest;
 import com.sprint.mission.discodeit.channel.adapter.in.rest.channel.dto.response.ChannelDto;
@@ -27,7 +27,7 @@ public interface ChannelControllerService {
     List<ChannelDto> findAllByUserId(UUID userId);
 
     // 채널 정보(이름, 설명) 수정
-    ChannelDto update(UUID id, ChannelUpdateRequest request);
+    ChannelDto update(UUID id, PublicChannelUpdateRequest request);
 
     // 채널 삭제
     void delete(UUID id);
