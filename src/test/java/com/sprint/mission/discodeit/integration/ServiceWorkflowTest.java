@@ -1,8 +1,8 @@
 package com.sprint.mission.discodeit.integration;
 
-import com.sprint.mission.discodeit.message.adapter.in.rest.message.dto.request.MessageAttachmentCreateRequest;
+import com.sprint.mission.discodeit.message.application.message.dto.MessageAttachmentCommand;
 import com.sprint.mission.discodeit.user.adapter.in.rest.auth.dto.request.LoginRequest;
-import com.sprint.mission.discodeit.message.adapter.in.rest.message.dto.request.MessageCreateRequest;
+import com.sprint.mission.discodeit.message.application.message.dto.CreateMessageCommand;
 import com.sprint.mission.discodeit.channel.adapter.in.rest.channel.dto.request.PrivateChannelCreateRequest;
 import com.sprint.mission.discodeit.channel.adapter.in.rest.channel.dto.request.PublicChannelCreateRequest;
 import com.sprint.mission.discodeit.channel.adapter.in.rest.channel.dto.response.ChannelDto;
@@ -169,11 +169,11 @@ class ServiceWorkflowTest {
         assertEquals(2, channel.participantIds().size());
 
         MessageDto message = messageControllerService.create(
-                new MessageCreateRequest(
+                new CreateMessageCommand(
                         "hello",
                         channel.id(),
                         author.id(),
-                        List.of(new MessageAttachmentCreateRequest(
+                        List.of(new MessageAttachmentCommand(
                                 "attachment.txt", "text/plain", new byte[]{4, 5}
                         ))
                 )
@@ -238,7 +238,7 @@ class ServiceWorkflowTest {
         assertThrows(
                 EntityNotFoundException.class,
                 () -> messageControllerService.create(
-                        new MessageCreateRequest(
+                        new CreateMessageCommand(
                                 "hello",
                                 UUID.randomUUID(),
                                 UUID.randomUUID(),
@@ -341,7 +341,7 @@ class ServiceWorkflowTest {
                 )
         );
         MessageDto message = messageControllerService.create(
-                new MessageCreateRequest(
+                new CreateMessageCommand(
                         "event message", channel.id(), author.id(), List.of()
                 )
         );

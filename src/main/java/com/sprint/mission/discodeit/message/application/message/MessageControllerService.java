@@ -1,6 +1,6 @@
 package com.sprint.mission.discodeit.message.application.message;
 
-import com.sprint.mission.discodeit.message.adapter.in.rest.message.dto.request.MessageCreateRequest;
+import com.sprint.mission.discodeit.message.application.message.dto.CreateMessageCommand;
 import com.sprint.mission.discodeit.message.adapter.in.rest.message.dto.request.MessageUpdateRequest;
 import com.sprint.mission.discodeit.message.adapter.in.rest.message.dto.response.MessageDto;
 
@@ -13,7 +13,7 @@ import java.util.UUID;
 public interface MessageControllerService {
 
     // 새 메시지를 생성한다
-    MessageDto create(MessageCreateRequest request);
+    MessageDto create(CreateMessageCommand command);
 
     // 특정 채널의 모든 메시지를 조회한다
     List<MessageDto> findAllByChannelId(UUID channelId);

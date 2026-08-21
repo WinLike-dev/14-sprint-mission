@@ -1,6 +1,5 @@
 package com.sprint.mission.discodeit.user.adapter.in.rest.user.dto.request;
 
-import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -10,8 +9,8 @@ import jakarta.validation.constraints.Size;
  * 생성이므로 username/email/password는 모두 필요하다.
  * 여기서 걸러진 실패는 필드 단위로 응답에 담긴다.
  *
- * 프로필은 선택 항목이라 본문에 함께 싣는다.
- * 첨부를 본문에 담는 방식은 MessageCreateRequest.attachments와 같다.
+ * multipart 요청의 userCreateRequest 파트(application/json)로 들어온다.
+ * 프로필 이미지는 profile 파트로 따로 오므로 여기에 담지 않는다.
  */
 public record UserCreateRequest(
         @NotBlank(message = "username은 필수입니다.")
@@ -24,10 +23,6 @@ public record UserCreateRequest(
 
         @NotBlank(message = "password는 필수입니다.")
         @Size(min = 4, max = 100, message = "password는 4자 이상 100자 이하여야 합니다.")
-        String password,
-
-        // 선택 항목. 값이 있으면 내부 필드까지 함께 검증한다.
-        @Valid
-        UserProfileCreateRequest profile
+        String password
 ) {
 }

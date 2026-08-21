@@ -1,7 +1,7 @@
 package com.sprint.mission.discodeit.message.application.message;
 
-import com.sprint.mission.discodeit.message.adapter.in.rest.message.dto.request.MessageAttachmentCreateRequest;
-import com.sprint.mission.discodeit.message.adapter.in.rest.message.dto.request.MessageCreateRequest;
+import com.sprint.mission.discodeit.message.application.message.dto.CreateMessageCommand;
+import com.sprint.mission.discodeit.message.application.message.dto.MessageAttachmentCommand;
 import com.sprint.mission.discodeit.message.adapter.in.rest.message.dto.request.MessageUpdateRequest;
 import com.sprint.mission.discodeit.message.adapter.in.rest.message.dto.response.MessageDto;
 import com.sprint.mission.discodeit.message.domain.message.Message;
@@ -36,8 +36,8 @@ public class MessageServiceImpl implements MessageControllerService {
 
     // 새 메시지를 생성한다. 채널/작성자 존재 확인 후 첨부파일을 먼저 저장하고, 메시지를 저장한다.
     @Override
-    public MessageDto create(MessageCreateRequest request) {
-        MessageCreateRequest target = Objects.requireNonNull(request);
+    public MessageDto create(CreateMessageCommand command) {
+        CreateMessageCommand target = Objects.requireNonNull(command);
         channelReader.requireExists(target.channelId());   // 채널이 존재하지 않으면 예외 발생
         authorReader.requireExists(target.authorId());     // 작성자가 존재하지 않으면 예외 발생
 
@@ -100,12 +100,12 @@ public class MessageServiceImpl implements MessageControllerService {
     }
 
     // 첨부파일 목록을 순회하며 BinaryContent를 생성하고, 생성된 ID 목록을 반환한다
-    private List<UUID> createAttachments(List<MessageAttachmentCreateRequest> requests) {
+    private List<UUID> createAttachments(List<MessageAttachmentCommand> attachments) {
         List<UUID> createdIds = new ArrayList<>();
         try {
-            for (MessageAttachmentCreateRequest request : requests) {
+            for (MessageAttachmentCommand attachment : attachments) {
                 createdIds.add(contentManager.create(new MessageContentData(
-                        request.fileName(), request.contentType(), request.bytes()
+                        attachment.fileName(), attachment.contentType(), attachment.bytes()
                 )));
             }
             return List.copyOf(createdIds);

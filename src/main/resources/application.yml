@@ -2,6 +2,13 @@ spring:
   application:
     name: discodeit
 
+  # 프로필 이미지와 메시지 첨부파일을 multipart로 받는다.
+  # 기본값(파일 1MB, 요청 10MB)은 이미지 한 장에도 걸리기 쉬워 올려둔다.
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 30MB
+
 discodeit:
   repository:
     # 저장소 구현체 선택: jcf | file
