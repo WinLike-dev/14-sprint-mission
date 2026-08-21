@@ -1,0 +1,1308 @@
+{
+  "info": {
+    "name": "Discodeit API",
+    "description": "스프린트 미션 5에서 재설계한 REST API. 폴더 순서대로 실행하면 앞 요청이 만든 ID를 뒤 요청이 이어받는다.\n\n환경 변수 baseUrl만 채우면 컬렉션 러너로 처음부터 끝까지 돌릴 수 있다.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "runId",
+      "value": ""
+    },
+    {
+      "key": "authorId",
+      "value": ""
+    },
+    {
+      "key": "participantId",
+      "value": ""
+    },
+    {
+      "key": "publicChannelId",
+      "value": ""
+    },
+    {
+      "key": "privateChannelId",
+      "value": ""
+    },
+    {
+      "key": "messageId",
+      "value": ""
+    },
+    {
+      "key": "readStatusId",
+      "value": ""
+    },
+    {
+      "key": "binaryContentId",
+      "value": ""
+    },
+    {
+      "key": "missingId",
+      "value": "00000000-0000-0000-0000-000000000000"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// 같은 컬렉션을 여러 번 돌려도 username이 겹치지 않게 실행마다 접미사를 만든다.",
+          "if (!pm.collectionVariables.get('runId')) {",
+          "    pm.collectionVariables.set('runId', Date.now().toString(36));",
+          "}"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "1. User",
+      "description": "회원 등록부터. 이후 폴더가 여기서 만든 사용자 ID를 쓴다.",
+      "item": [
+        {
+          "name": "User 등록 (프로필 포함)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "userCreateRequest",
+                  "value": "{\"username\":\"{{runId}}-author\",\"email\":\"{{runId}}-author@example.com\",\"password\":\"pass1234\"}",
+                  "type": "text",
+                  "contentType": "application/json"
+                },
+                {
+                  "key": "profile",
+                  "type": "file",
+                  "src": "sample-attachment.png"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users"
+              ]
+            },
+            "description": "JSON은 userCreateRequest 파트(application/json), 이미지는 profile 파트로 보낸다. 프론트엔드가 보내는 형태와 같다."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"201 응답\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"Location 헤더로 만들어진 리소스를 알린다\", () => pm.expect(pm.response.headers.get(\"Location\")).to.include(\"/api/users/\"));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"프로필이 실제로 등록된다\", () => pm.expect(body.profileId).to.not.be.null);",
+                  "pm.test(\"응답에 password가 없다\", () => pm.expect(body).to.not.have.property(\"password\"));",
+                  "pm.collectionVariables.set(\"authorId\", pm.response.json().id);",
+                  "pm.collectionVariables.set(\"binaryContentId\", pm.response.json().profileId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "User 등록 (프로필 없음)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "userCreateRequest",
+                  "value": "{\"username\":\"{{runId}}-participant\",\"email\":\"{{runId}}-participant@example.com\",\"password\":\"pass1234\"}",
+                  "type": "text",
+                  "contentType": "application/json"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users"
+              ]
+            },
+            "description": "프론트엔드는 파일이 없으면 profile 파트를 아예 보내지 않는다. 그래도 201이어야 한다."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"201 응답\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"프로필 없이 등록되면 profileId는 null\", () => pm.expect(pm.response.json().profileId).to.be.null);",
+                  "pm.collectionVariables.set(\"participantId\", pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "전체 User 목록 조회",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200 응답\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"배열로 온다\", () => pm.expect(pm.response.json()).to.be.an(\"array\"));",
+                  "pm.test(\"방금 만든 사용자가 있다\", () => pm.expect(pm.response.json().map(u => u.id)).to.include(pm.collectionVariables.get(\"authorId\")));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "User 정보 수정",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "userUpdateRequest",
+                  "value": "{\"newUsername\":\"{{runId}}-author-renamed\"}",
+                  "type": "text",
+                  "contentType": "application/json"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{authorId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "{{authorId}}"
+              ]
+            },
+            "description": "부분 수정이다. 넘기지 않은 필드는 그대로 둔다."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200 응답\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"username이 바뀐다\", () => pm.expect(pm.response.json().username).to.eql(pm.collectionVariables.get(\"runId\") + \"-author-renamed\"));",
+                  "pm.test(\"넘기지 않은 email은 그대로다\", () => pm.expect(pm.response.json().email).to.eql(pm.collectionVariables.get(\"runId\") + \"-author@example.com\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "User 온라인 상태 업데이트",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"newLastActiveAt\": \"2026-08-21T12:00:00.000Z\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{authorId}}/userStatus",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "{{authorId}}",
+                "userStatus"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200 응답\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"넘긴 시각이 그대로 반영된다\", () => pm.expect(pm.response.json().lastActiveAt).to.eql(\"2026-08-21T12:00:00Z\"));",
+                  "pm.test(\"id를 함께 알린다\", () => pm.expect(pm.response.json().id).to.be.a(\"string\"));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2. Auth",
+      "description": "로그인.",
+      "item": [
+        {
+          "name": "로그인",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"username\": \"{{runId}}-author-renamed\",\n  \"password\": \"pass1234\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200 응답\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"로그인한 사용자를 돌려준다\", () => pm.expect(pm.response.json().id).to.eql(pm.collectionVariables.get(\"authorId\")));",
+                  "pm.test(\"응답에 password가 없다\", () => pm.expect(pm.response.json()).to.not.have.property(\"password\"));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "3. Channel",
+      "description": "공개 채널과 비공개 채널.",
+      "item": [
+        {
+          "name": "Public Channel 생성",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"name\": \"{{runId}}-general\",\n  \"description\": \"postman 테스트 채널\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/channels/public",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "channels",
+                "public"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"201 응답\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"PUBLIC 타입이다\", () => pm.expect(pm.response.json().type).to.eql(\"PUBLIC\"));",
+                  "pm.collectionVariables.set(\"publicChannelId\", pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Private Channel 생성",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"participantIds\": [\n    \"{{authorId}}\",\n    \"{{participantId}}\"\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/channels/private",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "channels",
+                "private"
+              ]
+            },
+            "description": "참여자의 읽음 상태가 채널 생성과 함께 만들어진다."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"201 응답\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"PRIVATE 타입이다\", () => pm.expect(pm.response.json().type).to.eql(\"PRIVATE\"));",
+                  "pm.test(\"참여자 2명이 담긴다\", () => pm.expect(pm.response.json().participantIds).to.have.lengthOf(2));",
+                  "pm.collectionVariables.set(\"privateChannelId\", pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "User가 참여 중인 Channel 목록 조회",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/channels",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "channels"
+              ],
+              "query": [
+                {
+                  "key": "userId",
+                  "value": "{{authorId}}"
+                }
+              ]
+            },
+            "description": "공개 채널은 모두에게, 비공개 채널은 참여자에게만 보인다."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200 응답\", () => pm.response.to.have.status(200));",
+                  "const ids = pm.response.json().map(c => c.id);",
+                  "pm.test(\"공개 채널이 보인다\", () => pm.expect(ids).to.include(pm.collectionVariables.get(\"publicChannelId\")));",
+                  "pm.test(\"참여 중인 비공개 채널이 보인다\", () => pm.expect(ids).to.include(pm.collectionVariables.get(\"privateChannelId\")));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Channel 정보 수정",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"newName\": \"{{runId}}-renamed\",\n  \"newDescription\": \"이름을 바꿨다\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/channels/{{publicChannelId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "channels",
+                "{{publicChannelId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200 응답\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"이름이 바뀐다\", () => pm.expect(pm.response.json().name).to.eql(pm.collectionVariables.get(\"runId\") + \"-renamed\"));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "4. Message",
+      "description": "첨부파일을 포함한 메시지.",
+      "item": [
+        {
+          "name": "Message 생성 (첨부 포함)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "messageCreateRequest",
+                  "value": "{\"content\":\"postman에서 보낸 메시지\",\"channelId\":\"{{privateChannelId}}\",\"authorId\":\"{{authorId}}\"}",
+                  "type": "text",
+                  "contentType": "application/json"
+                },
+                {
+                  "key": "attachments",
+                  "type": "file",
+                  "src": "sample-attachment.png"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/messages",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "messages"
+              ]
+            },
+            "description": "JSON은 messageCreateRequest 파트, 파일은 attachments 파트로 보낸다. attachments는 여러 개를 보낼 수 있다."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"201 응답\", () => pm.response.to.have.status(201));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"첨부가 1개 등록된다\", () => pm.expect(body.attachmentIds).to.have.lengthOf(1));",
+                  "pm.collectionVariables.set(\"messageId\", pm.response.json().id);",
+                  "pm.collectionVariables.set(\"binaryContentId\", body.attachmentIds[0]);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Message 생성 (첨부 없음)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "messageCreateRequest",
+                  "value": "{\"content\":\"첨부 없는 메시지\",\"channelId\":\"{{privateChannelId}}\",\"authorId\":\"{{authorId}}\"}",
+                  "type": "text",
+                  "contentType": "application/json"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/messages",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "messages"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"201 응답\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"첨부가 없으면 빈 배열\", () => pm.expect(pm.response.json().attachmentIds).to.be.an(\"array\").that.is.empty);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Channel의 Message 목록 조회",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/messages",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "messages"
+              ],
+              "query": [
+                {
+                  "key": "channelId",
+                  "value": "{{privateChannelId}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200 응답\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"메시지 2건이 조회된다\", () => pm.expect(pm.response.json()).to.have.lengthOf(2));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Message 내용 수정",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"newContent\": \"수정한 내용\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/messages/{{messageId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "messages",
+                "{{messageId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200 응답\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"내용이 바뀐다\", () => pm.expect(pm.response.json().content).to.eql(\"수정한 내용\"));",
+                  "pm.test(\"updatedAt이 createdAt보다 뒤다\", () => pm.expect(new Date(pm.response.json().updatedAt) >= new Date(pm.response.json().createdAt)).to.be.true);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "5. ReadStatus",
+      "description": "어디까지 읽었는지.",
+      "item": [
+        {
+          "name": "Message 읽음 상태 생성",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"userId\": \"{{authorId}}\",\n  \"channelId\": \"{{publicChannelId}}\",\n  \"lastReadAt\": \"2026-08-21T12:00:00.000Z\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/readStatuses",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "readStatuses"
+              ]
+            },
+            "description": "읽은 시각은 클라이언트가 정한다. 비공개 채널의 읽음 상태는 채널 생성 때 이미 만들어지므로 여기서는 공개 채널을 쓴다."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"201 응답\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"Location이 만들어진 읽음 상태를 가리킨다\", () => pm.expect(pm.response.headers.get(\"Location\")).to.include(\"/api/readStatuses/\"));",
+                  "pm.test(\"넘긴 시각이 그대로 저장된다\", () => pm.expect(pm.response.json().lastReadAt).to.eql(\"2026-08-21T12:00:00Z\"));",
+                  "pm.collectionVariables.set(\"readStatusId\", pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "User의 Message 읽음 상태 목록 조회",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/readStatuses",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "readStatuses"
+              ],
+              "query": [
+                {
+                  "key": "userId",
+                  "value": "{{authorId}}"
+                }
+              ]
+            },
+            "description": "프론트엔드는 이 목록의 id를 들고 있다가 갱신에 쓴다."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200 응답\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"모든 항목이 id를 가진다\", () => pm.response.json().forEach(s => pm.expect(s.id).to.be.a(\"string\")));",
+                  "pm.test(\"방금 만든 읽음 상태가 있다\", () => pm.expect(pm.response.json().map(s => s.id)).to.include(pm.collectionVariables.get(\"readStatusId\")));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Message 읽음 상태 수정",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"newLastReadAt\": \"2026-08-21T23:59:59.000Z\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/readStatuses/{{readStatusId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "readStatuses",
+                "{{readStatusId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200 응답\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"넘긴 시각이 그대로 반영된다\", () => pm.expect(pm.response.json().lastReadAt).to.eql(\"2026-08-21T23:59:59Z\"));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "6. BinaryContent",
+      "description": "업로드된 첨부 파일 조회.",
+      "item": [
+        {
+          "name": "첨부 파일 조회",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/binaryContents/{{binaryContentId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "binaryContents",
+                "{{binaryContentId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200 응답\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"파일 이름이 담긴다\", () => pm.expect(body.fileName).to.eql(\"sample-attachment.png\"));",
+                  "pm.test(\"MIME 타입이 담긴다\", () => pm.expect(body.contentType).to.include(\"image/png\"));",
+                  "pm.test(\"내용이 base64로 담긴다\", () => pm.expect(body.bytes).to.be.a(\"string\").and.not.empty);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "여러 첨부 파일 조회",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/binaryContents",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "binaryContents"
+              ],
+              "query": [
+                {
+                  "key": "binaryContentIds",
+                  "value": "{{binaryContentId}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200 응답\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"요청한 개수만큼 온다\", () => pm.expect(pm.response.json()).to.have.lengthOf(1));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "7. 실패 응답",
+      "description": "문서에 적힌 상태 코드가 실제로 나오는지 확인한다.",
+      "item": [
+        {
+          "name": "검증 실패 → 400",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "userCreateRequest",
+                  "value": "{\"email\":\"not-an-email\",\"password\":\"1\"}",
+                  "type": "text",
+                  "contentType": "application/json"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"400 응답\", () => pm.response.to.have.status(400));",
+                  "const fields = pm.response.json().fieldErrors.map(e => e.field);",
+                  "pm.test(\"실패한 필드를 하나씩 알려준다\", () => { pm.expect(fields).to.include(\"username\"); pm.expect(fields).to.include(\"email\"); pm.expect(fields).to.include(\"password\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "username 중복 → 409",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "userCreateRequest",
+                  "value": "{\"username\":\"{{runId}}-participant\",\"email\":\"{{runId}}-other@example.com\",\"password\":\"pass1234\"}",
+                  "type": "text",
+                  "contentType": "application/json"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users"
+              ]
+            },
+            "description": "요청 자체는 올바르지만 현재 저장된 데이터와 충돌한다. 그래서 400이 아니라 409다."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"409 응답\", () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "비밀번호 불일치 → 401",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"username\": \"{{runId}}-author-renamed\",\n  \"password\": \"wrong-password\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"401 응답\", () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "없는 username 로그인 → 401",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"username\": \"no-such-user\",\n  \"password\": \"pass1234\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "없는 사용자와 틀린 비밀번호를 구분해 알리지 않는다. 나누면 어떤 username이 등록되어 있는지 알려주는 셈이 된다."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"401 응답\", () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Private Channel 수정 → 409",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"newName\": \"바꿀 수 없다\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/channels/{{privateChannelId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "channels",
+                "{{privateChannelId}}"
+              ]
+            },
+            "description": "같은 요청이 공개 채널에서는 성공한다. 요청 형식의 문제가 아니라 대상의 현재 상태 때문에 거부된다."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"409 응답\", () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "없는 Message 수정 → 404",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"newContent\": \"없는 메시지\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/messages/{{missingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "messages",
+                "{{missingId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"404 응답\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "없는 첨부 파일 조회 → 404",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/binaryContents/{{missingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "binaryContents",
+                "{{missingId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"404 응답\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "8. 정리",
+      "description": "만든 것을 되돌린다. 삭제는 모두 204다.",
+      "item": [
+        {
+          "name": "Message 삭제",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/messages/{{messageId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "messages",
+                "{{messageId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"204 응답\", () => pm.response.to.have.status(204));",
+                  "pm.test(\"본문이 없다\", () => pm.expect(pm.response.text()).to.be.empty);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Channel 삭제 (public)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/channels/{{publicChannelId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "channels",
+                "{{publicChannelId}}"
+              ]
+            },
+            "description": "채널에 딸린 읽음 상태와 메시지도 함께 지워진다."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"204 응답\", () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Channel 삭제 (private)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/channels/{{privateChannelId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "channels",
+                "{{privateChannelId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"204 응답\", () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "User 삭제 (author)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{authorId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "{{authorId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"204 응답\", () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "User 삭제 (participant)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{participantId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "{{participantId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"204 응답\", () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "없는 User 삭제 → 404",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{missingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "{{missingId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"404 응답\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

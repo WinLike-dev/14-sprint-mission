@@ -1,3 +1,8 @@
+# Railway 같은 PaaS는 사용할 포트를 PORT 환경 변수로 알려준다.
+# 그 값에 바인딩하지 않으면 헬스 체크가 닿지 못해 배포가 실패한다.
+server:
+  port: ${PORT:8080}
+
 spring:
   application:
     name: discodeit
