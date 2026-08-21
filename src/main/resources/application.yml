@@ -10,3 +10,13 @@ discodeit:
     type: ${DISCODEIT_REPOSITORY_TYPE:file}
     # type=file 일 때 사용할 데이터 루트 경로. 누락 시 data로 fallback한다.
     data-root: ${DISCODEIT_DATA_ROOT:data}
+
+springdoc:
+  # OpenAPI 문서(JSON) 경로. oasdiff로 제공 스펙과 비교할 때 이 경로를 사용한다.
+  api-docs:
+    path: /v3/api-docs
+  # Swagger UI 경로. 브라우저에서 API를 직접 호출해볼 수 있다.
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: alpha
+    tags-sorter: alpha

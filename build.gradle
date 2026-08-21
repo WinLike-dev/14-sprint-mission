@@ -8,6 +8,7 @@ group = 'com.sprint.mission'
 version = '0.0.1-SNAPSHOT'
 
 def lombokVersion = '1.18.46'
+def springdocVersion = '2.7.0'
 
 repositories {
     mavenCentral()
@@ -22,6 +23,7 @@ java {
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:${springdocVersion}"
 
     compileOnly "org.projectlombok:lombok:${lombokVersion}"
     annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
