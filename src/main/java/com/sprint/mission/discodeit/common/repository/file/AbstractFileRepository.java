@@ -22,6 +22,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Supplier;
 
 public abstract class AbstractFileRepository<T extends Identifiable & Serializable>
         extends AbstractCrudRepository<T> {
@@ -29,11 +31,38 @@ public abstract class AbstractFileRepository<T extends Identifiable & Serializab
     private static final String FILE_EXTENSION = ".ser";
     private final Path directory;
     private final Class<T> entityType;
+    private final FileLockProvider lockProvider;
 
-    protected AbstractFileRepository(Path directory, Class<T> entityType) {
+    protected AbstractFileRepository(
+            Path directory,
+            Class<T> entityType,
+            FileLockProvider lockProvider
+    ) {
         super(entityType);
         this.directory = Objects.requireNonNull(directory);
         this.entityType = Objects.requireNonNull(entityType);
+        this.lockProvider = Objects.requireNonNull(lockProvider);
+    }
+
+    // 같은 엔티티를 동시에 다루는 요청은 차례를 기다린다.
+    //
+    // 쓰기는 임시 파일에 담고 ATOMIC_MOVE로 갈아끼우므로 반쯤 쓰인 파일이 읽히지는 않는다.
+    // 그래도 잠금이 필요한 이유는 두 가지다.
+    //
+    // 하나. 확인과 반영 사이가 벌어진다. update는 존재를 확인하고 나서 쓴다.
+    // 그 사이에 다른 요청이 지우면 지워진 엔티티가 되살아난다.
+    //
+    // 둘. Windows는 열려 있는 파일을 다른 이름으로 덮어쓰지 못한다.
+    // 읽는 중에 옮기려 하면 이동이 AccessDeniedException으로 실패한다.
+    @Override
+    protected final <R> R inEntityLock(UUID id, Supplier<R> action) {
+        ReentrantLock lock = lockProvider.getLock(filePath(id));
+        lock.lock();
+        try {
+            return action.get();
+        } finally {
+            lock.unlock();
+        }
     }
 
     @Override

@@ -19,6 +19,7 @@ import com.sprint.mission.discodeit.channel.adapter.out.persistence.channel.file
 import com.sprint.mission.discodeit.message.adapter.out.persistence.message.file.FileMessageRepository;
 import com.sprint.mission.discodeit.channel.adapter.out.persistence.readstatus.file.FileReadStatusRepository;
 import com.sprint.mission.discodeit.user.adapter.out.persistence.user.file.FileUserRepository;
+import com.sprint.mission.discodeit.common.repository.file.FileLockProvider;
 import com.sprint.mission.discodeit.user.adapter.out.persistence.status.file.FileUserStatusRepository;
 import com.sprint.mission.discodeit.content.adapter.out.persistence.binarycontent.jcf.JCFBinaryContentRepository;
 import com.sprint.mission.discodeit.channel.adapter.out.persistence.channel.jcf.JCFChannelRepository;
@@ -67,7 +68,7 @@ class RepositoryParityTest {
 
         StorageOperationException exception = assertThrows(
                 StorageOperationException.class,
-                () -> new FileUserRepository(root).findAll()
+                () -> new FileUserRepository(root, new FileLockProvider()).findAll()
         );
 
         assertNotNull(exception.getCause());
@@ -174,13 +175,14 @@ class RepositoryParityTest {
     }
 
     private Repositories fileRepositories(Path root) {
+        FileLockProvider locks = new FileLockProvider();
         return new Repositories(
-                new FileUserRepository(root),
-                new FileChannelRepository(root),
-                new FileMessageRepository(root),
-                new FileReadStatusRepository(root),
-                new FileUserStatusRepository(root),
-                new FileBinaryContentRepository(root)
+                new FileUserRepository(root, locks),
+                new FileChannelRepository(root, locks),
+                new FileMessageRepository(root, locks),
+                new FileReadStatusRepository(root, locks),
+                new FileUserStatusRepository(root, locks),
+                new FileBinaryContentRepository(root, locks)
         );
     }
 

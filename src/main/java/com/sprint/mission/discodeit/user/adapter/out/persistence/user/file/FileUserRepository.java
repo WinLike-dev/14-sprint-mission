@@ -1,6 +1,7 @@
 package com.sprint.mission.discodeit.user.adapter.out.persistence.user.file;
 
 import com.sprint.mission.discodeit.common.repository.file.AbstractFileRepository;
+import com.sprint.mission.discodeit.common.repository.file.FileLockProvider;
 import com.sprint.mission.discodeit.user.domain.user.User;
 import com.sprint.mission.discodeit.user.application.port.out.UserRepository;
 
@@ -10,7 +11,7 @@ import java.nio.file.Path;
 public final class FileUserRepository extends AbstractFileRepository<User>
         implements UserRepository {
 
-    public FileUserRepository(Path root) {
-        super(root.resolve("users"), User.class);
+    public FileUserRepository(Path root, FileLockProvider lockProvider) {
+        super(root.resolve("users"), User.class, lockProvider);
     }
 }

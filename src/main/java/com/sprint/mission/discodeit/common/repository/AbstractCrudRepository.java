@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Supplier;
 
 public abstract class AbstractCrudRepository<T extends Identifiable>
         implements CrudRepository<T> {
@@ -23,14 +24,17 @@ public abstract class AbstractCrudRepository<T extends Identifiable>
         T target = Objects.requireNonNull(entity);
         UUID id = Objects.requireNonNull(target.getId());
 
-        ensureNotStored(id);
-        write(target);
-        return target;
+        return inEntityLock(id, () -> {
+            ensureNotStored(id);
+            write(target);
+            return target;
+        });
     }
 
     @Override
     public final T getById(UUID id) {
-        return requireStored(Objects.requireNonNull(id));
+        UUID targetId = Objects.requireNonNull(id);
+        return inEntityLock(targetId, () -> requireStored(targetId));
     }
 
     @Override
@@ -48,17 +52,22 @@ public abstract class AbstractCrudRepository<T extends Identifiable>
         T target = Objects.requireNonNull(entity);
         UUID id = Objects.requireNonNull(target.getId());
 
-        ensureStored(id);
-        write(target);
-        return target;
+        return inEntityLock(id, () -> {
+            ensureStored(id);
+            write(target);
+            return target;
+        });
     }
 
     @Override
     public final void deleteById(UUID id) {
         UUID targetId = Objects.requireNonNull(id);
 
-        ensureStored(targetId);
-        remove(targetId);
+        inEntityLock(targetId, () -> {
+            ensureStored(targetId);
+            remove(targetId);
+            return null;
+        });
     }
 
     // 존재 확인만 필요한 경로는 객체를 읽지 않는다.
@@ -80,6 +89,13 @@ public abstract class AbstractCrudRepository<T extends Identifiable>
         return read(id).orElseThrow(
                 () -> new EntityNotFoundException(entityType, id)
         );
+    }
+
+    // 한 엔티티에 대한 확인과 반영을 하나의 단위로 묶는 지점.
+    // 저장 기술이 동시 접근을 어떻게 막을지는 구현체가 정한다.
+    // 기본값은 아무것도 하지 않는다. 잠금이 필요한 구현체만 이 메서드를 재정의한다.
+    protected <R> R inEntityLock(UUID id, Supplier<R> action) {
+        return action.get();
     }
 
     protected abstract void write(T entity);

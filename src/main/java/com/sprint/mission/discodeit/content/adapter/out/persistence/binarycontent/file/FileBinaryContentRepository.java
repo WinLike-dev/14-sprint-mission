@@ -1,6 +1,7 @@
 package com.sprint.mission.discodeit.content.adapter.out.persistence.binarycontent.file;
 
 import com.sprint.mission.discodeit.common.repository.file.AbstractFileRepository;
+import com.sprint.mission.discodeit.common.repository.file.FileLockProvider;
 import com.sprint.mission.discodeit.content.domain.binarycontent.BinaryContent;
 import com.sprint.mission.discodeit.content.application.port.out.BinaryContentRepository;
 
@@ -10,7 +11,7 @@ import java.nio.file.Path;
 public final class FileBinaryContentRepository extends AbstractFileRepository<BinaryContent>
         implements BinaryContentRepository {
 
-    public FileBinaryContentRepository(Path root) {
-        super(root.resolve("binary-contents"), BinaryContent.class);
+    public FileBinaryContentRepository(Path root, FileLockProvider lockProvider) {
+        super(root.resolve("binary-contents"), BinaryContent.class, lockProvider);
     }
 }

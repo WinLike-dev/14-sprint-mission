@@ -6,6 +6,7 @@ import com.sprint.mission.discodeit.channel.application.port.out.ChannelReposito
 import com.sprint.mission.discodeit.channel.application.port.out.ReadStatusRepository;
 import com.sprint.mission.discodeit.content.adapter.out.persistence.binarycontent.file.FileBinaryContentRepository;
 import com.sprint.mission.discodeit.content.application.port.out.BinaryContentRepository;
+import com.sprint.mission.discodeit.common.repository.file.FileLockProvider;
 import com.sprint.mission.discodeit.message.adapter.out.persistence.message.file.FileMessageRepository;
 import com.sprint.mission.discodeit.message.application.port.out.MessageRepository;
 import com.sprint.mission.discodeit.user.adapter.out.persistence.status.file.FileUserStatusRepository;
@@ -39,6 +40,10 @@ public class FileRepositoryConfig {
     // 모든 파일 어댑터가 공유하는 데이터 루트 경로
     private final Path dataRoot;
 
+    // 파일 하나당 잠금 하나. 저장소들이 같은 인스턴스를 공유해야
+    // 같은 파일에 대한 잠금이 하나로 모인다.
+    private final FileLockProvider lockProvider = new FileLockProvider();
+
     // RepositoryProperties를 주입받아 경로 설정까지 한곳에서 검증된 값으로 다룬다.
     public FileRepositoryConfig(RepositoryProperties properties) {
         this.dataRoot = properties.dataRootPath();
@@ -46,31 +51,31 @@ public class FileRepositoryConfig {
 
     @Bean
     public UserRepository userRepository() {
-        return new FileUserRepository(dataRoot);
+        return new FileUserRepository(dataRoot, lockProvider);
     }
 
     @Bean
     public ChannelRepository channelRepository() {
-        return new FileChannelRepository(dataRoot);
+        return new FileChannelRepository(dataRoot, lockProvider);
     }
 
     @Bean
     public MessageRepository messageRepository() {
-        return new FileMessageRepository(dataRoot);
+        return new FileMessageRepository(dataRoot, lockProvider);
     }
 
     @Bean
     public ReadStatusRepository readStatusRepository() {
-        return new FileReadStatusRepository(dataRoot);
+        return new FileReadStatusRepository(dataRoot, lockProvider);
     }
 
     @Bean
     public UserStatusRepository userStatusRepository() {
-        return new FileUserStatusRepository(dataRoot);
+        return new FileUserStatusRepository(dataRoot, lockProvider);
     }
 
     @Bean
     public BinaryContentRepository binaryContentRepository() {
-        return new FileBinaryContentRepository(dataRoot);
+        return new FileBinaryContentRepository(dataRoot, lockProvider);
     }
 }
