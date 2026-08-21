@@ -2,6 +2,13 @@ package com.sprint.mission.discodeit.message.adapter.in.rest.message;
 
 import java.net.URI;
 import jakarta.validation.Valid;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import com.sprint.mission.discodeit.message.application.message.MessageControllerService;
 import com.sprint.mission.discodeit.message.adapter.in.rest.message.dto.request.MessageCreateRequest;
 import com.sprint.mission.discodeit.message.adapter.in.rest.message.dto.request.MessageUpdateRequest;
@@ -37,12 +44,30 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/messages")
 @RequiredArgsConstructor
+@Tag(name = "Message", description = "Message API")
 public class MessageController {
 
     private final MessageControllerService messageService;
 
-    // POST /api/messages - 새 메시지를 생성하고 201 Created를 반환한다
     // 첨부파일을 함께 받을 수 있으므로 multipart로 받는다.
+    @Operation(summary = "Message 생성")
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "201",
+                    description = "Message가 성공적으로 생성됨",
+                    content = @Content(schema = @Schema(implementation = MessageDto.class))
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "요청 값이 올바르지 않음",
+                    content = @Content
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Channel 또는 User를 찾을 수 없음",
+                    content = @Content
+            )
+    })
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<MessageDto> create(
             @Valid @RequestPart("messageCreateRequest") MessageCreateRequest request,
@@ -52,24 +77,54 @@ public class MessageController {
         return ResponseEntity.created(URI.create("/api/messages/" + created.id())).body(created);
     }
 
-    // GET /api/messages?channelId=... - 특정 채널의 모든 메시지를 조회한다
+    @Operation(summary = "Channel의 Message 목록 조회")
+    @ApiResponse(responseCode = "200", description = "Message 목록 조회 성공")
     @GetMapping
-    public ResponseEntity<List<MessageDto>> findAllByChannelId(@RequestParam UUID channelId) {
+    public ResponseEntity<List<MessageDto>> findAllByChannelId(
+            @Parameter(description = "조회할 Channel ID") @RequestParam UUID channelId
+    ) {
         return ResponseEntity.ok(messageService.findAllByChannelId(channelId));
     }
 
-    // PATCH /api/messages/{messageId} - 메시지 내용을 수정한다
+    @Operation(summary = "Message 내용 수정")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Message가 성공적으로 수정됨"),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "요청 값이 올바르지 않음",
+                    content = @Content
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Message를 찾을 수 없음",
+                    content = @Content
+            )
+    })
     @PatchMapping("/{messageId}")
     public ResponseEntity<MessageDto> update(
-            @PathVariable UUID messageId,
+            @Parameter(description = "수정할 Message ID") @PathVariable UUID messageId,
             @Valid @RequestBody MessageUpdateRequest request
     ) {
         return ResponseEntity.ok(messageService.update(messageId, request));
     }
 
-    // DELETE /api/messages/{messageId} - 메시지를 삭제하고 204 No Content를 반환한다
+    @Operation(summary = "Message 삭제")
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "204",
+                    description = "Message가 성공적으로 삭제됨",
+                    content = @Content
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Message를 찾을 수 없음",
+                    content = @Content
+            )
+    })
     @DeleteMapping("/{messageId}")
-    public ResponseEntity<Void> delete(@PathVariable UUID messageId) {
+    public ResponseEntity<Void> delete(
+            @Parameter(description = "삭제할 Message ID") @PathVariable UUID messageId
+    ) {
         messageService.delete(messageId);
         return ResponseEntity.noContent().build();
     }

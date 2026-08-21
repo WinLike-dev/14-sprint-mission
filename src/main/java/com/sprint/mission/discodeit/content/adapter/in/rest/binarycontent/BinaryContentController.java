@@ -2,6 +2,12 @@ package com.sprint.mission.discodeit.content.adapter.in.rest.binarycontent;
 
 import com.sprint.mission.discodeit.content.application.binarycontent.ContentControllerService;
 import com.sprint.mission.discodeit.content.adapter.in.rest.binarycontent.dto.response.BinaryContentDto;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,19 +27,34 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/binaryContents")
 @RequiredArgsConstructor
+@Tag(name = "BinaryContent", description = "첨부 파일 API")
 public class BinaryContentController {
 
     private final ContentControllerService contentService;
 
-    // GET /api/binaryContents/{binaryContentId} - 단일 바이너리 콘텐츠를 ID로 조회한다
+    @Operation(summary = "첨부 파일 조회")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "첨부 파일 조회 성공"),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "첨부 파일을 찾을 수 없음",
+                    content = @Content
+            )
+    })
     @GetMapping("/{binaryContentId}")
-    public ResponseEntity<BinaryContentDto> find(@PathVariable UUID binaryContentId) {
+    public ResponseEntity<BinaryContentDto> find(
+            @Parameter(description = "조회할 첨부 파일 ID") @PathVariable UUID binaryContentId
+    ) {
         return ResponseEntity.ok(contentService.find(binaryContentId));
     }
 
-    // GET /api/binaryContents?binaryContentIds=...&binaryContentIds=... - 여러 ID로 바이너리 콘텐츠를 한 번에 조회한다
+    @Operation(summary = "여러 첨부 파일 조회")
+    @ApiResponse(responseCode = "200", description = "첨부 파일 목록 조회 성공")
     @GetMapping
-    public ResponseEntity<List<BinaryContentDto>> findAllByIdIn(@RequestParam List<UUID> binaryContentIds) {
+    public ResponseEntity<List<BinaryContentDto>> findAllByIdIn(
+            @Parameter(description = "조회할 첨부 파일 ID 목록")
+            @RequestParam List<UUID> binaryContentIds
+    ) {
         return ResponseEntity.ok(contentService.findAllByIdIn(binaryContentIds));
     }
 }
