@@ -82,7 +82,7 @@ class RepositoryParityTest {
         );
         Channel channel = repositories.channels.create(Channel.privateChannel());
         ReadStatus readStatus = repositories.readStatuses.create(
-                new ReadStatus(user.getId(), channel.getId())
+                new ReadStatus(user.getId(), channel.getId(), Instant.now())
         );
         BinaryContent binary = repositories.binaries.create(
                 new BinaryContent("image.png", "image/png", new byte[]{1, 2, 3})
@@ -153,7 +153,7 @@ class RepositoryParityTest {
         assertTrue(repositories.readStatuses.findAllByUserId(user.getId()).isEmpty());
 
         repositories.readStatuses.create(
-                new ReadStatus(user.getId(), channel.getId())
+                new ReadStatus(user.getId(), channel.getId(), Instant.now())
         );
         repositories.readStatuses.deleteAllByChannelId(channel.getId());
         assertTrue(repositories.readStatuses.findAllByChannelId(channel.getId()).isEmpty());

@@ -7,6 +7,7 @@ import com.sprint.mission.discodeit.user.application.port.out.UserStatusReposito
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -35,9 +36,9 @@ public class UserStatusServiceImpl implements UserStatusControllerService {
 
     // 사용자의 마지막 활동 시각을 현재 시각으로 갱신하고, 갱신된 상태를 반환한다.
     @Override
-    public UserStatusDto update(UUID userId) {
+    public UserStatusDto update(UUID userId, Instant newLastActiveAt) {
         UserStatus status = getStatusByUserId(userId);
-        status.updateLastActiveAt(); // 마지막 활동 시각을 지금으로 변경
+        status.updateLastActiveAt(newLastActiveAt);
         return UserStatusDto.from(userStatusRepository.update(status));
     }
 

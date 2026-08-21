@@ -13,6 +13,7 @@ import com.sprint.mission.discodeit.channel.application.port.out.ChannelUserRead
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -33,7 +34,7 @@ public class ReadStatusServiceImpl implements ReadStatusControllerService {
 
     // 읽음 상태 생성 (PUBLIC 채널에서만 가능, PRIVATE 채널은 채널 생성 시 자동 생성됨)
     @Override
-    public ReadStatusDto create(UUID userId, UUID channelId) {
+    public ReadStatusDto create(UUID userId, UUID channelId, Instant lastReadAt) {
         Objects.requireNonNull(userId, "userId는 null일 수 없습니다.");
         Objects.requireNonNull(
                 channelId,
@@ -53,7 +54,7 @@ public class ReadStatusServiceImpl implements ReadStatusControllerService {
                     associationContext(userId, channelId)
             );
         }
-        ReadStatus status = new ReadStatus(userId, channelId);
+        ReadStatus status = new ReadStatus(userId, channelId, lastReadAt);
         return ReadStatusDto.from(readStatusRepository.create(status));
     }
 
@@ -75,9 +76,9 @@ public class ReadStatusServiceImpl implements ReadStatusControllerService {
 
     // 마지막 읽음 시각을 현재 시각으로 갱신 (사용자가 채널을 확인했을 때 호출)
     @Override
-    public ReadStatusDto updateLastReadAt(UUID userId, UUID channelId) {
-        ReadStatus status = getByUserIdAndChannelId(userId, channelId);
-        status.updateLastReadAt();
+    public ReadStatusDto updateLastReadAt(UUID readStatusId, Instant newLastReadAt) {
+        ReadStatus status = readStatusRepository.getById(readStatusId);
+        status.updateLastReadAt(newLastReadAt);
         return ReadStatusDto.from(readStatusRepository.update(status));
     }
 

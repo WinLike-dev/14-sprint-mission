@@ -11,6 +11,7 @@ import com.sprint.mission.discodeit.user.application.port.out.UserStatusReposito
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.util.Objects;
 
 /**
@@ -39,7 +40,7 @@ public class AuthServiceImpl implements AuthControllerService {
                 .orElseThrow(() -> new EntityNotFoundException(UserStatus.class, user.getId()));
 
         // 가장 최근 ActiveAt이 된 기간 업데이트
-        status.updateLastActiveAt(); // 로그인했으므로 "지금 활동 중"으로 갱신
+        status.updateLastActiveAt(Instant.now()); // 로그인했으므로 "지금 활동 중"으로 갱신
         userStatusRepository.update(status);
 
         return UserResult.from(user, status.isOnline());

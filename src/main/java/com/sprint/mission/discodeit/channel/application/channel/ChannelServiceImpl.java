@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -62,7 +63,7 @@ public class ChannelServiceImpl implements ChannelControllerService {
         List<ReadStatus> createdStatuses = new ArrayList<>();
         try {
             for (UUID userId : uniqueParticipantIds) {
-                ReadStatus status = new ReadStatus(userId, channel.getId());
+                ReadStatus status = new ReadStatus(userId, channel.getId(), Instant.now());
                 readStatusRepository.create(status);
                 createdStatuses.add(status);
             }

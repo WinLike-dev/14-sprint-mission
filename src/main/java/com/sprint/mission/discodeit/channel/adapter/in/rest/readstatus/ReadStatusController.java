@@ -1,14 +1,19 @@
 package com.sprint.mission.discodeit.channel.adapter.in.rest.readstatus;
 
 import java.net.URI;
+import jakarta.validation.Valid;
 import com.sprint.mission.discodeit.channel.application.readstatus.ReadStatusControllerService;
+import com.sprint.mission.discodeit.channel.adapter.in.rest.readstatus.dto.request.ReadStatusCreateRequest;
+import com.sprint.mission.discodeit.channel.adapter.in.rest.readstatus.dto.request.ReadStatusUpdateRequest;
 import com.sprint.mission.discodeit.channel.adapter.in.rest.readstatus.dto.response.ReadStatusDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -28,16 +33,17 @@ public class ReadStatusController {
 
     private final ReadStatusControllerService readStatusService; // 실제 비즈니스 로직을 처리하는 서비스
 
-    // POST /api/readStatuses?userId=xxx&channelId=yyy - 읽음 상태 생성
-    // Location은 단건 조회 경로가 없으므로 사용자별 목록을 가리킨다.
+    // POST /api/readStatuses - 읽음 상태 생성
+    // Location은 만들어진 읽음 상태를 가리킨다. 그 URI로 PATCH가 동작한다.
     @PostMapping
     public ResponseEntity<ReadStatusDto> create(
-            @RequestParam UUID userId,
-            @RequestParam UUID channelId
+            @Valid @RequestBody ReadStatusCreateRequest request
     ) {
-        ReadStatusDto created = readStatusService.create(userId, channelId);
+        ReadStatusDto created = readStatusService.create(
+                request.userId(), request.channelId(), request.lastReadAt()
+        );
         return ResponseEntity
-                .created(URI.create("/api/readStatuses?userId=" + userId))
+                .created(URI.create("/api/readStatuses/" + created.id()))
                 .body(created);
     }
 
@@ -47,12 +53,14 @@ public class ReadStatusController {
         return ResponseEntity.ok(readStatusService.findAllByUserId(userId));
     }
 
-    // PATCH /api/readStatuses?userId=xxx&channelId=yyy - 마지막 읽음 시각 갱신
-    @PatchMapping
+    // PATCH /api/readStatuses/{readStatusId} - 마지막 읽음 시각 갱신
+    @PatchMapping("/{readStatusId}")
     public ResponseEntity<ReadStatusDto> updateLastReadAt(
-            @RequestParam UUID userId,
-            @RequestParam UUID channelId
+            @PathVariable UUID readStatusId,
+            @Valid @RequestBody ReadStatusUpdateRequest request
     ) {
-        return ResponseEntity.ok(readStatusService.updateLastReadAt(userId, channelId));
+        ReadStatusDto updated =
+                readStatusService.updateLastReadAt(readStatusId, request.newLastReadAt());
+        return ResponseEntity.ok(updated);
     }
 }

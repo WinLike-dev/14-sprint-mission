@@ -48,8 +48,9 @@ public class UserStatus extends BaseEntity {
 
     // 설계: 마지막 활동 시각은 외부 입력으로 교체하지 않고 UserStatus가 현재 시각으로 갱신한다.
     // 마지막 활동 시각을 "지금"으로 업데이트한다. 로그인이나 API 호출 시 사용.
-    public void updateLastActiveAt() {
-        this.lastActiveAt = Instant.now();
+    // 활동 시각은 호출자가 알려준다. 서버 시각으로 덮어쓰지 않는다.
+    public void updateLastActiveAt(Instant newLastActiveAt) {
+        this.lastActiveAt = Objects.requireNonNull(newLastActiveAt, "newLastActiveAt은 null일 수 없습니다.");
         markUpdated();
     }
 

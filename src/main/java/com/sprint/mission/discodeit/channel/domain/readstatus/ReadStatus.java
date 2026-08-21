@@ -25,10 +25,10 @@ public class ReadStatus extends BaseEntity {
     private Instant lastReadAt; // 사용자가 이 채널을 마지막으로 읽은 시각
 
     // 새로운 읽음 상태를 생성할 때 사용 (lastReadAt은 현재 시각으로 초기화)
-    public ReadStatus(UUID userId, UUID channelId) {
+    public ReadStatus(UUID userId, UUID channelId, Instant lastReadAt) {
         this.userId = Objects.requireNonNull(userId, "userId는 null일 수 없습니다.");
         this.channelId = Objects.requireNonNull(channelId, "channelId는 null일 수 없습니다.");
-        this.lastReadAt = Instant.now();
+        this.lastReadAt = Objects.requireNonNull(lastReadAt, "lastReadAt은 null일 수 없습니다.");
     }
 
     // 기존 데이터를 복원할 때 사용하는 생성자 (copy 메서드에서 호출)
@@ -47,8 +47,9 @@ public class ReadStatus extends BaseEntity {
     }
 
     // 설계: 읽은 시각은 외부 입력이 아니라 서버의 현재 시각으로 갱신한다.
-    public void updateLastReadAt() {
-        this.lastReadAt = Instant.now();
+    // 읽은 시각은 클라이언트가 알려준다. 서버 시각으로 덮어쓰지 않는다.
+    public void updateLastReadAt(Instant newLastReadAt) {
+        this.lastReadAt = Objects.requireNonNull(newLastReadAt, "newLastReadAt은 null일 수 없습니다.");
         markUpdated();
     }
 

@@ -7,6 +7,7 @@ import com.sprint.mission.discodeit.user.application.status.UserStatusController
 import com.sprint.mission.discodeit.user.application.user.UserControllerService;
 import com.sprint.mission.discodeit.user.adapter.in.rest.user.dto.request.UserCreateRequest;
 import com.sprint.mission.discodeit.user.adapter.in.rest.user.dto.request.UserUpdateRequest;
+import com.sprint.mission.discodeit.user.adapter.in.rest.status.dto.request.UserStatusUpdateRequest;
 import com.sprint.mission.discodeit.user.adapter.in.rest.status.dto.response.UserStatusDto;
 import com.sprint.mission.discodeit.user.adapter.in.rest.user.dto.response.UserDto;
 import jakarta.validation.Valid;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
@@ -83,9 +85,10 @@ public class UserController {
     // 접속 상태는 사용자에 종속된 정보이므로 사용자 하위 경로로 노출한다.
     @PatchMapping("/{userId}/userStatus")
     public ResponseEntity<UserStatusDto> updateUserStatusByUserId(
-            @PathVariable UUID userId
+            @PathVariable UUID userId,
+            @Valid @RequestBody UserStatusUpdateRequest request
     ) {
-        return ResponseEntity.ok(userStatusService.update(userId));
+        return ResponseEntity.ok(userStatusService.update(userId, request.newLastActiveAt()));
     }
 
     private CreateUserCommand toCreateCommand(UserCreateRequest request, MultipartFile profile) {

@@ -7,16 +7,24 @@ import java.util.UUID;
 
 /**
  * 읽음 상태 응답 DTO.
- * 읽음 상태 정보를 클라이언트에게 반환할 때 사용하는 객체이다.
- *
- * @param userId     사용자 ID
- * @param channelId  채널 ID
- * @param lastReadAt 마지막으로 읽은 시각
+ * id를 함께 알린다. 클라이언트는 이 id로 갱신 대상을 지정한다.
  */
-public record ReadStatusDto(UUID userId, UUID channelId, Instant lastReadAt) {
-
-    // ReadStatus 엔티티를 ReadStatusDto로 변환하는 팩토리 메서드
+public record ReadStatusDto(
+        UUID id,
+        Instant createdAt,
+        Instant updatedAt,
+        UUID userId,
+        UUID channelId,
+        Instant lastReadAt
+) {
     public static ReadStatusDto from(ReadStatus status) {
-        return new ReadStatusDto(status.getUserId(), status.getChannelId(), status.getLastReadAt());
+        return new ReadStatusDto(
+                status.getId(),
+                status.getCreatedAt(),
+                status.getUpdatedAt(),
+                status.getUserId(),
+                status.getChannelId(),
+                status.getLastReadAt()
+        );
     }
 }

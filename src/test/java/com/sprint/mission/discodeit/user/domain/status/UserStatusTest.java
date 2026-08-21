@@ -6,8 +6,10 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class UserStatusTest {
@@ -33,19 +35,19 @@ class UserStatusTest {
         assertFalse(status.isOnline(now));
     }
 
+    // 활동 시각도 호출자가 알려준 값을 그대로 둔다.
     @Test
-    void updateLastActiveAtUsesCurrentTime() {
+    void updateLastActiveAtKeepsGivenTime() {
         UserStatus status = new UserStatus(
                 UUID.randomUUID(),
                 Instant.parse("2026-08-09T00:00:00Z")
         );
-        Instant beforeUpdate = Instant.now();
+        Instant newActiveAt = Instant.parse("2026-08-09T00:03:00Z");
 
-        status.updateLastActiveAt();
+        status.updateLastActiveAt(newActiveAt);
 
-        Instant afterUpdate = Instant.now();
-        assertFalse(status.getLastActiveAt().isBefore(beforeUpdate));
-        assertFalse(status.getLastActiveAt().isAfter(afterUpdate));
+        assertEquals(newActiveAt, status.getLastActiveAt());
         assertNotNull(status.getUpdatedAt());
+        assertThrows(NullPointerException.class, () -> status.updateLastActiveAt(null));
     }
 }

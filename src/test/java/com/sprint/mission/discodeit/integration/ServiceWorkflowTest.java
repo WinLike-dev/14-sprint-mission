@@ -145,12 +145,11 @@ class ServiceWorkflowTest {
         UserStatusDto foundStatus = userStatusControllerService.find(author.id());
         assertEquals(author.id(), foundStatus.userId());
 
-        Instant beforeStatusUpdate = Instant.now();
-        UserStatusDto updatedStatus = userStatusControllerService.update(author.id());
-        Instant afterStatusUpdate = Instant.now();
+        Instant newLastActiveAt = foundStatus.lastActiveAt().plusSeconds(60);
+        UserStatusDto updatedStatus =
+                userStatusControllerService.update(author.id(), newLastActiveAt);
         assertEquals(author.id(), updatedStatus.userId());
-        assertFalse(updatedStatus.lastActiveAt().isBefore(beforeStatusUpdate));
-        assertFalse(updatedStatus.lastActiveAt().isAfter(afterStatusUpdate));
+        assertEquals(newLastActiveAt, updatedStatus.lastActiveAt());
 
         Instant beforeLogin = Instant.now();
         assertEquals(author.id(), authControllerService.login(
@@ -185,14 +184,11 @@ class ServiceWorkflowTest {
         ReadStatusDto foundReadStatus = readStatusControllerService.find(
                 author.id(), channel.id()
         );
-        Instant beforeReadStatusUpdate = Instant.now();
+        Instant newLastReadAt = foundReadStatus.lastReadAt().plusSeconds(60);
         ReadStatusDto updatedReadStatus = readStatusControllerService.updateLastReadAt(
-                author.id(), channel.id()
+                foundReadStatus.id(), newLastReadAt
         );
-        Instant afterReadStatusUpdate = Instant.now();
-        assertFalse(updatedReadStatus.lastReadAt().isBefore(foundReadStatus.lastReadAt()));
-        assertFalse(updatedReadStatus.lastReadAt().isBefore(beforeReadStatusUpdate));
-        assertFalse(updatedReadStatus.lastReadAt().isAfter(afterReadStatusUpdate));
+        assertEquals(newLastReadAt, updatedReadStatus.lastReadAt());
 
         channelControllerService.delete(channel.id());
 
@@ -258,7 +254,7 @@ class ServiceWorkflowTest {
         );
         assertThrows(
                 EntityNotFoundException.class,
-                () -> userStatusControllerService.update(missingUserId)
+                () -> userStatusControllerService.update(missingUserId, Instant.now())
         );
     }
 
@@ -290,7 +286,9 @@ class ServiceWorkflowTest {
         try {
             assertThrows(
                     ReadStatusCreationNotAllowedException.class,
-                    () -> readStatusControllerService.create(participant.id(), channel.id())
+                    () -> readStatusControllerService.create(
+                            participant.id(), channel.id(), Instant.now()
+                    )
             );
         } finally {
             channelControllerService.delete(channel.id());
@@ -315,7 +313,7 @@ class ServiceWorkflowTest {
                         "event cleanup test"
                 )
         );
-        readStatusControllerService.create(user.id(), channel.id());
+        readStatusControllerService.create(user.id(), channel.id(), Instant.now());
 
         userControllerService.delete(user.id());
 

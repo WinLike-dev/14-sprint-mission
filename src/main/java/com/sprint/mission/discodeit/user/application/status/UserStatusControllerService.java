@@ -2,6 +2,7 @@ package com.sprint.mission.discodeit.user.application.status;
 
 import com.sprint.mission.discodeit.user.adapter.in.rest.status.dto.response.UserStatusDto;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -19,5 +20,5 @@ public interface UserStatusControllerService {
     List<UserStatusDto> findAll();
 
     // 특정 사용자의 마지막 활동 시각을 현재 시각으로 갱신한다.
-    UserStatusDto update(UUID userId);
+    UserStatusDto update(UUID userId, Instant newLastActiveAt);
 }
