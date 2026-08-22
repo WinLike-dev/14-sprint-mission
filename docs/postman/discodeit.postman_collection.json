@@ -660,9 +660,9 @@
       "description": "어디까지 읽었는지.",
       "item": [
         {
-          "name": "Message 읽음 상태 생성",
+          "name": "Message 읽음 상태 등록 (없어서 생성)",
           "request": {
-            "method": "POST",
+            "method": "PUT",
             "header": [],
             "body": {
               "mode": "raw",
@@ -671,19 +671,21 @@
                   "language": "json"
                 }
               },
-              "raw": "{\n  \"userId\": \"{{authorId}}\",\n  \"channelId\": \"{{publicChannelId}}\",\n  \"lastReadAt\": \"2026-08-21T12:00:00.000Z\"\n}"
+              "raw": "{\n  \"lastReadAt\": \"2026-08-21T12:00:00.000Z\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/api/readStatuses",
+              "raw": "{{baseUrl}}/api/readStatuses/{{authorId}}/{{publicChannelId}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "api",
-                "readStatuses"
+                "readStatuses",
+                "{{authorId}}",
+                "{{publicChannelId}}"
               ]
             },
-            "description": "읽은 시각은 클라이언트가 정한다. 비공개 채널의 읽음 상태는 채널 생성 때 이미 만들어지므로 여기서는 공개 채널을 쓴다."
+            "description": "대상은 경로의 userId와 channelId 조합이 지정한다. 읽은 시각은 클라이언트가 정한다. 비공개 채널의 읽음 상태는 채널 생성 때 이미 만들어지므로 여기서는 공개 채널을 쓴다."
           },
           "event": [
             {
@@ -691,10 +693,51 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"201 응답\", () => pm.response.to.have.status(201));",
-                  "pm.test(\"Location이 만들어진 읽음 상태를 가리킨다\", () => pm.expect(pm.response.headers.get(\"Location\")).to.include(\"/api/readStatuses/\"));",
+                  "pm.test(\"200 응답\", () => pm.response.to.have.status(200));",
                   "pm.test(\"넘긴 시각이 그대로 저장된다\", () => pm.expect(pm.response.json().lastReadAt).to.eql(\"2026-08-21T12:00:00Z\"));",
                   "pm.collectionVariables.set(\"readStatusId\", pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Message 읽음 상태 등록 (이미 있어서 갱신)",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"lastReadAt\": \"2026-08-21T23:59:59.000Z\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/readStatuses/{{authorId}}/{{publicChannelId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "readStatuses",
+                "{{authorId}}",
+                "{{publicChannelId}}"
+              ]
+            },
+            "description": "앞 요청과 주소도 본문 모양도 같다. 이미 있는지를 클라이언트가 알 필요가 없다는 뜻이다."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200 응답\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"넘긴 시각이 그대로 반영된다\", () => pm.expect(pm.response.json().lastReadAt).to.eql(\"2026-08-21T23:59:59Z\"));",
+                  "pm.test(\"같은 대상을 고쳤다. 새로 만들지 않았다\", () => pm.expect(pm.response.json().id).to.eql(pm.collectionVariables.get(\"readStatusId\")));"
                 ]
               }
             }
@@ -721,7 +764,7 @@
                 }
               ]
             },
-            "description": "프론트엔드는 이 목록의 id를 들고 있다가 갱신에 쓴다."
+            "description": "프론트엔드는 로그인 직후 이 목록으로 채널별 안 읽음 여부를 판단한다."
           },
           "event": [
             {
@@ -731,35 +774,60 @@
                 "exec": [
                   "pm.test(\"200 응답\", () => pm.response.to.have.status(200));",
                   "pm.test(\"모든 항목이 id를 가진다\", () => pm.response.json().forEach(s => pm.expect(s.id).to.be.a(\"string\")));",
-                  "pm.test(\"방금 만든 읽음 상태가 있다\", () => pm.expect(pm.response.json().map(s => s.id)).to.include(pm.collectionVariables.get(\"readStatusId\")));"
+                  "const mine = pm.response.json().filter(s => s.channelId === pm.collectionVariables.get(\"publicChannelId\"));",
+                  "pm.test(\"두 번 등록해도 한 건만 남는다\", () => pm.expect(mine).to.have.lengthOf(1));"
                 ]
               }
             }
           ]
         },
         {
-          "name": "Message 읽음 상태 수정",
+          "name": "특정 Channel의 Message 읽음 상태 조회",
           "request": {
-            "method": "PATCH",
+            "method": "GET",
             "header": [],
-            "body": {
-              "mode": "raw",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              },
-              "raw": "{\n  \"newLastReadAt\": \"2026-08-21T23:59:59.000Z\"\n}"
-            },
             "url": {
-              "raw": "{{baseUrl}}/api/readStatuses/{{readStatusId}}",
+              "raw": "{{baseUrl}}/api/readStatuses/{{authorId}}/{{publicChannelId}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "api",
                 "readStatuses",
-                "{{readStatusId}}"
+                "{{authorId}}",
+                "{{publicChannelId}}"
+              ]
+            },
+            "description": "id를 몰라도 조합만으로 단건을 집어낼 수 있다."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200 응답\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"조합으로 찾은 것이 앞서 만든 그것이다\", () => pm.expect(pm.response.json().id).to.eql(pm.collectionVariables.get(\"readStatusId\")));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Message 읽음 상태 삭제",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/readStatuses/{{authorId}}/{{publicChannelId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "readStatuses",
+                "{{authorId}}",
+                "{{publicChannelId}}"
               ]
             }
           },
@@ -769,8 +837,37 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"200 응답\", () => pm.response.to.have.status(200));",
-                  "pm.test(\"넘긴 시각이 그대로 반영된다\", () => pm.expect(pm.response.json().lastReadAt).to.eql(\"2026-08-21T23:59:59Z\"));"
+                  "pm.test(\"204 응답\", () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "삭제된 읽음 상태 조회 → 404",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/readStatuses/{{authorId}}/{{publicChannelId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "readStatuses",
+                "{{authorId}}",
+                "{{publicChannelId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"404 응답\", () => pm.response.to.have.status(404));"
                 ]
               }
             }

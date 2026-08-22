@@ -5,7 +5,6 @@ import com.sprint.mission.discodeit.channel.domain.readstatus.ReadStatus;
 import com.sprint.mission.discodeit.channel.domain.channel.Channel;
 import com.sprint.mission.discodeit.channel.domain.channel.ChannelType;
 import com.sprint.mission.discodeit.channel.domain.readstatus.exception.ReadStatusCreationNotAllowedException;
-import com.sprint.mission.discodeit.common.exception.DuplicateAssociationException;
 import com.sprint.mission.discodeit.common.exception.EntityNotFoundException;
 import com.sprint.mission.discodeit.channel.application.port.out.ChannelRepository;
 import com.sprint.mission.discodeit.channel.application.port.out.ReadStatusRepository;
@@ -16,13 +15,14 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
  * 읽음 상태(ReadStatus) 비즈니스 로직의 실제 구현 클래스.
- * 읽음 상태의 생성, 조회, 갱신, 삭제를 처리한다.
- * PRIVATE 채널의 경우 채널 생성 시에만 ReadStatus가 자동으로 만들어지므로,
- * 이 서비스에서 직접 생성하는 것은 PUBLIC 채널에 대해서만 가능하다.
+ * 대상은 언제나 (userId, channelId)로 지정한다.
+ * PRIVATE 채널의 읽음 상태는 채널 생성 시 참여자별로 함께 만들어지므로,
+ * 이 서비스가 새로 만드는 것은 PUBLIC 채널에 대해서만 가능하다.
  */
 @Service
 @RequiredArgsConstructor
@@ -32,27 +32,32 @@ public class ReadStatusServiceImpl implements ReadStatusControllerService {
     private final ChannelRepository channelRepository; // 채널 저장소 (채널 존재 여부 및 타입 확인용)
     private final ChannelUserReader userReader; // 사용자 존재 여부 확인용
 
-    // 읽음 상태 생성 (PUBLIC 채널에서만 가능, PRIVATE 채널은 채널 생성 시 자동 생성됨)
+    // 읽음 시각을 주어진 값으로 만든다. 없으면 만들고 있으면 갱신한다.
+    //
+    // 생성과 갱신을 나누면 호출자가 "이미 있는지"를 먼저 알아야 올바른 연산을 고를 수 있고,
+    // 잘못 고르면 중복 충돌로 거절된다. 조합이 유일하다는 사실은 서버가 이미 아는 것이므로
+    // 여기서 흡수한다. 같은 요청을 몇 번 보내도 결과가 같다.
     @Override
-    public ReadStatusDto create(UUID userId, UUID channelId, Instant lastReadAt) {
+    public ReadStatusDto upsert(UUID userId, UUID channelId, Instant lastReadAt) {
         Objects.requireNonNull(userId, "userId는 null일 수 없습니다.");
-        Objects.requireNonNull(
-                channelId,
-                "channelId는 null일 수 없습니다."
-        );
+        Objects.requireNonNull(channelId, "channelId는 null일 수 없습니다.");
+        Objects.requireNonNull(lastReadAt, "lastReadAt은 null일 수 없습니다.");
+
+        Optional<ReadStatus> existing =
+                readStatusRepository.findByUserIdAndChannelId(userId, channelId);
+        if (existing.isPresent()) {
+            // 이미 있다는 것은 만들 때 사용자와 채널을 확인했다는 뜻이다.
+            // 둘 중 하나가 사라지면 읽음 상태도 함께 지워지므로 여기서 다시 묻지 않는다.
+            ReadStatus status = existing.get();
+            status.updateLastReadAt(lastReadAt);
+            return ReadStatusDto.from(readStatusRepository.update(status));
+        }
+
+        // 새로 만드는 경우에만 참조 대상과 채널 종류를 확인한다.
         userReader.requireExists(userId);
         Channel channel = channelRepository.getById(channelId);
         if (channel.getType() == ChannelType.PRIVATE) { // PRIVATE 채널은 별도 생성 불가
             throw new ReadStatusCreationNotAllowedException(channelId);
-        }
-
-        // 유저와 채널 id 모두 똑같은 놈 있는 지 체크 (같은 조합이 이미 있으면 중복 예외 발생)
-        // 필요한 건 존재 여부뿐이라 객체를 만들지 않는 exists로 묻는다.
-        if (readStatusRepository.existsByUserIdAndChannelId(userId, channelId)) {
-            throw new DuplicateAssociationException(
-                    ReadStatus.class,
-                    associationContext(userId, channelId)
-            );
         }
         ReadStatus status = new ReadStatus(userId, channelId, lastReadAt);
         return ReadStatusDto.from(readStatusRepository.create(status));
@@ -74,14 +79,6 @@ public class ReadStatusServiceImpl implements ReadStatusControllerService {
                 .toList();
     }
 
-    // 마지막 읽음 시각을 현재 시각으로 갱신 (사용자가 채널을 확인했을 때 호출)
-    @Override
-    public ReadStatusDto updateLastReadAt(UUID readStatusId, Instant newLastReadAt) {
-        ReadStatus status = readStatusRepository.getById(readStatusId);
-        status.updateLastReadAt(newLastReadAt);
-        return ReadStatusDto.from(readStatusRepository.update(status));
-    }
-
     // 읽음 상태 삭제 (사용자 + 채널 조합으로 찾아서 삭제)
     @Override
     public void delete(UUID userId, UUID channelId) {
@@ -99,12 +96,7 @@ public class ReadStatusServiceImpl implements ReadStatusControllerService {
         return readStatusRepository.findByUserIdAndChannelId(userId, channelId)
                 .orElseThrow(() -> new EntityNotFoundException(
                         ReadStatus.class,
-                        associationContext(userId, channelId)
+                        "userId=%s, channelId=%s".formatted(userId, channelId)
                 ));
-    }
-
-    // 예외 메시지에 포함할 연관 정보 문자열을 생성하는 헬퍼 메서드
-    private String associationContext(UUID userId, UUID channelId) {
-        return "userId=%s, channelId=%s".formatted(userId, channelId);
     }
 }

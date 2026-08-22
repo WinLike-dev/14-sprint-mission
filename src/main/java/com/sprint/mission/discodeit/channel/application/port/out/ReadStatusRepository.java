@@ -38,14 +38,6 @@ public interface ReadStatusRepository extends CrudRepository<ReadStatus> {
                 .findFirst();
     }
 
-    // 해당 조합의 읽음 상태가 이미 있는지만 확인한다.
-    // 중복 등록 검사처럼 객체가 아니라 존재 여부만 필요한 경우를 위한 메서드다.
-    default boolean existsByUserIdAndChannelId(UUID userId, UUID channelId) {
-        return findAll().stream()
-                .filter(status -> status.getUserId().equals(userId))
-                .anyMatch(status -> status.getChannelId().equals(channelId));
-    }
-
     // 특정 사용자의 모든 읽음 상태를 삭제 (사용자 탈퇴 시 사용)
     default void deleteAllByUserId(UUID userId) {
         findAllByUserId(userId).forEach(status -> deleteById(status.getId()));

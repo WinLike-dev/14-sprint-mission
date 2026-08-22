@@ -1,11 +1,11 @@
 # Postman
 
-`discodeit.postman_collection.json`은 API 20개를 전부 훑는다. 폴더 순서대로 실행하면
+`discodeit.postman_collection.json`은 API 21개를 전부 훑는다. 폴더 순서대로 실행하면
 앞 요청이 만든 ID를 뒤 요청이 이어받으므로, 값을 손으로 채울 필요가 없다.
 
 | 파일 | 내용 |
 | --- | --- |
-| `discodeit.postman_collection.json` | 컬렉션 (요청 32건, 단언 66건) |
+| `discodeit.postman_collection.json` | 컬렉션 (요청 35건, 단언 70건) |
 | `newman-run-output.txt` | 실행 결과 (사람이 읽는 형태) |
 | `newman-run-report.json` | 실행 결과 (요청·응답 전문 포함) |
 | `sample-attachment.png` | 첨부 테스트용 1x1 PNG |
@@ -35,8 +35,9 @@ npx newman run discodeit.postman_collection.json \
 - **부분 수정** — `newUsername`만 보내면 username만 바뀌고 email은 그대로다.
 - **시각의 주인** — `lastReadAt`과 `newLastActiveAt`은 보낸 값이 그대로 저장된다.
   서버 수신 시각으로 덮어쓰지 않는다.
-- **id로 지정** — 읽음 상태 목록의 모든 항목이 `id`를 가진다. 프론트엔드가 이 값을
-  들고 있다가 갱신에 쓴다.
+- **조합으로 지정** — 읽음 상태는 `PUT /api/readStatuses/{userId}/{channelId}`로
+  등록한다. 같은 요청을 두 번 보내면 두 번째는 갱신이 되고, 응답의 `id`가 첫 번째와
+  같다. 목록에도 한 건만 남는다. 클라이언트가 id를 미리 알 필요가 없다.
 - **응답에 password가 없다** — 등록과 로그인 응답 모두.
 - **실패 응답** — 문서에 적힌 상태 코드가 실제로 나오는지 본다.
   400(검증), 401(로그인 실패), 404(없는 리소스), 409(중복·상태 충돌).

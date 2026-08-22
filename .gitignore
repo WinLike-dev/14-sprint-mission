@@ -12,3 +12,9 @@
 
 # 미션이 제공한 원본 자료 (스펙은 docs/openapi, 프론트엔드는 src/main/resources/static으로 옮겨 관리)
 /resource/
+
+# 프론트엔드 정적 자원 (빌드 산출물)
+/src/main/resources/static/
+
+# 테스트 코드
+/src/test/

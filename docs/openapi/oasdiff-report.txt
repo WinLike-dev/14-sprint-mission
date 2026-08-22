@@ -1,10 +1,15 @@
-### New Endpoints: None
------------------------
+### New Endpoints: 2
+--------------------
+POST /api/readStatuses  
+PATCH /api/readStatuses/{readStatusId}  
 
-### Deleted Endpoints: None
----------------------------
+### Deleted Endpoints: 3
+------------------------
+DELETE /api/readStatuses/{userId}/{channelId}  
+GET /api/readStatuses/{userId}/{channelId}  
+PUT /api/readStatuses/{userId}/{channelId}  
 
-### Modified Endpoints: 16
+### Modified Endpoints: 14
 --------------------------
 POST /api/auth/login
 - Request body changed
@@ -31,6 +36,7 @@ POST /api/auth/login
       - New media type: */*
 
 GET /api/binaryContents/{binaryContentId}
+- OperationID changed from 'find_1' to 'find'
 - Responses changed
   - Modified response: 404
     - Content changed
@@ -86,6 +92,7 @@ POST /api/channels/public
             - Deleted property: participantIds
 
 DELETE /api/channels/{channelId}
+- OperationID changed from 'delete_3' to 'delete_2'
 - Responses changed
   - Modified response: 404
     - Content changed
@@ -121,6 +128,7 @@ PATCH /api/channels/{channelId}
       - New media type: */*
 
 POST /api/messages
+- OperationID changed from 'create_1' to 'create_2'
 - Request body changed
   - Content changed
     - Modified media type: multipart/form-data
@@ -144,6 +152,7 @@ POST /api/messages
       - New media type: */*
 
 DELETE /api/messages/{messageId}
+- OperationID changed from 'delete_2' to 'delete_1'
 - Responses changed
   - Modified response: 404
     - Content changed
@@ -161,41 +170,6 @@ PATCH /api/messages/{messageId}
         - Properties changed
           - Modified property: newContent
             - MaxLength changed from 2000 to null
-- Responses changed
-  - Deleted response: 400
-  - Modified response: 404
-    - Content changed
-      - New media type: */*
-
-POST /api/readStatuses
-- Request body changed
-  - Content changed
-    - Modified media type: application/json
-      - Schema changed
-        - Description changed from '' to 'Message 읽음 상태 생성 정보'
-        - Required changed
-          - Deleted required property: channelId
-          - Deleted required property: lastReadAt
-          - Deleted required property: userId
-- Responses changed
-  - Deleted response: 409
-  - Modified response: 400
-    - Description changed from '요청 값이 올바르지 않음' to '이미 읽음 상태가 존재함'
-    - Content changed
-      - New media type: */*
-  - Modified response: 404
-    - Content changed
-      - New media type: */*
-
-PATCH /api/readStatuses/{readStatusId}
-- OperationID changed from 'updateLastReadAt' to 'update_1'
-- Request body changed
-  - Content changed
-    - Modified media type: application/json
-      - Schema changed
-        - Description changed from '' to '수정할 읽음 상태 정보'
-        - Required changed
-          - Deleted required property: newLastReadAt
 - Responses changed
   - Deleted response: 400
   - Modified response: 404
@@ -237,6 +211,7 @@ POST /api/users
       - New media type: */*
 
 DELETE /api/users/{userId}
+- OperationID changed from 'delete_1' to 'delete'
 - Responses changed
   - Modified response: 404
     - Content changed
@@ -294,7 +269,7 @@ Other Changes
 -------------
 Version changed from '3.0.1' to '3.1.0'
 Servers changed
-- New server: http://localhost:8080
-- Deleted server: /
+- Modified server: http://localhost:8080
+  - Description changed from 'Generated server url' to '로컬 서버'
 
 
