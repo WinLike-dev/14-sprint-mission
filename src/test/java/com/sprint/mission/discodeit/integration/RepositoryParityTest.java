@@ -1,31 +1,32 @@
 package com.sprint.mission.discodeit.integration;
 
-import com.sprint.mission.discodeit.binarycontent.entity.BinaryContent;
-import com.sprint.mission.discodeit.channel.entity.Channel;
-import com.sprint.mission.discodeit.message.entity.Message;
-import com.sprint.mission.discodeit.readstatus.entity.ReadStatus;
-import com.sprint.mission.discodeit.user.entity.User;
-import com.sprint.mission.discodeit.userstatus.entity.UserStatus;
+import com.sprint.mission.discodeit.content.domain.binarycontent.BinaryContent;
+import com.sprint.mission.discodeit.channel.domain.channel.Channel;
+import com.sprint.mission.discodeit.message.domain.message.Message;
+import com.sprint.mission.discodeit.channel.domain.readstatus.ReadStatus;
+import com.sprint.mission.discodeit.user.domain.user.User;
+import com.sprint.mission.discodeit.user.domain.status.UserStatus;
 import com.sprint.mission.discodeit.common.exception.EntityNotFoundException;
 import com.sprint.mission.discodeit.common.exception.StorageOperationException;
-import com.sprint.mission.discodeit.binarycontent.repository.BinaryContentRepository;
-import com.sprint.mission.discodeit.channel.repository.ChannelRepository;
-import com.sprint.mission.discodeit.message.repository.MessageRepository;
-import com.sprint.mission.discodeit.readstatus.repository.ReadStatusRepository;
-import com.sprint.mission.discodeit.user.repository.UserRepository;
-import com.sprint.mission.discodeit.userstatus.repository.UserStatusRepository;
-import com.sprint.mission.discodeit.binarycontent.repository.file.FileBinaryContentRepository;
-import com.sprint.mission.discodeit.channel.repository.file.FileChannelRepository;
-import com.sprint.mission.discodeit.message.repository.file.FileMessageRepository;
-import com.sprint.mission.discodeit.readstatus.repository.file.FileReadStatusRepository;
-import com.sprint.mission.discodeit.user.repository.file.FileUserRepository;
-import com.sprint.mission.discodeit.userstatus.repository.file.FileUserStatusRepository;
-import com.sprint.mission.discodeit.binarycontent.repository.jcf.JCFBinaryContentRepository;
-import com.sprint.mission.discodeit.channel.repository.jcf.JCFChannelRepository;
-import com.sprint.mission.discodeit.message.repository.jcf.JCFMessageRepository;
-import com.sprint.mission.discodeit.readstatus.repository.jcf.JCFReadStatusRepository;
-import com.sprint.mission.discodeit.user.repository.jcf.JCFUserRepository;
-import com.sprint.mission.discodeit.userstatus.repository.jcf.JCFUserStatusRepository;
+import com.sprint.mission.discodeit.content.application.port.out.BinaryContentRepository;
+import com.sprint.mission.discodeit.channel.application.port.out.ChannelRepository;
+import com.sprint.mission.discodeit.message.application.port.out.MessageRepository;
+import com.sprint.mission.discodeit.channel.application.port.out.ReadStatusRepository;
+import com.sprint.mission.discodeit.user.application.port.out.UserRepository;
+import com.sprint.mission.discodeit.user.application.port.out.UserStatusRepository;
+import com.sprint.mission.discodeit.content.adapter.out.persistence.binarycontent.file.FileBinaryContentRepository;
+import com.sprint.mission.discodeit.channel.adapter.out.persistence.channel.file.FileChannelRepository;
+import com.sprint.mission.discodeit.message.adapter.out.persistence.message.file.FileMessageRepository;
+import com.sprint.mission.discodeit.channel.adapter.out.persistence.readstatus.file.FileReadStatusRepository;
+import com.sprint.mission.discodeit.user.adapter.out.persistence.user.file.FileUserRepository;
+import com.sprint.mission.discodeit.common.repository.file.FileLockProvider;
+import com.sprint.mission.discodeit.user.adapter.out.persistence.status.file.FileUserStatusRepository;
+import com.sprint.mission.discodeit.content.adapter.out.persistence.binarycontent.jcf.JCFBinaryContentRepository;
+import com.sprint.mission.discodeit.channel.adapter.out.persistence.channel.jcf.JCFChannelRepository;
+import com.sprint.mission.discodeit.message.adapter.out.persistence.message.jcf.JCFMessageRepository;
+import com.sprint.mission.discodeit.channel.adapter.out.persistence.readstatus.jcf.JCFReadStatusRepository;
+import com.sprint.mission.discodeit.user.adapter.out.persistence.user.jcf.JCFUserRepository;
+import com.sprint.mission.discodeit.user.adapter.out.persistence.status.jcf.JCFUserStatusRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -67,7 +68,7 @@ class RepositoryParityTest {
 
         StorageOperationException exception = assertThrows(
                 StorageOperationException.class,
-                () -> new FileUserRepository(root).findAll()
+                () -> new FileUserRepository(root, new FileLockProvider()).findAll()
         );
 
         assertNotNull(exception.getCause());
@@ -82,7 +83,7 @@ class RepositoryParityTest {
         );
         Channel channel = repositories.channels.create(Channel.privateChannel());
         ReadStatus readStatus = repositories.readStatuses.create(
-                new ReadStatus(user.getId(), channel.getId())
+                new ReadStatus(user.getId(), channel.getId(), Instant.now())
         );
         BinaryContent binary = repositories.binaries.create(
                 new BinaryContent("image.png", "image/png", new byte[]{1, 2, 3})
@@ -153,7 +154,7 @@ class RepositoryParityTest {
         assertTrue(repositories.readStatuses.findAllByUserId(user.getId()).isEmpty());
 
         repositories.readStatuses.create(
-                new ReadStatus(user.getId(), channel.getId())
+                new ReadStatus(user.getId(), channel.getId(), Instant.now())
         );
         repositories.readStatuses.deleteAllByChannelId(channel.getId());
         assertTrue(repositories.readStatuses.findAllByChannelId(channel.getId()).isEmpty());
@@ -174,13 +175,14 @@ class RepositoryParityTest {
     }
 
     private Repositories fileRepositories(Path root) {
+        FileLockProvider locks = new FileLockProvider();
         return new Repositories(
-                new FileUserRepository(root),
-                new FileChannelRepository(root),
-                new FileMessageRepository(root),
-                new FileReadStatusRepository(root),
-                new FileUserStatusRepository(root),
-                new FileBinaryContentRepository(root)
+                new FileUserRepository(root, locks),
+                new FileChannelRepository(root, locks),
+                new FileMessageRepository(root, locks),
+                new FileReadStatusRepository(root, locks),
+                new FileUserStatusRepository(root, locks),
+                new FileBinaryContentRepository(root, locks)
         );
     }
 

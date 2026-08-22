@@ -34,6 +34,12 @@ public abstract class AbstractJCFRepository<T extends Identifiable>
                 .map(this::copy);
     }
 
+    // 키 존재만 확인한다. 복사본을 만들지 않는다.
+    @Override
+    protected final boolean contains(UUID id) {
+        return data.containsKey(id);
+    }
+
     @Override
     protected final List<T> readAll() {
         List<T> copies = new ArrayList<>();

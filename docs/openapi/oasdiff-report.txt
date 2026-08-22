@@ -1,0 +1,300 @@
+### New Endpoints: None
+-----------------------
+
+### Deleted Endpoints: None
+---------------------------
+
+### Modified Endpoints: 16
+--------------------------
+POST /api/auth/login
+- Request body changed
+  - Content changed
+    - Modified media type: application/json
+      - Schema changed
+        - Description changed from '' to '로그인 정보'
+        - Required changed
+          - Deleted required property: password
+          - Deleted required property: username
+- Responses changed
+  - New response: 404
+  - Deleted response: 401
+  - Modified response: 200
+    - Content changed
+      - Modified media type: */*
+        - Schema changed
+          - Properties changed
+            - New property: password
+            - Deleted property: online
+  - Modified response: 400
+    - Description changed from '요청 값이 올바르지 않음' to '비밀번호가 일치하지 않음'
+    - Content changed
+      - New media type: */*
+
+GET /api/binaryContents/{binaryContentId}
+- Responses changed
+  - Modified response: 404
+    - Content changed
+      - New media type: */*
+
+GET /api/channels
+- OperationID changed from 'findAllByUserId_1' to 'findAll_1'
+
+POST /api/channels/private
+- OperationID changed from 'createPrivate' to 'create_4'
+- Request body changed
+  - Content changed
+    - Modified media type: application/json
+      - Schema changed
+        - Description changed from '' to 'Private Channel 생성 정보'
+        - Required changed
+          - Deleted required property: participantIds
+- Responses changed
+  - Modified response: 201
+    - Content changed
+      - Modified media type: */*
+        - Schema changed
+          - Properties changed
+            - New property: createdAt
+            - New property: updatedAt
+            - Deleted property: lastMessageAt
+            - Deleted property: participantIds
+
+POST /api/channels/public
+- OperationID changed from 'createPublic' to 'create_3'
+- Request body changed
+  - Content changed
+    - Modified media type: application/json
+      - Schema changed
+        - Description changed from '' to 'Public Channel 생성 정보'
+        - Required changed
+          - Deleted required property: description
+          - Deleted required property: name
+        - Properties changed
+          - Modified property: description
+            - MaxLength changed from 500 to null
+          - Modified property: name
+            - MaxLength changed from 100 to null
+- Responses changed
+  - Modified response: 201
+    - Content changed
+      - Modified media type: */*
+        - Schema changed
+          - Properties changed
+            - New property: createdAt
+            - New property: updatedAt
+            - Deleted property: lastMessageAt
+            - Deleted property: participantIds
+
+DELETE /api/channels/{channelId}
+- Responses changed
+  - Modified response: 404
+    - Content changed
+      - New media type: */*
+
+PATCH /api/channels/{channelId}
+- OperationID changed from 'update_2' to 'update_3'
+- Request body changed
+  - Content changed
+    - Modified media type: application/json
+      - Schema changed
+        - Description changed from '' to '수정할 Channel 정보'
+        - Properties changed
+          - Modified property: newDescription
+            - MaxLength changed from 500 to null
+          - Modified property: newName
+            - MaxLength changed from 100 to null
+            - Pattern changed from '.*\S.*' to ''
+- Responses changed
+  - New response: 400
+  - Deleted response: 409
+  - Modified response: 200
+    - Content changed
+      - Modified media type: */*
+        - Schema changed
+          - Properties changed
+            - New property: createdAt
+            - New property: updatedAt
+            - Deleted property: lastMessageAt
+            - Deleted property: participantIds
+  - Modified response: 404
+    - Content changed
+      - New media type: */*
+
+POST /api/messages
+- Request body changed
+  - Content changed
+    - Modified media type: multipart/form-data
+      - Schema changed
+        - Properties changed
+          - Modified property: attachments
+            - Description changed from '' to 'Message 첨부 파일들'
+          - Modified property: messageCreateRequest
+            - Description changed from '' to 'Message 생성 정보'
+            - Required changed
+              - Deleted required property: authorId
+              - Deleted required property: channelId
+              - Deleted required property: content
+            - Properties changed
+              - Modified property: content
+                - MaxLength changed from 2000 to null
+- Responses changed
+  - Deleted response: 400
+  - Modified response: 404
+    - Content changed
+      - New media type: */*
+
+DELETE /api/messages/{messageId}
+- Responses changed
+  - Modified response: 404
+    - Content changed
+      - New media type: */*
+
+PATCH /api/messages/{messageId}
+- OperationID changed from 'update_1' to 'update_2'
+- Request body changed
+  - Content changed
+    - Modified media type: application/json
+      - Schema changed
+        - Description changed from '' to '수정할 Message 내용'
+        - Required changed
+          - Deleted required property: newContent
+        - Properties changed
+          - Modified property: newContent
+            - MaxLength changed from 2000 to null
+- Responses changed
+  - Deleted response: 400
+  - Modified response: 404
+    - Content changed
+      - New media type: */*
+
+POST /api/readStatuses
+- Request body changed
+  - Content changed
+    - Modified media type: application/json
+      - Schema changed
+        - Description changed from '' to 'Message 읽음 상태 생성 정보'
+        - Required changed
+          - Deleted required property: channelId
+          - Deleted required property: lastReadAt
+          - Deleted required property: userId
+- Responses changed
+  - Deleted response: 409
+  - Modified response: 400
+    - Description changed from '요청 값이 올바르지 않음' to '이미 읽음 상태가 존재함'
+    - Content changed
+      - New media type: */*
+  - Modified response: 404
+    - Content changed
+      - New media type: */*
+
+PATCH /api/readStatuses/{readStatusId}
+- OperationID changed from 'updateLastReadAt' to 'update_1'
+- Request body changed
+  - Content changed
+    - Modified media type: application/json
+      - Schema changed
+        - Description changed from '' to '수정할 읽음 상태 정보'
+        - Required changed
+          - Deleted required property: newLastReadAt
+- Responses changed
+  - Deleted response: 400
+  - Modified response: 404
+    - Content changed
+      - New media type: */*
+
+POST /api/users
+- Request body changed
+  - Content changed
+    - Modified media type: multipart/form-data
+      - Schema changed
+        - Properties changed
+          - Modified property: profile
+            - Description changed from '' to 'User 프로필 이미지'
+          - Modified property: userCreateRequest
+            - Description changed from '' to 'User 생성 정보'
+            - Required changed
+              - Deleted required property: email
+              - Deleted required property: password
+              - Deleted required property: username
+            - Properties changed
+              - Modified property: password
+                - MinLength changed from 4 to 0
+                - MaxLength changed from 100 to null
+              - Modified property: username
+                - MaxLength changed from 50 to null
+- Responses changed
+  - Deleted response: 409
+  - Modified response: 201
+    - Content changed
+      - Modified media type: */*
+        - Schema changed
+          - Properties changed
+            - New property: password
+            - Deleted property: online
+  - Modified response: 400
+    - Description changed from '요청 값이 올바르지 않음' to '같은 email 또는 username를 사용하는 User가 이미 존재함'
+    - Content changed
+      - New media type: */*
+
+DELETE /api/users/{userId}
+- Responses changed
+  - Modified response: 404
+    - Content changed
+      - New media type: */*
+
+PATCH /api/users/{userId}
+- Request body changed
+  - Content changed
+    - Modified media type: multipart/form-data
+      - Schema changed
+        - Properties changed
+          - Modified property: profile
+            - Description changed from '' to '수정할 User 프로필 이미지'
+          - Modified property: userUpdateRequest
+            - Description changed from '' to '수정할 User 정보'
+            - Properties changed
+              - Modified property: newPassword
+                - MinLength changed from 4 to 0
+                - MaxLength changed from 100 to null
+                - Pattern changed from '.*\S.*' to ''
+              - Modified property: newUsername
+                - MaxLength changed from 50 to null
+                - Pattern changed from '.*\S.*' to ''
+- Responses changed
+  - Deleted response: 409
+  - Modified response: 200
+    - Content changed
+      - Modified media type: */*
+        - Schema changed
+          - Properties changed
+            - New property: password
+            - Deleted property: online
+  - Modified response: 400
+    - Description changed from '요청 값이 올바르지 않음' to '같은 email 또는 username를 사용하는 User가 이미 존재함'
+    - Content changed
+      - New media type: */*
+  - Modified response: 404
+    - Content changed
+      - New media type: */*
+
+PATCH /api/users/{userId}/userStatus
+- Request body changed
+  - Content changed
+    - Modified media type: application/json
+      - Schema changed
+        - Description changed from '' to '변경할 User 온라인 상태 정보'
+        - Required changed
+          - Deleted required property: newLastActiveAt
+- Responses changed
+  - Modified response: 404
+    - Content changed
+      - New media type: */*
+
+Other Changes
+-------------
+Version changed from '3.0.1' to '3.1.0'
+Servers changed
+- New server: http://localhost:8080
+- Deleted server: /
+
+

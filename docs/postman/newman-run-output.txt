@@ -1,0 +1,196 @@
+(node:35404) [DEP0176] DeprecationWarning: fs.F_OK is deprecated, use fs.constants.F_OK instead
+(Use `node --trace-deprecation ...` to show where the warning was created)
+newman
+
+Discodeit API
+
+□ 1. User
+└ User 등록 (프로필 포함)
+  POST http://localhost:18080/api/users (node:35404) [DEP0044] DeprecationWarning: The `util.isArray` API is deprecated. Please use `Array.isArray()` instead.
+[201 Created, 495B, 53ms]
+  √  201 응답
+  √  Location 헤더로 만들어진 리소스를 알린다
+  √  프로필이 실제로 등록된다
+  √  응답에 password가 없다
+
+└ User 등록 (프로필 없음)
+  POST http://localhost:18080/api/users [201 Created, 471B, 38ms]
+  √  201 응답
+  √  프로필 없이 등록되면 profileId는 null
+
+└ 전체 User 목록 조회
+  GET http://localhost:18080/api/users [200 OK, 677B, 12ms]
+  √  200 응답
+  √  배열로 온다
+  √  방금 만든 사용자가 있다
+
+└ User 정보 수정
+  PATCH http://localhost:18080/api/users/a88c1998-52dc-4d49-8061-6f02b6eb24dc [200 OK, 439B, 21ms]
+  √  200 응답
+  √  username이 바뀐다
+  √  넘기지 않은 email은 그대로다
+
+└ User 온라인 상태 업데이트
+  PATCH http://localhost:18080/api/users/a88c1998-52dc-4d49-8061-6f02b6eb24dc/userStatus [200 OK, 399B, 8ms]
+  √  200 응답
+  √  넘긴 시각이 그대로 반영된다
+  √  id를 함께 알린다
+
+□ 2. Auth
+└ 로그인
+  POST http://localhost:18080/api/auth/login [200 OK, 439B, 21ms]
+  √  200 응답
+  √  로그인한 사용자를 돌려준다
+  √  응답에 password가 없다
+
+□ 3. Channel
+└ Public Channel 생성
+  POST http://localhost:18080/api/channels/public [201 Created, 400B, 8ms]
+  √  201 응답
+  √  PUBLIC 타입이다
+
+└ Private Channel 생성
+  POST http://localhost:18080/api/channels/private [201 Created, 442B, 25ms]
+  √  201 응답
+  √  PRIVATE 타입이다
+  √  참여자 2명이 담긴다
+
+└ User가 참여 중인 Channel 목록 조회
+  GET http://localhost:18080/api/channels?userId=a88c1998-52dc-4d49-8061-6f02b6eb24dc [200 OK, 547B, 20ms]
+  √  200 응답
+  √  공개 채널이 보인다
+  √  참여 중인 비공개 채널이 보인다
+
+└ Channel 정보 수정
+  PATCH http://localhost:18080/api/channels/6241222c-86d6-4c73-b36b-2d5171bc93f2 [200 OK, 328B, 10ms]
+  √  200 응답
+  √  이름이 바뀐다
+
+□ 4. Message
+└ Message 생성 (첨부 포함)
+  POST http://localhost:18080/api/messages [201 Created, 567B, 25ms]
+  √  201 응답
+  √  첨부가 1개 등록된다
+
+└ Message 생성 (첨부 없음)
+  POST http://localhost:18080/api/messages [201 Created, 522B, 26ms]
+  √  201 응답
+  √  첨부가 없으면 빈 배열
+
+└ Channel의 Message 목록 조회
+  GET http://localhost:18080/api/messages?channelId=a731c75a-e1af-4e47-82bd-2a51604e7291 [200 OK, 794B, 24ms]
+  √  200 응답
+  √  메시지 2건이 조회된다
+
+└ Message 내용 수정
+  PATCH http://localhost:18080/api/messages/3f05b563-a348-43bf-a4ec-bc9fe0125eb9 [200 OK, 486B, 7ms]
+  √  200 응답
+  √  내용이 바뀐다
+  √  updatedAt이 createdAt보다 뒤다
+
+□ 5. ReadStatus
+└ Message 읽음 상태 생성
+  POST http://localhost:18080/api/readStatuses [201 Created, 505B, 16ms]
+  √  201 응답
+  √  Location이 만들어진 읽음 상태를 가리킨다
+  √  넘긴 시각이 그대로 저장된다
+
+└ User의 Message 읽음 상태 목록 조회
+  GET http://localhost:18080/api/readStatuses?userId=a88c1998-52dc-4d49-8061-6f02b6eb24dc [200 OK, 717B, 11ms]
+  √  200 응답
+  √  모든 항목이 id를 가진다
+  √  방금 만든 읽음 상태가 있다
+
+└ Message 읽음 상태 수정
+  PATCH http://localhost:18080/api/readStatuses/dc60d586-3316-45ef-9bbb-53a40fedd659 [200 OK, 434B, 6ms]
+  √  200 응답
+  √  넘긴 시각이 그대로 반영된다
+
+□ 6. BinaryContent
+└ 첨부 파일 조회
+  GET http://localhost:18080/api/binaryContents/3b8de49c-94f2-44fc-9ac6-5c237e65f5cc [200 OK, 429B, 13ms]
+  √  200 응답
+  √  파일 이름이 담긴다
+  √  MIME 타입이 담긴다
+  √  내용이 base64로 담긴다
+
+└ 여러 첨부 파일 조회
+  GET http://localhost:18080/api/binaryContents?binaryContentIds=3b8de49c-94f2-44fc-9ac6-5c237e65f5cc [200 OK, 431B, 3ms]
+  √  200 응답
+  √  요청한 개수만큼 온다
+
+□ 7. 실패 응답
+└ 검증 실패 → 400
+  POST http://localhost:18080/api/users [400 Bad Request, 517B, 8ms]
+  √  400 응답
+  √  실패한 필드를 하나씩 알려준다
+
+└ username 중복 → 409
+  POST http://localhost:18080/api/users [409 Conflict, 345B, 17ms]
+  √  409 응답
+
+└ 비밀번호 불일치 → 401
+  POST http://localhost:18080/api/auth/login [401 Unauthorized, 331B, 4ms]
+  √  401 응답
+
+└ 없는 username 로그인 → 401
+  POST http://localhost:18080/api/auth/login [401 Unauthorized, 320B, 4ms]
+  √  401 응답
+
+└ Private Channel 수정 → 409
+  PATCH http://localhost:18080/api/channels/a731c75a-e1af-4e47-82bd-2a51604e7291 [409 Conflict, 375B, 3ms]
+  √  409 응답
+
+└ 없는 Message 수정 → 404
+  PATCH http://localhost:18080/api/messages/00000000-0000-0000-0000-000000000000 [404 Not Found, 354B, 3ms]
+  √  404 응답
+
+└ 없는 첨부 파일 조회 → 404
+  GET http://localhost:18080/api/binaryContents/00000000-0000-0000-0000-000000000000 [404 Not Found, 360B, 2ms]
+  √  404 응답
+
+□ 8. 정리
+└ Message 삭제
+  DELETE http://localhost:18080/api/messages/3f05b563-a348-43bf-a4ec-bc9fe0125eb9 [204 No Content, 112B, 18ms]
+  √  204 응답
+  √  본문이 없다
+
+└ Channel 삭제 (public)
+  DELETE http://localhost:18080/api/channels/6241222c-86d6-4c73-b36b-2d5171bc93f2 [204 No Content, 112B, 14ms]
+  √  204 응답
+
+└ Channel 삭제 (private)
+  DELETE http://localhost:18080/api/channels/a731c75a-e1af-4e47-82bd-2a51604e7291 [204 No Content, 112B, 13ms]
+  √  204 응답
+
+└ User 삭제 (author)
+  DELETE http://localhost:18080/api/users/a88c1998-52dc-4d49-8061-6f02b6eb24dc [204 No Content, 112B, 13ms]
+  √  204 응답
+
+└ User 삭제 (participant)
+  DELETE http://localhost:18080/api/users/dbed3c90-6b64-41d3-8bdd-ecc71cc642e5 [204 No Content, 112B, 5ms]
+  √  204 응답
+
+└ 없는 User 삭제 → 404
+  DELETE http://localhost:18080/api/users/00000000-0000-0000-0000-000000000000 [404 Not Found, 351B, 2ms]
+  √  404 응답
+
+┌─────────────────────────┬──────────────────┬──────────────────┐
+│                         │         executed │           failed │
+├─────────────────────────┼──────────────────┼──────────────────┤
+│              iterations │                1 │                0 │
+├─────────────────────────┼──────────────────┼──────────────────┤
+│                requests │               32 │                0 │
+├─────────────────────────┼──────────────────┼──────────────────┤
+│            test-scripts │               32 │                0 │
+├─────────────────────────┼──────────────────┼──────────────────┤
+│      prerequest-scripts │               32 │                0 │
+├─────────────────────────┼──────────────────┼──────────────────┤
+│              assertions │               66 │                0 │
+├─────────────────────────┴──────────────────┴──────────────────┤
+│ total run duration: 3s                                        │
+├───────────────────────────────────────────────────────────────┤
+│ total data received: 7.55kB (approx)                          │
+├───────────────────────────────────────────────────────────────┤
+│ average response time: 14ms [min: 2ms, max: 53ms, s.d.: 11ms] │
+└───────────────────────────────────────────────────────────────┘

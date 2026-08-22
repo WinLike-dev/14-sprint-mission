@@ -1,7 +1,34 @@
+# Railway 같은 PaaS는 사용할 포트를 PORT 환경 변수로 알려준다.
+# 그 값에 바인딩하지 않으면 헬스 체크가 닿지 못해 배포가 실패한다.
+server:
+  port: ${PORT:8080}
+
 spring:
   application:
     name: discodeit
 
+  # 프로필 이미지와 메시지 첨부파일을 multipart로 받는다.
+  # 기본값(파일 1MB, 요청 10MB)은 이미지 한 장에도 걸리기 쉬워 올려둔다.
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 30MB
+
 discodeit:
   repository:
+    # 저장소 구현체 선택: jcf | file
+    # 값을 바꾸면 Java 코드 수정 없이 저장 기술이 교체된다.
+    # 설정이 누락되면 file로 fallback하고, 허용되지 않은 값이면 기동 단계에서 실패한다(fail-fast).
+    type: ${DISCODEIT_REPOSITORY_TYPE:file}
+    # type=file 일 때 사용할 데이터 루트 경로. 누락 시 data로 fallback한다.
     data-root: ${DISCODEIT_DATA_ROOT:data}
+
+springdoc:
+  # OpenAPI 문서(JSON) 경로. oasdiff로 제공 스펙과 비교할 때 이 경로를 사용한다.
+  api-docs:
+    path: /v3/api-docs
+  # Swagger UI 경로. 브라우저에서 API를 직접 호출해볼 수 있다.
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: alpha
+    tags-sorter: alpha
