@@ -9,6 +9,7 @@ version = '0.0.1-SNAPSHOT'
 
 def lombokVersion = '1.18.46'
 def springdocVersion = '2.7.0'
+def mapstructVersion = '1.6.3'
 
 repositories {
     mavenCentral()
@@ -24,9 +25,13 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:${springdocVersion}"
+    implementation "org.mapstruct:mapstruct:${mapstructVersion}"
 
     compileOnly "org.projectlombok:lombok:${lombokVersion}"
+
     annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
+    annotationProcessor "org.mapstruct:mapstruct-processor:${mapstructVersion}"
+    annotationProcessor 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
 
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
 

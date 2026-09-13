@@ -1,6 +1,6 @@
 package com.sprint.mission.discodeit.user.adapter.in.rest.user;
 
-import com.sprint.mission.discodeit.common.exception.UploadedFileReadException;
+import com.sprint.mission.discodeit.user.adapter.in.rest.status.UserStatusRestMapper;
 import com.sprint.mission.discodeit.user.adapter.in.rest.status.dto.request.UserStatusUpdateRequest;
 import com.sprint.mission.discodeit.user.adapter.in.rest.status.dto.response.UserStatusDto;
 import com.sprint.mission.discodeit.user.adapter.in.rest.user.dto.request.UserCreateRequest;
@@ -10,7 +10,6 @@ import com.sprint.mission.discodeit.user.application.status.UserStatusController
 import com.sprint.mission.discodeit.user.application.user.UserControllerService;
 import com.sprint.mission.discodeit.user.application.user.dto.CreateUserCommand;
 import com.sprint.mission.discodeit.user.application.user.dto.UpdateUserCommand;
-import com.sprint.mission.discodeit.user.application.user.dto.UserProfileCommand;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -33,7 +32,6 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.net.URI;
 import java.util.List;
 import java.util.UUID;
@@ -50,6 +48,8 @@ public class UserController {
 
     private final UserControllerService userService;
     private final UserStatusControllerService userStatusService;
+    private final UserRestMapper userMapper;
+    private final UserStatusRestMapper userStatusMapper;
 
     // 프로필 이미지를 함께 받을 수 있으므로 multipart로 받는다.
     // 201과 함께 Location으로 만들어진 리소스의 위치를 알려준다.
@@ -76,15 +76,20 @@ public class UserController {
             @Valid @RequestPart("userCreateRequest") UserCreateRequest request,
             @RequestPart(value = "profile", required = false) MultipartFile profile
     ) {
-        UserDto created = UserDto.from(userService.create(toCreateCommand(request, profile)));
-        return ResponseEntity.created(URI.create("/api/users/" + created.id())).body(created);
+        CreateUserCommand command = userMapper.toCommand(request, profile);
+        UserDto created = userMapper.toResponse(userService.create(command));
+
+        return ResponseEntity
+                .created(URI.create("/api/users/" + created.id()))
+                .body(created);
     }
 
     @Operation(summary = "전체 User 목록 조회")
     @ApiResponse(responseCode = "200", description = "User 목록 조회 성공")
     @GetMapping
     public ResponseEntity<List<UserDto>> findAll() {
-        return ResponseEntity.ok(userService.findAll().stream().map(UserDto::from).toList());
+        List<UserDto> responses = userMapper.toResponses(userService.findAll());
+        return ResponseEntity.ok(responses);
     }
 
     @Operation(summary = "User 정보 수정")
@@ -112,8 +117,11 @@ public class UserController {
             @Valid @RequestPart("userUpdateRequest") UserUpdateRequest request,
             @RequestPart(value = "profile", required = false) MultipartFile profile
     ) {
-        UpdateUserCommand command = toUpdateCommand(request, profile);
-        return ResponseEntity.ok(UserDto.from(userService.update(userId, command)));
+        UpdateUserCommand command = userMapper.toCommand(request, profile);
+        UserDto response = userMapper.toResponse(
+                userService.update(userId, command)
+        );
+        return ResponseEntity.ok(response);
     }
 
     @Operation(summary = "User 삭제")
@@ -155,41 +163,10 @@ public class UserController {
             @Parameter(description = "상태를 변경할 User ID") @PathVariable UUID userId,
             @Valid @RequestBody UserStatusUpdateRequest request
     ) {
-        return ResponseEntity.ok(userStatusService.update(userId, request.newLastActiveAt()));
-    }
-
-    private CreateUserCommand toCreateCommand(UserCreateRequest request, MultipartFile profile) {
-        return new CreateUserCommand(
-                request.username(),
-                request.email(),
-                request.password(),
-                toProfileCommand(profile)
+        return ResponseEntity.ok(
+                userStatusMapper.toResponse(
+                        userStatusService.update(userId, request.newLastActiveAt())
+                )
         );
-    }
-
-    private UpdateUserCommand toUpdateCommand(UserUpdateRequest request, MultipartFile profile) {
-        return new UpdateUserCommand(
-                request.newUsername(),
-                request.newEmail(),
-                request.newPassword(),
-                toProfileCommand(profile)
-        );
-    }
-
-    // 프로필 파트는 선택 항목이다. 없으면 null을 넘겨 "프로필 없음"(등록) 또는
-    // "기존 프로필 유지"(수정)를 뜻하게 한다. 파트 이름만 오고 내용이 비어 있어도 같게 본다.
-    private UserProfileCommand toProfileCommand(MultipartFile profile) {
-        if (profile == null || profile.isEmpty()) {
-            return null;
-        }
-        try {
-            return new UserProfileCommand(
-                    profile.getOriginalFilename(),
-                    profile.getContentType(),
-                    profile.getBytes()
-            );
-        } catch (IOException exception) {
-            throw new UploadedFileReadException("프로필 이미지를 읽지 못했습니다.", exception);
-        }
     }
 }

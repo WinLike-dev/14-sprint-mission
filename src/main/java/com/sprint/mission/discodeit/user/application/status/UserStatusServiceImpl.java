@@ -1,6 +1,6 @@
 package com.sprint.mission.discodeit.user.application.status;
 
-import com.sprint.mission.discodeit.user.adapter.in.rest.status.dto.response.UserStatusDto;
+import com.sprint.mission.discodeit.user.application.status.dto.UserStatusResult;
 import com.sprint.mission.discodeit.user.domain.status.UserStatus;
 import com.sprint.mission.discodeit.common.exception.EntityNotFoundException;
 import com.sprint.mission.discodeit.user.application.port.out.UserStatusRepository;
@@ -22,24 +22,24 @@ public class UserStatusServiceImpl implements UserStatusControllerService {
 
     private final UserStatusRepository userStatusRepository;
 
-    // 특정 사용자의 온라인 상태를 조회하여 DTO로 반환한다.
+    // 특정 사용자의 온라인 상태를 조회하여 결과 모델로 반환한다.
     @Override
-    public UserStatusDto find(UUID userId) {
-        return UserStatusDto.from(getStatusByUserId(userId));
+    public UserStatusResult find(UUID userId) {
+        return UserStatusResult.from(getStatusByUserId(userId));
     }
 
-    // 모든 사용자의 온라인 상태를 조회하여 DTO 리스트로 반환한다.
+    // 모든 사용자의 온라인 상태를 조회하여 결과 모델 목록으로 반환한다.
     @Override
-    public List<UserStatusDto> findAll() {
-        return userStatusRepository.findAll().stream().map(UserStatusDto::from).toList();
+    public List<UserStatusResult> findAll() {
+        return userStatusRepository.findAll().stream().map(UserStatusResult::from).toList();
     }
 
     // 사용자의 마지막 활동 시각을 현재 시각으로 갱신하고, 갱신된 상태를 반환한다.
     @Override
-    public UserStatusDto update(UUID userId, Instant newLastActiveAt) {
+    public UserStatusResult update(UUID userId, Instant newLastActiveAt) {
         UserStatus status = getStatusByUserId(userId);
         status.updateLastActiveAt(newLastActiveAt);
-        return UserStatusDto.from(userStatusRepository.update(status));
+        return UserStatusResult.from(userStatusRepository.update(status));
     }
 
     // userId로 UserStatus를 찾는 내부 헬퍼 메서드. 없으면 예외를 던진다.

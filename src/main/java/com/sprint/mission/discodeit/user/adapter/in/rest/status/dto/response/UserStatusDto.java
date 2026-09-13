@@ -1,7 +1,5 @@
 package com.sprint.mission.discodeit.user.adapter.in.rest.status.dto.response;
 
-import com.sprint.mission.discodeit.user.domain.status.UserStatus;
-
 import java.time.Instant;
 import java.util.UUID;
 
@@ -17,14 +15,4 @@ public record UserStatusDto(
         Instant lastActiveAt,
         boolean online
 ) {
-    public static UserStatusDto from(UserStatus status) {
-        return new UserStatusDto(
-                status.getId(),
-                status.getCreatedAt(),
-                status.getUpdatedAt(),
-                status.getUserId(),
-                status.getLastActiveAt(),
-                status.isOnline()
-        );
-    }
 }

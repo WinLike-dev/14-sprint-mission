@@ -31,6 +31,7 @@ import java.util.UUID;
 public class BinaryContentController {
 
     private final ContentControllerService contentService;
+    private final BinaryContentRestMapper contentMapper;
 
     @Operation(summary = "첨부 파일 조회")
     @ApiResponses({
@@ -45,7 +46,9 @@ public class BinaryContentController {
     public ResponseEntity<BinaryContentDto> find(
             @Parameter(description = "조회할 첨부 파일 ID") @PathVariable UUID binaryContentId
     ) {
-        return ResponseEntity.ok(contentService.find(binaryContentId));
+        return ResponseEntity.ok(
+                contentMapper.toResponse(contentService.find(binaryContentId))
+        );
     }
 
     @Operation(summary = "여러 첨부 파일 조회")
@@ -55,6 +58,8 @@ public class BinaryContentController {
             @Parameter(description = "조회할 첨부 파일 ID 목록")
             @RequestParam List<UUID> binaryContentIds
     ) {
-        return ResponseEntity.ok(contentService.findAllByIdIn(binaryContentIds));
+        return ResponseEntity.ok(
+                contentMapper.toResponses(contentService.findAllByIdIn(binaryContentIds))
+        );
     }
 }

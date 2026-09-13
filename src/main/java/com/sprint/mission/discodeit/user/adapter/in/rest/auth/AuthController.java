@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import com.sprint.mission.discodeit.user.application.auth.AuthControllerService;
 import com.sprint.mission.discodeit.user.adapter.in.rest.auth.dto.request.LoginRequest;
 import com.sprint.mission.discodeit.user.adapter.in.rest.user.dto.response.UserDto;
+import com.sprint.mission.discodeit.user.adapter.in.rest.user.UserRestMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -27,6 +28,8 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final AuthControllerService authService;
+    private final AuthRestMapper authMapper;
+    private final UserRestMapper userMapper;
 
     // 존재하지 않는 username과 틀린 password를 구분해 알리지 않는다.
     // 둘을 나누면 어떤 username이 등록되어 있는지 알려주는 셈이 된다.
@@ -46,6 +49,10 @@ public class AuthController {
     })
     @PostMapping("/login")
     public ResponseEntity<UserDto> login(@Valid @RequestBody LoginRequest request) {
-        return ResponseEntity.ok(UserDto.from(authService.login(request)));
+        return ResponseEntity.ok(
+                userMapper.toResponse(
+                        authService.login(authMapper.toCommand(request))
+                )
+        );
     }
 }

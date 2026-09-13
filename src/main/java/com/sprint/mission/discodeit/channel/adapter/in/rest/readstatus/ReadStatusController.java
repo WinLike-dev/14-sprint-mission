@@ -40,6 +40,7 @@ import java.util.UUID;
 public class ReadStatusController {
 
     private final ReadStatusControllerService readStatusService; // 실제 비즈니스 로직을 처리하는 서비스
+    private final ReadStatusRestMapper readStatusMapper;
 
     // Location은 만들어진 읽음 상태를 가리킨다. 그 URI로 PATCH가 동작한다.
     @Operation(summary = "Message 읽음 상태 생성")
@@ -69,8 +70,8 @@ public class ReadStatusController {
     public ResponseEntity<ReadStatusDto> create(
             @Valid @RequestBody ReadStatusCreateRequest request
     ) {
-        ReadStatusDto created = readStatusService.create(
-                request.userId(), request.channelId(), request.lastReadAt()
+        ReadStatusDto created = readStatusMapper.toResponse(
+                readStatusService.create(readStatusMapper.toCommand(request))
         );
         return ResponseEntity
                 .created(URI.create("/api/readStatuses/" + created.id()))
@@ -83,7 +84,9 @@ public class ReadStatusController {
     public ResponseEntity<List<ReadStatusDto>> findAllByUserId(
             @Parameter(description = "조회할 User ID") @RequestParam UUID userId
     ) {
-        return ResponseEntity.ok(readStatusService.findAllByUserId(userId));
+        return ResponseEntity.ok(
+                readStatusMapper.toResponses(readStatusService.findAllByUserId(userId))
+        );
     }
 
     @Operation(summary = "Message 읽음 상태 수정")
@@ -108,8 +111,12 @@ public class ReadStatusController {
             @Parameter(description = "수정할 읽음 상태 ID") @PathVariable UUID readStatusId,
             @Valid @RequestBody ReadStatusUpdateRequest request
     ) {
-        ReadStatusDto updated =
-                readStatusService.updateLastReadAt(readStatusId, request.newLastReadAt());
+        ReadStatusDto updated = readStatusMapper.toResponse(
+                readStatusService.updateLastReadAt(
+                        readStatusId,
+                        readStatusMapper.toCommand(request)
+                )
+        );
         return ResponseEntity.ok(updated);
     }
 }

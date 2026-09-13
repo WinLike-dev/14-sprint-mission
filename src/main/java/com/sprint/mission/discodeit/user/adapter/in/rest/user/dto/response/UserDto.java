@@ -1,7 +1,5 @@
 package com.sprint.mission.discodeit.user.adapter.in.rest.user.dto.response;
 
-import com.sprint.mission.discodeit.user.application.user.dto.UserResult;
-
 import java.time.Instant;
 import java.util.UUID;
 
@@ -19,15 +17,4 @@ public record UserDto(
         UUID profileId,
         boolean online
 ) {
-    public static UserDto from(UserResult result) {
-        return new UserDto(
-                result.id(),
-                result.createdAt(),
-                result.updatedAt(),
-                result.username(),
-                result.email(),
-                result.profileId(),
-                result.online()
-        );
-    }
 }

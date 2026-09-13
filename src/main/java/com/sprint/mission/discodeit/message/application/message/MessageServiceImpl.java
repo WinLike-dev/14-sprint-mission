@@ -2,8 +2,8 @@ package com.sprint.mission.discodeit.message.application.message;
 
 import com.sprint.mission.discodeit.message.application.message.dto.CreateMessageCommand;
 import com.sprint.mission.discodeit.message.application.message.dto.MessageAttachmentCommand;
-import com.sprint.mission.discodeit.message.adapter.in.rest.message.dto.request.MessageUpdateRequest;
-import com.sprint.mission.discodeit.message.adapter.in.rest.message.dto.response.MessageDto;
+import com.sprint.mission.discodeit.message.application.message.dto.MessageResult;
+import com.sprint.mission.discodeit.message.application.message.dto.UpdateMessageCommand;
 import com.sprint.mission.discodeit.message.domain.message.Message;
 import com.sprint.mission.discodeit.message.application.port.out.MessageRepository;
 import com.sprint.mission.discodeit.message.application.port.out.MessageAuthorReader;
@@ -36,7 +36,7 @@ public class MessageServiceImpl implements MessageControllerService {
 
     // 새 메시지를 생성한다. 채널/작성자 존재 확인 후 첨부파일을 먼저 저장하고, 메시지를 저장한다.
     @Override
-    public MessageDto create(CreateMessageCommand command) {
+    public MessageResult create(CreateMessageCommand command) {
         CreateMessageCommand target = Objects.requireNonNull(command);
         channelReader.requireExists(target.channelId());   // 채널이 존재하지 않으면 예외 발생
         authorReader.requireExists(target.authorId());     // 작성자가 존재하지 않으면 예외 발생
@@ -52,7 +52,7 @@ public class MessageServiceImpl implements MessageControllerService {
             Events.raise(new ChannelMessageChangedEvent(
                     created.getChannelId(), created.getCreatedAt()
             ));
-            return MessageDto.from(created);
+            return MessageResult.from(created);
         } catch (RuntimeException exception) {
             // 메시지 저장 실패 시 이미 저장된 메시지와 첨부파일을 정리(보상 로직)한다
             if (created != null && messageRepository.existsById(created.getId())) {
@@ -69,19 +69,19 @@ public class MessageServiceImpl implements MessageControllerService {
 
     // 특정 채널의 모든 메시지를 조회한다
     @Override
-    public List<MessageDto> findAllByChannelId(UUID channelId) {
+    public List<MessageResult> findAllByChannelId(UUID channelId) {
         channelReader.requireExists(channelId); // 채널 존재 여부 먼저 확인
         return messageRepository.findAllByChannelId(channelId).stream()
-                .map(MessageDto::from)
+                .map(MessageResult::from)
                 .toList();
     }
 
     // 메시지 내용을 수정한다
     @Override
-    public MessageDto update(UUID id, MessageUpdateRequest request) {
+    public MessageResult update(UUID id, UpdateMessageCommand command) {
         Message message = messageRepository.getById(id);
-        message.update(Objects.requireNonNull(request).newContent());
-        return MessageDto.from(messageRepository.update(message));
+        message.update(Objects.requireNonNull(command).content());
+        return MessageResult.from(messageRepository.update(message));
     }
 
     // 메시지를 삭제하고, 채널에 메시지 변경 이벤트를 발행한다

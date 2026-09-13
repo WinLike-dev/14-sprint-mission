@@ -1,17 +1,19 @@
 package com.sprint.mission.discodeit.integration;
 
 import com.sprint.mission.discodeit.message.application.message.dto.MessageAttachmentCommand;
-import com.sprint.mission.discodeit.user.adapter.in.rest.auth.dto.request.LoginRequest;
+import com.sprint.mission.discodeit.user.application.auth.dto.LoginCommand;
 import com.sprint.mission.discodeit.message.application.message.dto.CreateMessageCommand;
-import com.sprint.mission.discodeit.channel.adapter.in.rest.channel.dto.request.PrivateChannelCreateRequest;
-import com.sprint.mission.discodeit.channel.adapter.in.rest.channel.dto.request.PublicChannelCreateRequest;
-import com.sprint.mission.discodeit.channel.adapter.in.rest.channel.dto.response.ChannelDto;
-import com.sprint.mission.discodeit.message.adapter.in.rest.message.dto.response.MessageDto;
-import com.sprint.mission.discodeit.channel.adapter.in.rest.readstatus.dto.response.ReadStatusDto;
+import com.sprint.mission.discodeit.channel.application.channel.dto.ChannelResult;
+import com.sprint.mission.discodeit.channel.application.channel.dto.CreatePrivateChannelCommand;
+import com.sprint.mission.discodeit.channel.application.channel.dto.CreatePublicChannelCommand;
+import com.sprint.mission.discodeit.message.application.message.dto.MessageResult;
+import com.sprint.mission.discodeit.channel.application.readstatus.dto.CreateReadStatusCommand;
+import com.sprint.mission.discodeit.channel.application.readstatus.dto.ReadStatusResult;
+import com.sprint.mission.discodeit.channel.application.readstatus.dto.UpdateReadStatusCommand;
 import com.sprint.mission.discodeit.user.application.user.dto.CreateUserCommand;
 import com.sprint.mission.discodeit.user.application.user.dto.UserProfileCommand;
 import com.sprint.mission.discodeit.user.application.user.dto.UserResult;
-import com.sprint.mission.discodeit.user.adapter.in.rest.status.dto.response.UserStatusDto;
+import com.sprint.mission.discodeit.user.application.status.dto.UserStatusResult;
 import com.sprint.mission.discodeit.common.exception.DuplicateRequestValueException;
 import com.sprint.mission.discodeit.common.exception.EntityNotFoundException;
 import com.sprint.mission.discodeit.channel.domain.readstatus.exception.ReadStatusCreationNotAllowedException;
@@ -142,32 +144,32 @@ class ServiceWorkflowTest {
                 new CreateUserCommand("participant", "participant@example.com", "password", null)
         );
 
-        UserStatusDto foundStatus = userStatusControllerService.find(author.id());
+        UserStatusResult foundStatus = userStatusControllerService.find(author.id());
         assertEquals(author.id(), foundStatus.userId());
 
         Instant newLastActiveAt = foundStatus.lastActiveAt().plusSeconds(60);
-        UserStatusDto updatedStatus =
+        UserStatusResult updatedStatus =
                 userStatusControllerService.update(author.id(), newLastActiveAt);
         assertEquals(author.id(), updatedStatus.userId());
         assertEquals(newLastActiveAt, updatedStatus.lastActiveAt());
 
         Instant beforeLogin = Instant.now();
         assertEquals(author.id(), authControllerService.login(
-                new LoginRequest("author", "password")
+                new LoginCommand("author", "password")
         ).id());
         Instant afterLogin = Instant.now();
-        UserStatusDto loginStatus = UserStatusDto.from(
+        UserStatusResult loginStatus = UserStatusResult.from(
                 userStatusRepository.findByUserId(author.id()).orElseThrow()
         );
         assertFalse(loginStatus.lastActiveAt().isBefore(beforeLogin));
         assertFalse(loginStatus.lastActiveAt().isAfter(afterLogin));
 
-        ChannelDto channel = channelControllerService.createPrivate(
-                new PrivateChannelCreateRequest(List.of(author.id(), participant.id()))
+        ChannelResult channel = channelControllerService.createPrivate(
+                new CreatePrivateChannelCommand(List.of(author.id(), participant.id()))
         );
         assertEquals(2, channel.participantIds().size());
 
-        MessageDto message = messageControllerService.create(
+        MessageResult message = messageControllerService.create(
                 new CreateMessageCommand(
                         "hello",
                         channel.id(),
@@ -181,12 +183,12 @@ class ServiceWorkflowTest {
         assertEquals(1, message.attachmentIds().size());
         assertNotNull(channelControllerService.find(channel.id()).lastMessageAt());
 
-        ReadStatusDto foundReadStatus = readStatusControllerService.find(
+        ReadStatusResult foundReadStatus = readStatusControllerService.find(
                 author.id(), channel.id()
         );
         Instant newLastReadAt = foundReadStatus.lastReadAt().plusSeconds(60);
-        ReadStatusDto updatedReadStatus = readStatusControllerService.updateLastReadAt(
-                foundReadStatus.id(), newLastReadAt
+        ReadStatusResult updatedReadStatus = readStatusControllerService.updateLastReadAt(
+                foundReadStatus.id(), new UpdateReadStatusCommand(newLastReadAt)
         );
         assertEquals(newLastReadAt, updatedReadStatus.lastReadAt());
 
@@ -219,7 +221,7 @@ class ServiceWorkflowTest {
             assertThrows(
                     DuplicateRequestValueException.class,
                     () -> channelControllerService.createPrivate(
-                            new PrivateChannelCreateRequest(
+                            new CreatePrivateChannelCommand(
                                     List.of(participant.id(), participant.id())
                             )
                     )
@@ -279,16 +281,16 @@ class ServiceWorkflowTest {
                         null
                 )
         );
-        ChannelDto channel = channelControllerService.createPrivate(
-                new PrivateChannelCreateRequest(List.of(participant.id()))
+        ChannelResult channel = channelControllerService.createPrivate(
+                new CreatePrivateChannelCommand(List.of(participant.id()))
         );
 
         try {
             assertThrows(
                     ReadStatusCreationNotAllowedException.class,
-                    () -> readStatusControllerService.create(
+                    () -> readStatusControllerService.create(new CreateReadStatusCommand(
                             participant.id(), channel.id(), Instant.now()
-                    )
+                    ))
             );
         } finally {
             channelControllerService.delete(channel.id());
@@ -307,13 +309,15 @@ class ServiceWorkflowTest {
                         null
                 )
         );
-        ChannelDto channel = channelControllerService.createPublic(
-                new PublicChannelCreateRequest(
+        ChannelResult channel = channelControllerService.createPublic(
+                new CreatePublicChannelCommand(
                         "event-channel-" + suffix,
                         "event cleanup test"
                 )
         );
-        readStatusControllerService.create(user.id(), channel.id(), Instant.now());
+        readStatusControllerService.create(new CreateReadStatusCommand(
+                user.id(), channel.id(), Instant.now()
+        ));
 
         userControllerService.delete(user.id());
 
@@ -332,13 +336,13 @@ class ServiceWorkflowTest {
                         null
                 )
         );
-        ChannelDto channel = channelControllerService.createPublic(
-                new PublicChannelCreateRequest(
+        ChannelResult channel = channelControllerService.createPublic(
+                new CreatePublicChannelCommand(
                         "message-event-" + suffix,
                         "message projection test"
                 )
         );
-        MessageDto message = messageControllerService.create(
+        MessageResult message = messageControllerService.create(
                 new CreateMessageCommand(
                         "event message", channel.id(), author.id(), List.of()
                 )

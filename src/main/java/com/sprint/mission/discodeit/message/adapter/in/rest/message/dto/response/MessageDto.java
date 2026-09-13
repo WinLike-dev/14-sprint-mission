@@ -1,7 +1,5 @@
 package com.sprint.mission.discodeit.message.adapter.in.rest.message.dto.response;
 
-import com.sprint.mission.discodeit.message.domain.message.Message;
-
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -26,16 +24,4 @@ public record MessageDto(
         attachmentIds = List.copyOf(attachmentIds);
     }
 
-    // Message 도메인 엔티티를 MessageDto로 변환하는 팩토리 메서드
-    public static MessageDto from(Message message) {
-        return new MessageDto(
-                message.getId(),
-                message.getCreatedAt(),
-                message.getUpdatedAt(),
-                message.getContent(),
-                message.getChannelId(),
-                message.getAuthorId(),
-                message.getAttachmentIds()
-        );
-    }
 }

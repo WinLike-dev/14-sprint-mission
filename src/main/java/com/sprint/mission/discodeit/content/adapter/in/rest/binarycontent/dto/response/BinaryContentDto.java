@@ -1,7 +1,5 @@
 package com.sprint.mission.discodeit.content.adapter.in.rest.binarycontent.dto.response;
 
-import com.sprint.mission.discodeit.content.domain.binarycontent.BinaryContent;
-
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Objects;
@@ -25,15 +23,4 @@ public record BinaryContentDto(
         bytes = Arrays.copyOf(Objects.requireNonNull(bytes), bytes.length);
     }
 
-    // BinaryContent 도메인 엔티티를 BinaryContentDto로 변환하는 팩토리 메서드
-    public static BinaryContentDto from(BinaryContent content) {
-        return new BinaryContentDto(
-                content.getId(),
-                content.getCreatedAt(),
-                content.getFileName(),
-                content.getSize(),
-                content.getContentType(),
-                content.getBytes()
-        );
-    }
 }

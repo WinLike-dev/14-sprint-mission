@@ -1,6 +1,8 @@
 package com.sprint.mission.discodeit.channel.application.readstatus;
 
-import com.sprint.mission.discodeit.channel.adapter.in.rest.readstatus.dto.response.ReadStatusDto;
+import com.sprint.mission.discodeit.channel.application.readstatus.dto.CreateReadStatusCommand;
+import com.sprint.mission.discodeit.channel.application.readstatus.dto.ReadStatusResult;
+import com.sprint.mission.discodeit.channel.application.readstatus.dto.UpdateReadStatusCommand;
 import com.sprint.mission.discodeit.channel.domain.readstatus.ReadStatus;
 import com.sprint.mission.discodeit.channel.domain.channel.Channel;
 import com.sprint.mission.discodeit.channel.domain.channel.ChannelType;
@@ -13,7 +15,6 @@ import com.sprint.mission.discodeit.channel.application.port.out.ChannelUserRead
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -34,7 +35,10 @@ public class ReadStatusServiceImpl implements ReadStatusControllerService {
 
     // 읽음 상태 생성 (PUBLIC 채널에서만 가능, PRIVATE 채널은 채널 생성 시 자동 생성됨)
     @Override
-    public ReadStatusDto create(UUID userId, UUID channelId, Instant lastReadAt) {
+    public ReadStatusResult create(CreateReadStatusCommand command) {
+        CreateReadStatusCommand target = Objects.requireNonNull(command);
+        UUID userId = target.userId();
+        UUID channelId = target.channelId();
         Objects.requireNonNull(userId, "userId는 null일 수 없습니다.");
         Objects.requireNonNull(
                 channelId,
@@ -54,32 +58,32 @@ public class ReadStatusServiceImpl implements ReadStatusControllerService {
                     associationContext(userId, channelId)
             );
         }
-        ReadStatus status = new ReadStatus(userId, channelId, lastReadAt);
-        return ReadStatusDto.from(readStatusRepository.create(status));
+        ReadStatus status = new ReadStatus(userId, channelId, target.lastReadAt());
+        return ReadStatusResult.from(readStatusRepository.create(status));
     }
 
     // 특정 사용자 + 특정 채널의 읽음 상태를 조회
     @Override
-    public ReadStatusDto find(UUID userId, UUID channelId) {
-        return ReadStatusDto.from(getByUserIdAndChannelId(userId, channelId));
+    public ReadStatusResult find(UUID userId, UUID channelId) {
+        return ReadStatusResult.from(getByUserIdAndChannelId(userId, channelId));
     }
 
     // 특정 사용자의 모든 채널 읽음 상태를 조회
     @Override
-    public List<ReadStatusDto> findAllByUserId(UUID userId) {
+    public List<ReadStatusResult> findAllByUserId(UUID userId) {
         Objects.requireNonNull(userId, "userId는 null일 수 없습니다.");
         userReader.requireExists(userId);
         return readStatusRepository.findAllByUserId(userId).stream()
-                .map(ReadStatusDto::from)
+                .map(ReadStatusResult::from)
                 .toList();
     }
 
     // 마지막 읽음 시각을 현재 시각으로 갱신 (사용자가 채널을 확인했을 때 호출)
     @Override
-    public ReadStatusDto updateLastReadAt(UUID readStatusId, Instant newLastReadAt) {
+    public ReadStatusResult updateLastReadAt(UUID readStatusId, UpdateReadStatusCommand command) {
         ReadStatus status = readStatusRepository.getById(readStatusId);
-        status.updateLastReadAt(newLastReadAt);
-        return ReadStatusDto.from(readStatusRepository.update(status));
+        status.updateLastReadAt(Objects.requireNonNull(command).lastReadAt());
+        return ReadStatusResult.from(readStatusRepository.update(status));
     }
 
     // 읽음 상태 삭제 (사용자 + 채널 조합으로 찾아서 삭제)

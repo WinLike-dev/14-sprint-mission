@@ -1,9 +1,9 @@
 package com.sprint.mission.discodeit.channel.application.channel;
 
-import com.sprint.mission.discodeit.channel.adapter.in.rest.channel.dto.request.PublicChannelUpdateRequest;
-import com.sprint.mission.discodeit.channel.adapter.in.rest.channel.dto.request.PrivateChannelCreateRequest;
-import com.sprint.mission.discodeit.channel.adapter.in.rest.channel.dto.request.PublicChannelCreateRequest;
-import com.sprint.mission.discodeit.channel.adapter.in.rest.channel.dto.response.ChannelDto;
+import com.sprint.mission.discodeit.channel.application.channel.dto.ChannelResult;
+import com.sprint.mission.discodeit.channel.application.channel.dto.CreatePrivateChannelCommand;
+import com.sprint.mission.discodeit.channel.application.channel.dto.CreatePublicChannelCommand;
+import com.sprint.mission.discodeit.channel.application.channel.dto.UpdatePublicChannelCommand;
 import com.sprint.mission.discodeit.channel.domain.channel.Channel;
 import com.sprint.mission.discodeit.channel.domain.channel.ChannelType;
 import com.sprint.mission.discodeit.channel.domain.readstatus.ReadStatus;
@@ -41,16 +41,16 @@ public class ChannelServiceImpl implements ChannelControllerService {
 
     // 퍼블릭 채널 생성 -> 바로 저장
     @Override
-    public ChannelDto createPublic(PublicChannelCreateRequest request) {
-        PublicChannelCreateRequest target = Objects.requireNonNull(request);
+    public ChannelResult createPublic(CreatePublicChannelCommand command) {
+        CreatePublicChannelCommand target = Objects.requireNonNull(command);
         Channel channel = Channel.publicChannel(target.name(), target.description());
-        return createResponse(channelRepository.create(channel));
+        return createResult(channelRepository.create(channel));
     }
 
     // 프라이빗 채널 생성 -> 1. 참여자 명단 올바른 지 체크 2. 채널 생성 3. 읽기상태 생성
     @Override
-    public ChannelDto createPrivate(PrivateChannelCreateRequest request) {
-        List<UUID> participantIds = Objects.requireNonNull(request).participantIds();
+    public ChannelResult createPrivate(CreatePrivateChannelCommand command) {
+        List<UUID> participantIds = Objects.requireNonNull(command).participantIds();
         // set을 이용해 중복을 없게 하고, 입력 순서 유지시키기 (큰 의미는 모르겠지만 일단 디코에는 그렇게 구현되니)
         Set<UUID> uniqueParticipantIds = new LinkedHashSet<>(participantIds);
         if (uniqueParticipantIds.size() != participantIds.size()) {
@@ -67,7 +67,7 @@ public class ChannelServiceImpl implements ChannelControllerService {
                 readStatusRepository.create(status);
                 createdStatuses.add(status);
             }
-            return createResponse(channel);
+            return createResult(channel);
         } catch (RuntimeException exception) {
             // 실패했다면 저장소에 저장된 것들도 지워주는 원자성을 확보하기 위해 (다중 저장이므로 레포지토리 책임이라기에 애매함)
             for (ReadStatus status : createdStatuses) {
@@ -80,17 +80,17 @@ public class ChannelServiceImpl implements ChannelControllerService {
         }
     }
 
-    // ID로 채널을 조회하고 DTO로 변환하여 반환
+    // ID로 채널을 조회하고 application 결과로 변환하여 반환
     @Override
-    public ChannelDto find(UUID id) {
-        return createResponse(channelRepository.getById(id));
+    public ChannelResult find(UUID id) {
+        return createResult(channelRepository.getById(id));
     }
 
     // 사용자가 볼 수 있는 모든 채널을 조회 (PUBLIC 채널 전체 + 참여 중인 PRIVATE 채널)
     // 채널마다 참여자를 다시 조회하면 목록 한 번이 조회 C회로 늘어나므로(N+1),
     // ReadStatus를 한 번만 읽어 참여 채널 판별과 참여자 목록 조립에 함께 사용한다.
     @Override
-    public List<ChannelDto> findAllByUserId(UUID userId) {
+    public List<ChannelResult> findAllByUserId(UUID userId) {
         userReader.requireExists(userId);
 
         List<ReadStatus> allStatuses = readStatusRepository.findAll();
@@ -109,7 +109,7 @@ public class ChannelServiceImpl implements ChannelControllerService {
         return channelRepository.findAll().stream()
                 .filter(channel -> channel.getType() == ChannelType.PUBLIC
                         || participatedChannelIds.contains(channel.getId()))
-                .map(channel -> createResponse(
+                .map(channel -> createResult(
                         channel,
                         participantIdsByChannelId.getOrDefault(channel.getId(), List.of())
                 ))
@@ -118,16 +118,16 @@ public class ChannelServiceImpl implements ChannelControllerService {
 
     // 채널 정보 수정 (요청에 없는 필드는 기존 값 유지)
     @Override
-    public ChannelDto update(UUID id, PublicChannelUpdateRequest request) {
+    public ChannelResult update(UUID id, UpdatePublicChannelCommand command) {
         Channel channel = channelRepository.getById(id);
-        PublicChannelUpdateRequest target = Objects.requireNonNull(request);
+        UpdatePublicChannelCommand target = Objects.requireNonNull(command);
         channel.update(
                 target.newName() == null ? channel.getName() : target.newName(),
                 target.newDescription() == null
                         ? channel.getDescription()
                         : target.newDescription()
         );
-        return createResponse(channelRepository.update(channel));
+        return createResult(channelRepository.update(channel));
     }
 
     @Override
@@ -139,20 +139,20 @@ public class ChannelServiceImpl implements ChannelControllerService {
     }
 
     // 단건 조회 경로: 해당 채널의 ReadStatus만 조회한다.
-    private ChannelDto createResponse(Channel channel) {
+    private ChannelResult createResult(Channel channel) {
         List<UUID> participantIds = channel.getType() == ChannelType.PRIVATE
                 ? readStatusRepository.findAllByChannelId(channel.getId()).stream()
                 .map(ReadStatus::getUserId)
                 .toList()
                 : List.of();
-        return createResponse(channel, participantIds);
+        return createResult(channel, participantIds);
     }
 
-    // Channel 엔티티를 ChannelDto로 변환하는 헬퍼 메서드.
+    // Channel 엔티티를 application 결과로 변환하는 헬퍼 메서드.
     // 조회 전략은 호출 경로에 따라 다르지만 변환 규칙은 이 메서드 한 벌로 유지한다.
-    private ChannelDto createResponse(Channel channel, List<UUID> participantIds) {
+    private ChannelResult createResult(Channel channel, List<UUID> participantIds) {
         // private면 참여자 ID 받고 public이면 빈값을 보낸다.
-        return ChannelDto.from(
+        return ChannelResult.from(
                 channel,
                 channel.getType() == ChannelType.PRIVATE ? participantIds : List.of()
         );

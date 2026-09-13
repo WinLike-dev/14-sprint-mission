@@ -1,6 +1,6 @@
 package com.sprint.mission.discodeit.user.application.auth;
 
-import com.sprint.mission.discodeit.user.adapter.in.rest.auth.dto.request.LoginRequest;
+import com.sprint.mission.discodeit.user.application.auth.dto.LoginCommand;
 import com.sprint.mission.discodeit.common.exception.EntityNotFoundException;
 import com.sprint.mission.discodeit.user.application.user.dto.UserResult;
 import com.sprint.mission.discodeit.user.domain.user.User;
@@ -28,8 +28,8 @@ public class AuthServiceImpl implements AuthControllerService {
 
     // 로그인 처리: username과 password가 일치하는 사용자를 찾고, 활동 시각을 갱신한 뒤 DTO를 반환한다.
     @Override
-    public UserResult login(LoginRequest request) { // valid 를 넣어서
-        LoginRequest target = Objects.requireNonNull(request);
+    public UserResult login(LoginCommand command) {
+        LoginCommand target = Objects.requireNonNull(command);
         // username와 password 모두 일치하는 유저 찾기 -> 없으면 인증 실패 예외 발생
         User user = userRepository.findByUsername(target.username())
                 .filter(found -> found.getPassword().equals(target.password()))

@@ -1,12 +1,9 @@
 package com.sprint.mission.discodeit.message.adapter.in.rest.message;
 
-import com.sprint.mission.discodeit.common.exception.UploadedFileReadException;
 import com.sprint.mission.discodeit.message.adapter.in.rest.message.dto.request.MessageCreateRequest;
 import com.sprint.mission.discodeit.message.adapter.in.rest.message.dto.request.MessageUpdateRequest;
 import com.sprint.mission.discodeit.message.adapter.in.rest.message.dto.response.MessageDto;
 import com.sprint.mission.discodeit.message.application.message.MessageControllerService;
-import com.sprint.mission.discodeit.message.application.message.dto.CreateMessageCommand;
-import com.sprint.mission.discodeit.message.application.message.dto.MessageAttachmentCommand;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -30,7 +27,6 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.net.URI;
 import java.util.List;
 import java.util.UUID;
@@ -47,6 +43,7 @@ import java.util.UUID;
 public class MessageController {
 
     private final MessageControllerService messageService;
+    private final MessageRestMapper messageMapper;
 
     // 첨부파일을 함께 받을 수 있으므로 multipart로 받는다.
     @Operation(summary = "Message 생성")
@@ -72,7 +69,9 @@ public class MessageController {
             @Valid @RequestPart("messageCreateRequest") MessageCreateRequest request,
             @RequestPart(value = "attachments", required = false) List<MultipartFile> attachments
     ) {
-        MessageDto created = messageService.create(toCreateCommand(request, attachments));
+        MessageDto created = messageMapper.toResponse(
+                messageService.create(messageMapper.toCommand(request, attachments))
+        );
         return ResponseEntity.created(URI.create("/api/messages/" + created.id())).body(created);
     }
 
@@ -82,7 +81,9 @@ public class MessageController {
     public ResponseEntity<List<MessageDto>> findAllByChannelId(
             @Parameter(description = "조회할 Channel ID") @RequestParam UUID channelId
     ) {
-        return ResponseEntity.ok(messageService.findAllByChannelId(channelId));
+        return ResponseEntity.ok(
+                messageMapper.toResponses(messageService.findAllByChannelId(channelId))
+        );
     }
 
     @Operation(summary = "Message 내용 수정")
@@ -104,7 +105,11 @@ public class MessageController {
             @Parameter(description = "수정할 Message ID") @PathVariable UUID messageId,
             @Valid @RequestBody MessageUpdateRequest request
     ) {
-        return ResponseEntity.ok(messageService.update(messageId, request));
+        return ResponseEntity.ok(
+                messageMapper.toResponse(
+                        messageService.update(messageId, messageMapper.toCommand(request))
+                )
+        );
     }
 
     @Operation(summary = "Message 삭제")
@@ -128,42 +133,4 @@ public class MessageController {
         return ResponseEntity.noContent().build();
     }
 
-    // JSON 파트와 파일 파트를 합쳐 유스케이스 입력을 만든다.
-    private CreateMessageCommand toCreateCommand(
-            MessageCreateRequest request,
-            List<MultipartFile> attachments
-    ) {
-        return new CreateMessageCommand(
-                request.content(),
-                request.channelId(),
-                request.authorId(),
-                toAttachmentCommands(attachments)
-        );
-    }
-
-    // 첨부 파트는 선택 항목이다. 프론트엔드는 첨부가 없으면 파트를 아예 보내지 않는다.
-    private List<MessageAttachmentCommand> toAttachmentCommands(List<MultipartFile> attachments) {
-        if (attachments == null) {
-            return List.of();
-        }
-        return attachments.stream()
-                .filter(attachment -> !attachment.isEmpty())
-                .map(MessageController::toAttachmentCommand)
-                .toList();
-    }
-
-    private static MessageAttachmentCommand toAttachmentCommand(MultipartFile attachment) {
-        try {
-            return new MessageAttachmentCommand(
-                    attachment.getOriginalFilename(),
-                    attachment.getContentType(),
-                    attachment.getBytes()
-            );
-        } catch (IOException exception) {
-            throw new UploadedFileReadException(
-                    "첨부파일을 읽지 못했습니다.",
-                    exception
-            );
-        }
-    }
 }

@@ -41,6 +41,7 @@ import java.util.UUID;
 public class ChannelController {
 
     private final ChannelControllerService channelService; // 실제 비즈니스 로직을 처리하는 서비스
+    private final ChannelRestMapper channelMapper;
 
     @Operation(summary = "Public Channel 생성")
     @ApiResponse(
@@ -52,7 +53,9 @@ public class ChannelController {
     public ResponseEntity<ChannelDto> createPublic(
             @Valid @RequestBody PublicChannelCreateRequest request
     ) {
-        ChannelDto created = channelService.createPublic(request);
+        ChannelDto created = channelMapper.toResponse(
+                channelService.createPublic(channelMapper.toCommand(request))
+        );
         return ResponseEntity.created(URI.create("/api/channels/" + created.id())).body(created);
     }
 
@@ -66,7 +69,9 @@ public class ChannelController {
     public ResponseEntity<ChannelDto> createPrivate(
             @Valid @RequestBody PrivateChannelCreateRequest request
     ) {
-        ChannelDto created = channelService.createPrivate(request);
+        ChannelDto created = channelMapper.toResponse(
+                channelService.createPrivate(channelMapper.toCommand(request))
+        );
         return ResponseEntity.created(URI.create("/api/channels/" + created.id())).body(created);
     }
 
@@ -76,7 +81,9 @@ public class ChannelController {
     public ResponseEntity<List<ChannelDto>> findAllByUserId(
             @Parameter(description = "조회할 User ID") @RequestParam UUID userId
     ) {
-        return ResponseEntity.ok(channelService.findAllByUserId(userId));
+        return ResponseEntity.ok(
+                channelMapper.toResponses(channelService.findAllByUserId(userId))
+        );
     }
 
     @Operation(summary = "Channel 정보 수정")
@@ -98,7 +105,11 @@ public class ChannelController {
             @Parameter(description = "수정할 Channel ID") @PathVariable UUID channelId,
             @Valid @RequestBody PublicChannelUpdateRequest request
     ) {
-        return ResponseEntity.ok(channelService.update(channelId, request));
+        return ResponseEntity.ok(
+                channelMapper.toResponse(
+                        channelService.update(channelId, channelMapper.toCommand(request))
+                )
+        );
     }
 
     // 관련 ReadStatus와 Message도 함께 삭제된다.

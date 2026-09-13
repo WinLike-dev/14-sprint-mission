@@ -1,6 +1,6 @@
 package com.sprint.mission.discodeit.content.application.binarycontent;
 
-import com.sprint.mission.discodeit.content.adapter.in.rest.binarycontent.dto.response.BinaryContentDto;
+import com.sprint.mission.discodeit.content.application.binarycontent.dto.BinaryContentResult;
 
 import java.util.List;
 import java.util.UUID;
@@ -12,8 +12,8 @@ import java.util.UUID;
 public interface ContentControllerService {
 
     // ID로 단일 바이너리 콘텐츠를 조회한다
-    BinaryContentDto find(UUID id);
+    BinaryContentResult find(UUID id);
 
     // 여러 ID로 바이너리 콘텐츠를 한 번에 조회한다
-    List<BinaryContentDto> findAllByIdIn(List<UUID> ids);
+    List<BinaryContentResult> findAllByIdIn(List<UUID> ids);
 }

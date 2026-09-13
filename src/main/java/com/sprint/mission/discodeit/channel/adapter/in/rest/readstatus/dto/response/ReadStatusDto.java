@@ -1,7 +1,5 @@
 package com.sprint.mission.discodeit.channel.adapter.in.rest.readstatus.dto.response;
 
-import com.sprint.mission.discodeit.channel.domain.readstatus.ReadStatus;
-
 import java.time.Instant;
 import java.util.UUID;
 
@@ -17,14 +15,4 @@ public record ReadStatusDto(
         UUID channelId,
         Instant lastReadAt
 ) {
-    public static ReadStatusDto from(ReadStatus status) {
-        return new ReadStatusDto(
-                status.getId(),
-                status.getCreatedAt(),
-                status.getUpdatedAt(),
-                status.getUserId(),
-                status.getChannelId(),
-                status.getLastReadAt()
-        );
-    }
 }

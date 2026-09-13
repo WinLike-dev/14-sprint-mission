@@ -1,8 +1,8 @@
 package com.sprint.mission.discodeit.message.application.message;
 
 import com.sprint.mission.discodeit.message.application.message.dto.CreateMessageCommand;
-import com.sprint.mission.discodeit.message.adapter.in.rest.message.dto.request.MessageUpdateRequest;
-import com.sprint.mission.discodeit.message.adapter.in.rest.message.dto.response.MessageDto;
+import com.sprint.mission.discodeit.message.application.message.dto.MessageResult;
+import com.sprint.mission.discodeit.message.application.message.dto.UpdateMessageCommand;
 
 import java.util.List;
 import java.util.UUID;
@@ -13,13 +13,13 @@ import java.util.UUID;
 public interface MessageControllerService {
 
     // 새 메시지를 생성한다
-    MessageDto create(CreateMessageCommand command);
+    MessageResult create(CreateMessageCommand command);
 
     // 특정 채널의 모든 메시지를 조회한다
-    List<MessageDto> findAllByChannelId(UUID channelId);
+    List<MessageResult> findAllByChannelId(UUID channelId);
 
     // 메시지 내용을 수정한다
-    MessageDto update(UUID id, MessageUpdateRequest request);
+    MessageResult update(UUID id, UpdateMessageCommand command);
 
     // 메시지를 삭제한다
     void delete(UUID id);

@@ -1,10 +1,10 @@
 package com.sprint.mission.discodeit.channel.adapter.in.rest.channel.dto.response;
 
-import com.sprint.mission.discodeit.channel.domain.channel.Channel;
 import com.sprint.mission.discodeit.channel.domain.channel.ChannelType;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 /**
@@ -22,21 +22,11 @@ public record ChannelDto(
 ) {
     // 참여자 목록을 불변 리스트로 복사하여, 외부에서 수정하는 것을 방지
     public ChannelDto {
-        participantIds = List.copyOf(participantIds);
-    }
-
-    // Channel 엔티티와 참여자 목록을 받아서 ChannelDto로 변환하는 팩토리 메서드
-    public static ChannelDto from(
-            Channel channel,
-            List<UUID> participantIds
-    ) {
-        return new ChannelDto(
-                channel.getId(),
-                channel.getType(),
-                channel.getName(),
-                channel.getDescription(),
-                participantIds,
-                channel.getLastMessageAt()
+        participantIds = List.copyOf(
+                Objects.requireNonNull(
+                        participantIds,
+                        "participantIds는 null일 수 없습니다."
+                )
         );
     }
 }
