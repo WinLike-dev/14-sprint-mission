@@ -2,13 +2,35 @@
 .idea/
 *.iml
 
+# OS metadata
+.DS_Store
+Thumbs.db
+
 # Build outputs
 **/.gradle/
 **/build/
 /out/
+
+# Runtime logs and JVM crash dumps
+*.log
+hs_err_pid*
+replay_pid*
+*.hprof
+
+# Local environment variables
+.env
+.env.*
+!.env.example
 
 # File Repository data
 /data/
 
 # 미션이 제공한 원본 자료 (스펙은 docs/openapi, 프론트엔드는 src/main/resources/static으로 옮겨 관리)
 /resource/
+
+# Generated API snapshots and local verification reports
+/docs/openapi/discodeit-api-docs.json
+/docs/openapi/oasdiff-report.txt
+/docs/postman/newman-run-output.txt
+/docs/postman/newman-run-report.json
+/docs/postman/newman/

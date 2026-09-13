@@ -10,6 +10,9 @@
 | `newman-run-report.json` | 실행 결과 (요청·응답 전문 포함) |
 | `sample-attachment.png` | 첨부 테스트용 1x1 PNG |
 
+실행 결과인 `newman-run-output.txt`, `newman-run-report.json`과 `newman/` 폴더는
+로컬 결과물로 Git에서 제외한다. 컬렉션과 테스트 이미지는 Git으로 관리한다.
+
 ## 실행
 
 Postman 앱에서는 컬렉션을 Import 한 뒤 컬렉션 변수 `baseUrl`을 서버 주소로 바꾸고

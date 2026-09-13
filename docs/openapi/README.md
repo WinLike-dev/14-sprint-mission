@@ -6,6 +6,9 @@
 | `provided-api-docs.json` | 미션이 제공한 스펙 |
 | `oasdiff-report.txt` | 둘의 차이 |
 
+생성된 `discodeit-api-docs.json`과 `oasdiff-report.txt`는 로컬 결과물로 Git에서 제외한다.
+`provided-api-docs.json`은 비교 기준인 미션 원본이므로 Git으로 관리한다.
+
 실행 중인 서버에서는 `/v3/api-docs`가 같은 문서를 내려주고, `/swagger-ui.html`에서
 직접 호출해볼 수 있다.
 
@@ -52,5 +55,5 @@ DTO를, 생성과 수정은 엔티티를 돌려준다. 그러면 클라이언트
 
 ```
 curl -s http://localhost:8080/v3/api-docs > docs/openapi/discodeit-api-docs.json
-oasdiff diff docs/openapi/discodeit-api-docs.json docs/openapi/provided-api-docs.json -f text
+oasdiff diff docs/openapi/discodeit-api-docs.json docs/openapi/provided-api-docs.json -f text > docs/openapi/oasdiff-report.txt
 ```
