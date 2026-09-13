@@ -1,15 +1,16 @@
 package com.sprint.mission.discodeit.user.adapter.in.rest.user;
 
+import com.sprint.mission.discodeit.common.exception.UploadedFileReadException;
+import com.sprint.mission.discodeit.user.adapter.in.rest.status.dto.request.UserStatusUpdateRequest;
+import com.sprint.mission.discodeit.user.adapter.in.rest.status.dto.response.UserStatusDto;
+import com.sprint.mission.discodeit.user.adapter.in.rest.user.dto.request.UserCreateRequest;
+import com.sprint.mission.discodeit.user.adapter.in.rest.user.dto.request.UserUpdateRequest;
+import com.sprint.mission.discodeit.user.adapter.in.rest.user.dto.response.UserDto;
+import com.sprint.mission.discodeit.user.application.status.UserStatusControllerService;
+import com.sprint.mission.discodeit.user.application.user.UserControllerService;
 import com.sprint.mission.discodeit.user.application.user.dto.CreateUserCommand;
 import com.sprint.mission.discodeit.user.application.user.dto.UpdateUserCommand;
 import com.sprint.mission.discodeit.user.application.user.dto.UserProfileCommand;
-import com.sprint.mission.discodeit.user.application.status.UserStatusControllerService;
-import com.sprint.mission.discodeit.user.application.user.UserControllerService;
-import com.sprint.mission.discodeit.user.adapter.in.rest.user.dto.request.UserCreateRequest;
-import com.sprint.mission.discodeit.user.adapter.in.rest.user.dto.request.UserUpdateRequest;
-import com.sprint.mission.discodeit.user.adapter.in.rest.status.dto.request.UserStatusUpdateRequest;
-import com.sprint.mission.discodeit.user.adapter.in.rest.status.dto.response.UserStatusDto;
-import com.sprint.mission.discodeit.user.adapter.in.rest.user.dto.response.UserDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -23,8 +24,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -33,7 +34,6 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.net.URI;
 import java.util.List;
 import java.util.UUID;
@@ -189,7 +189,7 @@ public class UserController {
                     profile.getBytes()
             );
         } catch (IOException exception) {
-            throw new UncheckedIOException("프로필 이미지를 읽지 못했습니다.", exception);
+            throw new UploadedFileReadException("프로필 이미지를 읽지 못했습니다.", exception);
         }
     }
 }

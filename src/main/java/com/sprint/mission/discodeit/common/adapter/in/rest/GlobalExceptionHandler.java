@@ -5,6 +5,7 @@ import com.sprint.mission.discodeit.common.exception.DuplicateDataException;
 import com.sprint.mission.discodeit.common.exception.EntityNotFoundException;
 import com.sprint.mission.discodeit.common.exception.InvalidValueException;
 import com.sprint.mission.discodeit.common.exception.StorageOperationException;
+import com.sprint.mission.discodeit.common.exception.UploadedFileReadException;
 import com.sprint.mission.discodeit.user.application.auth.exception.AuthenticationFailedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,6 +18,8 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.MultipartException;
 
 import java.time.Instant;
 import java.util.LinkedHashMap;
@@ -45,12 +48,24 @@ public class GlobalExceptionHandler {
     // 엔티티를 찾을 수 없을 때 -> 404 Not Found 응답
     @ExceptionHandler(EntityNotFoundException.class)
     public ResponseEntity<Map<String, Object>> handleEntityNotFound(EntityNotFoundException e) {
+        log.warn(
+                "요청한 엔티티를 찾지 못했습니다. type={}, message={}",
+                e.getClass().getSimpleName(),
+                e.getMessage()
+        );
+        log.debug("EntityNotFoundException 발생 위치", e);
         return buildResponse(HttpStatus.NOT_FOUND, e.getMessage());
     }
 
     // 이미 저장된 데이터와 충돌할 때 -> 409 Conflict 응답
     @ExceptionHandler(DuplicateDataException.class)
     public ResponseEntity<Map<String, Object>> handleDuplicateData(DuplicateDataException e) {
+        log.warn(
+                "중복 데이터로 요청이 거부되었습니다. type={}, message={}",
+                e.getClass().getSimpleName(),
+                e.getMessage()
+        );
+        log.debug("DuplicateDataException 발생 위치", e);
         return buildResponse(HttpStatus.CONFLICT, e.getMessage());
     }
 
@@ -58,30 +73,55 @@ public class GlobalExceptionHandler {
     // 400으로 답하면 요청을 이해하지 못했다는 뜻이 되어 원인을 잘못 가리킨다.
     @ExceptionHandler(ConflictingStateException.class)
     public ResponseEntity<Map<String, Object>> handleConflictingState(ConflictingStateException e) {
+        log.warn(
+                "충돌 상태가 발생했습니다 type={}, message={}",
+                e.getClass().getSimpleName(),
+                e.getMessage()
+        );
+        log.debug("ConflictingStateException 발생 위치", e);
         return buildResponse(HttpStatus.CONFLICT, e.getMessage());
     }
 
     // 인증(로그인)에 실패했을 때 -> 401 Unauthorized 응답
     @ExceptionHandler(AuthenticationFailedException.class)
     public ResponseEntity<Map<String, Object>> handleAuthenticationFailed(AuthenticationFailedException e) {
+        log.warn(
+                "인증에 실패했습니다. type={}",
+                e.getClass().getSimpleName()
+        );
+        log.debug("AuthenticationFailedException 발생 위치", e);
         return buildResponse(HttpStatus.UNAUTHORIZED, e.getMessage());
     }
 
     // 도메인 규칙을 만족하지 못한 값 -> 400. 호출자가 고칠 수 있는 실패이므로 메시지를 그대로 전달한다.
     @ExceptionHandler(InvalidValueException.class)
     public ResponseEntity<Map<String, Object>> handleInvalidValue(InvalidValueException e) {
+        log.warn(
+                "도메인 규칙에 어긋나는 값입니다. type={}, message={}",
+                e.getClass().getSimpleName(),
+                e.getMessage()
+        );
+        log.debug("InvalidValueException 발생 위치", e);
         return buildResponse(HttpStatus.BAD_REQUEST, e.getMessage());
     }
 
     // Bean Validation 실패 -> 400. 어떤 필드가 왜 틀렸는지 필드 단위로 알려준다.
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidationFailure(MethodArgumentNotValidException e) {
-        List<Map<String, String>> fieldErrors = e.getBindingResult().getFieldErrors().stream()
+        List<Map<String, String>> fieldErrors =
+                e.getBindingResult().getFieldErrors().stream()
                 .map(error -> Map.of(
                         "field", error.getField(),
                         "message", String.valueOf(error.getDefaultMessage())
                 ))
                 .toList();
+        log.warn(
+                "요청 값 검증에 실패했습니다. fields={}",
+                fieldErrors.stream()
+                        .map(error -> error.get("field"))
+                        .toList()
+        );
+        log.debug("MethodArgumentNotValidException 발생 위치", e);
         return buildResponse(HttpStatus.BAD_REQUEST, "요청 값이 올바르지 않습니다.", fieldErrors);
     }
 
@@ -89,6 +129,12 @@ public class GlobalExceptionHandler {
     // 내부 변환 예외 메시지를 그대로 노출하지 않고 어떤 값이 문제인지만 알린다.
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<Map<String, Object>> handleTypeMismatch(MethodArgumentTypeMismatchException e) {
+        log.warn(
+                "요청 값의 형식이 올바르지 않습니다. parameter={}, requiredType={}",
+                e.getName(),
+                e.getRequiredType() == null ? "unknown" : e.getRequiredType().getSimpleName()
+        );
+        log.debug("MethodArgumentTypeMismatchException 발생 위치", e);
         return buildResponse(
                 HttpStatus.BAD_REQUEST,
                 "%s 값의 형식이 올바르지 않습니다.".formatted(e.getName())
@@ -98,6 +144,8 @@ public class GlobalExceptionHandler {
     // 본문을 읽을 수 없을 때(깨진 JSON 등) -> 400
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<Map<String, Object>> handleUnreadableBody(HttpMessageNotReadableException e) {
+        log.warn("요청 본문을 읽지 못했습니다. type={}", e.getClass().getSimpleName());
+        log.debug("HttpMessageNotReadableException 발생 위치", e);
         return buildResponse(HttpStatus.BAD_REQUEST, "요청 본문을 읽을 수 없습니다.");
     }
 
@@ -106,6 +154,8 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, Object>> handleMissingParameter(
             MissingServletRequestParameterException e
     ) {
+        log.warn("필수 요청 파라미터가 누락됐습니다. parameter={}", e.getParameterName());
+        log.debug("MissingServletRequestParameterException 발생 위치", e);
         return buildResponse(
                 HttpStatus.BAD_REQUEST,
                 "%s 파라미터가 필요합니다.".formatted(e.getParameterName())
@@ -127,6 +177,46 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, INTERNAL_MESSAGE);
     }
 
+    // 사이즈 규격을 넘어서는 파일 전송 시 413 에러
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<Map<String, Object>> handleMaxUploadExceed(
+            MaxUploadSizeExceededException exception
+    ) {
+        log.warn("업로드 허용 용량을 초과했습니다. maxUploadSize={}", exception.getMaxUploadSize());
+        log.debug("MaxUploadSizeExceededException 발생 위치", exception);
+
+        return buildResponse(
+                HttpStatus.PAYLOAD_TOO_LARGE,
+                "업로드 가능한 파일 크기를 초과했습니다."
+        );
+    }
+
+    // 멀티파트 형식이 올바르지 않는 경우
+    @ExceptionHandler(MultipartException.class)
+    public ResponseEntity<Map<String, Object>> handleMultipart(
+            MultipartException exception
+    ) {
+        log.warn("multipart 요청을 처리하지 못했습니다. type={}", exception.getClass().getSimpleName());
+        log.debug("MultipartException 발생 위치", exception);
+
+        return buildResponse(
+                HttpStatus.BAD_REQUEST,
+                "파일 업로드 요청 형식이 올바르지 않습니다."
+        );
+    }
+
+    // 규격을 잘 지켰는데도 서버가 파일 이해를 못했으면 -> 500 에러
+    @ExceptionHandler(UploadedFileReadException.class)
+    public ResponseEntity<Map<String, Object>> handleUploadedFileRead(
+            UploadedFileReadException exception
+    ) {
+        log.error("업로드된 파일을 읽지 못했습니다.", exception);
+        return buildResponse(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                INTERNAL_MESSAGE
+        );
+    }
+
     /**
      * 위에서 걸리지 않은 나머지 예외를 받는다.
      * 이게 없으면 미처리 예외가 Spring 기본 형식으로 나가서 응답 형태가 두 가지가 된다.
@@ -141,6 +231,12 @@ public class GlobalExceptionHandler {
         if (e instanceof ErrorResponse errorResponse) {
             HttpStatus status = HttpStatus.valueOf(errorResponse.getStatusCode().value());
             String detail = errorResponse.getBody().getDetail();
+            log.warn(
+                    "Spring MVC 요청 처리 예외가 발생했습니다. status={}, type={}",
+                    status.value(),
+                    e.getClass().getSimpleName()
+            );
+            log.debug("Spring MVC 예외 발생 위치", e);
             return buildResponse(status, detail == null ? status.getReasonPhrase() : detail);
         }
         log.error("처리되지 않은 예외입니다.", e);
