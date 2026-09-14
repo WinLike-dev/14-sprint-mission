@@ -10,13 +10,6 @@ import com.sprint.mission.discodeit.user.application.status.UserStatusController
 import com.sprint.mission.discodeit.user.application.user.UserControllerService;
 import com.sprint.mission.discodeit.user.application.user.dto.CreateUserCommand;
 import com.sprint.mission.discodeit.user.application.user.dto.UpdateUserCommand;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
@@ -43,8 +36,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
-@Tag(name = "User", description = "User API")
-public class UserController {
+public class UserController implements UserApi {
 
     private final UserControllerService userService;
     private final UserStatusControllerService userStatusService;
@@ -53,24 +45,7 @@ public class UserController {
 
     // 프로필 이미지를 함께 받을 수 있으므로 multipart로 받는다.
     // 201과 함께 Location으로 만들어진 리소스의 위치를 알려준다.
-    @Operation(summary = "User 등록")
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "201",
-                    description = "User가 성공적으로 생성됨",
-                    content = @Content(schema = @Schema(implementation = UserDto.class))
-            ),
-            @ApiResponse(
-                    responseCode = "400",
-                    description = "요청 값이 올바르지 않음",
-                    content = @Content
-            ),
-            @ApiResponse(
-                    responseCode = "409",
-                    description = "같은 username 또는 email을 사용하는 User가 이미 존재함",
-                    content = @Content
-            )
-    })
+    @Override
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<UserDto> create(
             @Valid @RequestPart("userCreateRequest") UserCreateRequest request,
@@ -84,36 +59,17 @@ public class UserController {
                 .body(created);
     }
 
-    @Operation(summary = "전체 User 목록 조회")
-    @ApiResponse(responseCode = "200", description = "User 목록 조회 성공")
+    @Override
     @GetMapping
     public ResponseEntity<List<UserDto>> findAll() {
         List<UserDto> responses = userMapper.toResponses(userService.findAll());
         return ResponseEntity.ok(responses);
     }
 
-    @Operation(summary = "User 정보 수정")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "User 정보가 성공적으로 수정됨"),
-            @ApiResponse(
-                    responseCode = "400",
-                    description = "요청 값이 올바르지 않음",
-                    content = @Content
-            ),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "User를 찾을 수 없음",
-                    content = @Content
-            ),
-            @ApiResponse(
-                    responseCode = "409",
-                    description = "같은 username 또는 email을 사용하는 User가 이미 존재함",
-                    content = @Content
-            )
-    })
+    @Override
     @PatchMapping(value = "/{userId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<UserDto> update(
-            @Parameter(description = "수정할 User ID") @PathVariable UUID userId,
+            @PathVariable UUID userId,
             @Valid @RequestPart("userUpdateRequest") UserUpdateRequest request,
             @RequestPart(value = "profile", required = false) MultipartFile profile
     ) {
@@ -124,43 +80,20 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
-    @Operation(summary = "User 삭제")
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "204",
-                    description = "User가 성공적으로 삭제됨",
-                    content = @Content
-            ),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "User를 찾을 수 없음",
-                    content = @Content
-            )
-    })
+    @Override
     @DeleteMapping("/{userId}")
     public ResponseEntity<Void> delete(
-            @Parameter(description = "삭제할 User ID") @PathVariable UUID userId
+            @PathVariable UUID userId
     ) {
         userService.delete(userId);
         return ResponseEntity.noContent().build();
     }
 
     // 접속 상태는 사용자에 종속된 정보이므로 사용자 하위 경로로 노출한다.
-    @Operation(summary = "User 온라인 상태 업데이트")
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "User 온라인 상태가 성공적으로 업데이트됨"
-            ),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "해당 User의 UserStatus를 찾을 수 없음",
-                    content = @Content
-            )
-    })
+    @Override
     @PatchMapping("/{userId}/userStatus")
     public ResponseEntity<UserStatusDto> updateUserStatusByUserId(
-            @Parameter(description = "상태를 변경할 User ID") @PathVariable UUID userId,
+            @PathVariable UUID userId,
             @Valid @RequestBody UserStatusUpdateRequest request
     ) {
         return ResponseEntity.ok(
