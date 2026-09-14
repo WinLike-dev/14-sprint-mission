@@ -1,7 +1,7 @@
 package com.sprint.mission.discodeit.content.application.internal;
 
-import com.sprint.mission.discodeit.content.domain.binarycontent.BinaryContent;
-import com.sprint.mission.discodeit.content.application.port.out.BinaryContentRepository;
+import com.sprint.mission.discodeit.content.entity.BinaryContent;
+import com.sprint.mission.discodeit.content.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.content.api.BinaryContentPayload;
 import com.sprint.mission.discodeit.content.api.ContentInternalApi;
 import lombok.RequiredArgsConstructor;

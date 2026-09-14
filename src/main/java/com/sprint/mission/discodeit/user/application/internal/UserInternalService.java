@@ -1,9 +1,9 @@
 package com.sprint.mission.discodeit.user.application.internal;
 
 import com.sprint.mission.discodeit.common.exception.EntityNotFoundException;
-import com.sprint.mission.discodeit.user.application.port.out.UserRepository;
+import com.sprint.mission.discodeit.user.repository.UserRepository;
 import com.sprint.mission.discodeit.user.api.UserInternalApi;
-import com.sprint.mission.discodeit.user.domain.user.User;
+import com.sprint.mission.discodeit.user.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

@@ -1,6 +1,6 @@
 package com.sprint.mission.discodeit.channel.application.readstatus;
 
-import com.sprint.mission.discodeit.channel.application.port.out.ReadStatusRepository;
+import com.sprint.mission.discodeit.channel.repository.ReadStatusRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

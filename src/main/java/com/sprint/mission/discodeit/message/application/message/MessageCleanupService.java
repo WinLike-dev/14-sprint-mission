@@ -1,8 +1,8 @@
 package com.sprint.mission.discodeit.message.application.message;
 
 import com.sprint.mission.discodeit.message.application.port.out.MessageContentManager;
-import com.sprint.mission.discodeit.message.domain.message.Message;
-import com.sprint.mission.discodeit.message.application.port.out.MessageRepository;
+import com.sprint.mission.discodeit.message.entity.Message;
+import com.sprint.mission.discodeit.message.repository.MessageRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
