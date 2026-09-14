@@ -7,7 +7,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * 사용자 상태 저장소 outbound 포트.
+ * 사용자 상태 저장소.
  * 사용자 ID 기준 조회를 메서드 이름 기반 쿼리로 정의한다.
  */
 public interface UserStatusRepository extends JpaRepository<UserStatus, UUID> {

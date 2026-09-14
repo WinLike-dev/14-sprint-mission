@@ -15,8 +15,8 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * 바이너리 콘텐츠 REST inbound 어댑터.
- * 조회만 HTTP로 열고, 생성/삭제는 content 모듈의 노출 API를 통해서만 받는다.
+ * 바이너리 콘텐츠 REST 컨트롤러.
+ * 조회만 HTTP로 연다. 생성/삭제는 프로필·첨부를 다루는 서비스가 처리한다.
  * 엔드포인트: /api/binaryContents
  */
 @RestController

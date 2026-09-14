@@ -11,7 +11,8 @@ import com.sprint.mission.discodeit.common.exception.exceptions.DuplicateAssocia
 import com.sprint.mission.discodeit.common.exception.exceptions.EntityNotFoundException;
 import com.sprint.mission.discodeit.channel.repository.ChannelRepository;
 import com.sprint.mission.discodeit.channel.repository.ReadStatusRepository;
-import com.sprint.mission.discodeit.channel.application.port.out.ChannelUserReader;
+import com.sprint.mission.discodeit.user.entity.User;
+import com.sprint.mission.discodeit.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -31,7 +32,7 @@ public class ReadStatusServiceImpl implements ReadStatusControllerService {
 
     private final ReadStatusRepository readStatusRepository; // 읽음 상태 저장소
     private final ChannelRepository channelRepository; // 채널 저장소 (채널 존재 여부 및 타입 확인용)
-    private final ChannelUserReader userReader; // 사용자 존재 여부 확인용
+    private final UserRepository userRepository; // 사용자 존재 여부 확인용
 
     // 읽음 상태 생성 (PUBLIC 채널에서만 가능, PRIVATE 채널은 채널 생성 시 자동 생성됨)
     @Override
@@ -44,7 +45,7 @@ public class ReadStatusServiceImpl implements ReadStatusControllerService {
                 channelId,
                 "channelId는 null일 수 없습니다."
         );
-        userReader.requireExists(userId);
+        requireUserExists(userId);
         Channel channel = channelRepository.findById(channelId)
                 .orElseThrow(() -> new EntityNotFoundException(Channel.class, channelId));
         if (channel.getType() == ChannelType.PRIVATE) { // PRIVATE 채널은 별도 생성 불가
@@ -73,7 +74,7 @@ public class ReadStatusServiceImpl implements ReadStatusControllerService {
     @Override
     public List<ReadStatusResult> findAllByUserId(UUID userId) {
         Objects.requireNonNull(userId, "userId는 null일 수 없습니다.");
-        userReader.requireExists(userId);
+        requireUserExists(userId);
         return readStatusRepository.findAllByUserId(userId).stream()
                 .map(ReadStatusResult::from)
                 .toList();
@@ -93,6 +94,13 @@ public class ReadStatusServiceImpl implements ReadStatusControllerService {
     public void delete(UUID userId, UUID channelId) {
         ReadStatus status = getByUserIdAndChannelId(userId, channelId);
         readStatusRepository.deleteById(status.getId());
+    }
+
+    // 사용자가 존재하는지 확인하고, 없으면 예외를 던지는 헬퍼 메서드
+    private void requireUserExists(UUID userId) {
+        if (!userRepository.existsById(userId)) {
+            throw new EntityNotFoundException(User.class, userId);
+        }
     }
 
     // userId + channelId 조합으로 ReadStatus를 조회하고, 없으면 예외를 던지는 헬퍼 메서드

@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * 바이너리 콘텐츠 저장소 outbound 포트.
+ * 바이너리 콘텐츠 저장소.
  * 여러 ID로 한 번에 조회하는 쿼리를 추가로 정의한다.
  */
 public interface BinaryContentRepository extends JpaRepository<BinaryContent, UUID> {

@@ -6,7 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.UUID;
 
 /**
- * 채널 저장소 outbound 포트.
+ * 채널 저장소.
  * 구현은 Spring Data JPA가 런타임에 만든다.
  */
 public interface ChannelRepository extends JpaRepository<Channel, UUID> {

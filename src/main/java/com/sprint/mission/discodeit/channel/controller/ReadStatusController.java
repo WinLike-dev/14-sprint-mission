@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * 읽음 상태 REST inbound 어댑터.
+ * 읽음 상태 REST 컨트롤러.
  * HTTP 요청을 받아 ReadStatusControllerService에 위임한다.
  * 기본 경로: /api/readStatuses
  */

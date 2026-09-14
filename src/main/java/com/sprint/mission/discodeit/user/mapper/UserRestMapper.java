@@ -42,7 +42,7 @@ public interface UserRestMapper {
 
     List<UserDto> toResponses(List<UserResult> results);
 
-    // MultipartFile은 REST 경계의 타입이므로 이 어댑터에서 애플리케이션 입력으로 바꾼다. ++ profile 불일치 타입 맞춰주기
+    // MultipartFile은 REST 경계의 타입이므로 이 mapper에서 애플리케이션 입력으로 바꾼다. ++ profile 불일치 타입 맞춰주기
     default UserProfileCommand toProfileCommand(MultipartFile profile) {
         if (profile == null || profile.isEmpty()) {
             return null;

@@ -9,7 +9,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * 읽음 상태 저장소 outbound 포트.
+ * 읽음 상태 저장소.
  * 기본 CRUD 외에 사용자/채널 기준 조회·삭제를 메서드 이름 기반 쿼리로 제공한다.
  */
 public interface ReadStatusRepository extends JpaRepository<ReadStatus, UUID> {

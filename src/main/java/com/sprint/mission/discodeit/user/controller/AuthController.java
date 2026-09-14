@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * 인증 REST inbound 어댑터.
+ * 인증 REST 컨트롤러.
  * "/api/auth" 경로의 로그인 요청을 AuthControllerService에 위임한다.
  */
 @RestController

@@ -31,7 +31,7 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * 사용자 REST inbound 어댑터.
+ * 사용자 REST 컨트롤러.
  * HTTP 요청을 받아 UserControllerService에 위임한다.
  */
 @RestController

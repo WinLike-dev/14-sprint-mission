@@ -8,7 +8,6 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.Instant;
 import java.util.Objects;
 
 /**
@@ -32,18 +31,12 @@ public class Channel extends BaseUpdatableEntity {
     @Column(length = 500)
     private String description; // 채널 설명 (PUBLIC만 사용, PRIVATE은 null)
 
-    // ERD에 없는 값이라 매핑하지 않는다. 저장되지 않으므로 조회한 채널에서는 항상 null이다.
-    // 메시지 저장소에서 최신 메시지 시각을 조회하는 방식으로 옮긴 뒤 필드를 제거한다.
-    @Transient
-    private Instant lastMessageAt; // 이 채널에 마지막으로 메시지가 작성된 시각
-
     // 새 채널을 처음 만들 때 사용하는 생성자 (ID와 시각은 저장 시 BaseEntity가 부여)
     private Channel(ChannelType type, String name, String description) {
         this.type = Objects.requireNonNull(type, "type은 null일 수 없습니다.");
         validateFields(type, name, description);
         this.name = name;
         this.description = description;
-        this.lastMessageAt = null;
     }
 
     // 공개 채널을 생성하는 팩토리 메서드 (이름과 설명 필수)
@@ -64,11 +57,6 @@ public class Channel extends BaseUpdatableEntity {
         validateFields(type, name, description);
         this.name = name;
         this.description = description;
-    }
-
-    // 채널의 마지막 메시지 시각을 갱신한다 (메시지가 생성/삭제될 때 호출됨)
-    public void updateLastMessageAt(Instant lastMessageAt) {
-        this.lastMessageAt = lastMessageAt;
     }
 
     // PRIVATE는 DM이므로 이름과 채널 설명 필요 없음

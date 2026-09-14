@@ -27,7 +27,6 @@ import com.sprint.mission.discodeit.message.service.MessageControllerService;
 import com.sprint.mission.discodeit.channel.service.ReadStatusControllerService;
 import com.sprint.mission.discodeit.user.service.UserControllerService;
 import com.sprint.mission.discodeit.user.service.UserStatusControllerService;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -258,7 +257,7 @@ class ServiceWorkflowTest {
     }
 
     @Test
-    void deletingUserRemovesReadStatusesThroughDomainEvent() {
+    void deletingUserRemovesReadStatuses() {
         String suffix = UUID.randomUUID().toString().substring(0, 8);
         UserResult user = userControllerService.create(
                 new CreateUserCommand(
@@ -284,10 +283,9 @@ class ServiceWorkflowTest {
         channelControllerService.delete(channel.id());
     }
 
-    // Channel.lastMessageAt은 ERD에 없어 @Transient로 두었으므로 조회한 채널에서는 항상 null이다.
-    @Disabled("lastMessageAt을 최신 메시지 조회로 계산하도록 바꾼 뒤 다시 켠다")
+    // lastMessageAt은 채널에 저장하지 않고 조회할 때 메시지에서 구한다.
     @Test
-    void deletingLastMessageUpdatesChannelProjectionThroughDomainEvent() {
+    void deletingLastMessageClearsChannelLastMessageAt() {
         String suffix = UUID.randomUUID().toString().substring(0, 8);
         UserResult author = userControllerService.create(
                 new CreateUserCommand(

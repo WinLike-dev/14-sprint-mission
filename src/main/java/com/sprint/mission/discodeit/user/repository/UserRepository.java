@@ -7,7 +7,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * 사용자 저장소 outbound 포트.
+ * 사용자 저장소.
  * username/email 조회 등 사용자 전용 쿼리를 메서드 이름 기반 쿼리로 정의한다.
  */
 public interface UserRepository extends JpaRepository<User, UUID> {

@@ -11,10 +11,9 @@ import com.sprint.mission.discodeit.common.exception.exceptions.EntityNotFoundEx
 import com.sprint.mission.discodeit.common.exception.exceptions.DuplicateFieldValueException;
 import com.sprint.mission.discodeit.user.repository.UserRepository;
 import com.sprint.mission.discodeit.user.repository.UserStatusRepository;
-import com.sprint.mission.discodeit.user.application.port.out.UserContentManager;
-import com.sprint.mission.discodeit.user.application.port.out.UserContentData;
-import com.sprint.mission.discodeit.common.event.Events;
-import com.sprint.mission.discodeit.user.api.event.UserDeletedEvent;
+import com.sprint.mission.discodeit.content.entity.BinaryContent;
+import com.sprint.mission.discodeit.content.repository.BinaryContentRepository;
+import com.sprint.mission.discodeit.channel.repository.ReadStatusRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -29,17 +28,18 @@ import java.util.stream.Collectors;
 /**
  * UserControllerService의 구현체.
  * 사용자 생성, 조회, 수정, 삭제 등 핵심 비즈니스 로직을 처리한다.
- * 프로필 이미지는 UserContentManager를 통해 다른 모듈(content)에 위임하고,
+ * 프로필 이미지는 BinaryContentRepository로 직접 저장·삭제하고,
  * 온라인 상태는 UserStatusRepository로 관리한다.
  */
 @Service
-// final 협력 객체를 받는 생성자를 Lombok이 만들고 Spring이 Repository/Port Bean을 주입한다.
+// final 협력 객체를 받는 생성자를 Lombok이 만들고 Spring이 Repository Bean을 주입한다.
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserControllerService {
 
     private final UserRepository userRepository;
     private final UserStatusRepository userStatusRepository;
-    private final UserContentManager contentManager; // 프로필 이미지 생성/삭제 outbound 포트
+    private final BinaryContentRepository binaryContentRepository; // 프로필 이미지 생성/삭제용
+    private final ReadStatusRepository readStatusRepository; // 사용자 삭제 시 읽음 상태 정리용
 
     // 새 사용자를 생성한다. 프로필 이미지 저장 -> User 저장 -> UserStatus 생성 순서로 진행한다.
     @Override
@@ -55,7 +55,7 @@ public class UserServiceImpl implements UserControllerService {
             // 프로필 이미지가 있으면 먼저 저장하고 ID를 받아온다
             createdProfileId = target.profile() == null
                     ? null
-                    : contentManager.create(toContentData(target.profile()));
+                    : createProfile(target.profile());
             // 새 엔티티는 id가 없으므로 save가 persist하고, 그때 id와 생성 시각이 채워진다.
             user = userRepository.save(new User(
                     target.username(),
@@ -101,7 +101,7 @@ public class UserServiceImpl implements UserControllerService {
         UUID previousProfileId = user.getProfileId(); // 기존 프로필 ID 보관
         UUID newProfileId = target.profile() == null
                 ? null
-                : contentManager.create(toContentData(target.profile())); // 새 프로필 생성
+                : createProfile(target.profile()); // 새 프로필 생성
         UUID nextProfileId = newProfileId == null ? previousProfileId : newProfileId; // 새 것이 없으면 기존 유지
 
         try {
@@ -119,32 +119,31 @@ public class UserServiceImpl implements UserControllerService {
             if (newProfileId != null) {
                 suppressCleanupFailure(
                         exception,
-                        () -> contentManager.delete(newProfileId)
+                        () -> binaryContentRepository.deleteById(newProfileId)
                 );
             }
             throw exception;
         }
         // 새 프로필이 실제로 생기고 기존 프로필도 있었다면 삭제한 후 응답을 만든다.
         if (newProfileId != null && previousProfileId != null) {
-            contentManager.delete(previousProfileId);
+            binaryContentRepository.deleteById(previousProfileId);
         }
         return createResponse(user);
     }
 
-    // 사용자를 삭제한다. 상태, 프로필, 관련 이벤트까지 함께 처리한다.
+    // 사용자를 삭제한다. 상태, 읽음 상태, 프로필까지 함께 처리한다.
     @Override
     public void delete(UUID id) {
         User user = getUser(id);
         UserStatus status = userStatusRepository.findByUserId(id)
                 .orElseThrow(() -> new EntityNotFoundException(UserStatus.class, id));
         userStatusRepository.deleteById(status.getId()); // 상태 먼저 삭제
+        readStatusRepository.deleteAllByUserId(id);      // 사용자의 읽음 상태 삭제
         userRepository.deleteById(id);                   // 사용자 삭제
         if (user.getProfileId() != null) {
-            contentManager.delete(user.getProfileId());  // 프로필 이미지 삭제
-                                                        // 겉다리 인데도 나중에 지운 이유 참조 당하는 놈을 나중에 지워야 참조 불가능한 것을 참조하는 불상사를 막을 수 있기 때문이다.
-                                                        // 아웃 바운디드라 나중에 처리한 이유도 있음
+            binaryContentRepository.deleteById(user.getProfileId());  // 프로필 이미지 삭제
+            // 곁다리인데도 나중에 지운 이유: 참조되는 쪽을 나중에 지워야 없는 대상을 참조하는 상황을 막을 수 있기 때문이다.
         }
-        Events.raise(new UserDeletedEvent(id)); // 다른 모듈에 사용자 삭제를 알림
     }
 
     // username과 email이 다른 사용자와 중복되지 않는지 검증한다.
@@ -211,7 +210,7 @@ public class UserServiceImpl implements UserControllerService {
         if (profileId != null) {
             suppressCleanupFailure(
                     original,
-                    () -> contentManager.delete(profileId)
+                    () -> binaryContentRepository.deleteById(profileId)
             );
         }
     }
@@ -226,9 +225,11 @@ public class UserServiceImpl implements UserControllerService {
         }
     }
 
-    private UserContentData toContentData(UserProfileCommand profile) {
-        return new UserContentData(
+    // 프로필 이미지를 BinaryContent로 저장하고 생성된 ID를 반환한다.
+    private UUID createProfile(UserProfileCommand profile) {
+        BinaryContent content = new BinaryContent(
                 profile.fileName(), profile.contentType(), profile.bytes()
         );
+        return binaryContentRepository.save(content).getId();
     }
 }

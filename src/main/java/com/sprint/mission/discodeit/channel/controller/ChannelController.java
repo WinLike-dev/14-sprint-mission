@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * 채널 REST inbound 어댑터.
+ * 채널 REST 컨트롤러.
  * HTTP 요청을 받아 ChannelControllerService에 위임하고, 결과만 HTTP 응답으로 바꾼다.
  * 기본 경로: /api/channels
  */

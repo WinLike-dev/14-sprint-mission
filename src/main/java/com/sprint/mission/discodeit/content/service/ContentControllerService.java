@@ -7,7 +7,7 @@ import java.util.UUID;
 
 /**
  * REST 조회용 유스케이스 계약.
- * 생성/삭제는 content 모듈의 노출 API(ContentInternalApi)로만 연다.
+ * 생성/삭제는 REST로 열지 않고, 프로필·첨부를 다루는 서비스가 BinaryContentRepository로 직접 처리한다.
  */
 public interface ContentControllerService {
 

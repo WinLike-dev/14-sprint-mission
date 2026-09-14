@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * 메시지 REST inbound 어댑터.
+ * 메시지 REST 컨트롤러.
  * HTTP 요청을 받아 MessageControllerService에 위임한다.
  * 엔드포인트: /api/messages
  */

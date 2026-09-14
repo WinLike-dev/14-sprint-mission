@@ -11,9 +11,12 @@ import com.sprint.mission.discodeit.common.exception.exceptions.DuplicateRequest
 import com.sprint.mission.discodeit.common.exception.exceptions.EntityNotFoundException;
 import com.sprint.mission.discodeit.channel.repository.ChannelRepository;
 import com.sprint.mission.discodeit.channel.repository.ReadStatusRepository;
-import com.sprint.mission.discodeit.channel.application.port.out.ChannelUserReader;
-import com.sprint.mission.discodeit.channel.api.event.ChannelDeletedEvent;
-import com.sprint.mission.discodeit.common.event.Events;
+import com.sprint.mission.discodeit.content.repository.BinaryContentRepository;
+import com.sprint.mission.discodeit.message.entity.Message;
+import com.sprint.mission.discodeit.message.repository.MessageRepository;
+import com.sprint.mission.discodeit.message.repository.MessageRepository.ChannelLastMessageAt;
+import com.sprint.mission.discodeit.user.entity.User;
+import com.sprint.mission.discodeit.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -38,7 +41,9 @@ public class ChannelServiceImpl implements ChannelControllerService {
 
     private final ChannelRepository channelRepository; // 채널 저장소
     private final ReadStatusRepository readStatusRepository; // 읽음 상태 저장소
-    private final ChannelUserReader userReader; // 사용자 존재 확인 outbound 포트
+    private final UserRepository userRepository; // 사용자 존재 확인용
+    private final MessageRepository messageRepository; // 마지막 메시지 시각 조회, 채널 삭제 시 메시지 정리용
+    private final BinaryContentRepository binaryContentRepository; // 채널 삭제 시 첨부파일 정리용
 
     // 퍼블릭 채널 생성 -> 바로 저장
     @Override
@@ -58,7 +63,7 @@ public class ChannelServiceImpl implements ChannelControllerService {
             throw new DuplicateRequestValueException(Channel.class, "participantIds");
         }
         // 멤버체크 exception
-        uniqueParticipantIds.forEach(userReader::requireExists);
+        uniqueParticipantIds.forEach(this::requireUserExists);
 
         Channel channel = channelRepository.save(Channel.privateChannel());
         List<ReadStatus> createdStatuses = new ArrayList<>();
@@ -92,7 +97,7 @@ public class ChannelServiceImpl implements ChannelControllerService {
     // ReadStatus를 한 번만 읽어 참여 채널 판별과 참여자 목록 조립에 함께 사용한다.
     @Override
     public List<ChannelResult> findAllByUserId(UUID userId) {
-        userReader.requireExists(userId);
+        requireUserExists(userId);
 
         List<ReadStatus> allStatuses = readStatusRepository.findAll();
         // 채널별 참여자 목록 (PRIVATE 채널 응답 조립용)
@@ -107,12 +112,24 @@ public class ChannelServiceImpl implements ChannelControllerService {
                 .map(ReadStatus::getChannelId)
                 .collect(Collectors.toSet());
 
-        return channelRepository.findAll().stream()
+        List<Channel> visibleChannels = channelRepository.findAll().stream()
                 .filter(channel -> channel.getType() == ChannelType.PUBLIC
                         || participatedChannelIds.contains(channel.getId()))
+                .toList();
+        // 마지막 메시지 시각도 채널마다 묻지 않고 한 번에 구한다.
+        Map<UUID, Instant> lastMessageAtByChannelId = messageRepository
+                .findLastMessageAtByChannelIdIn(visibleChannels.stream().map(Channel::getId).toList())
+                .stream()
+                .collect(Collectors.toMap(
+                        ChannelLastMessageAt::getChannelId,
+                        ChannelLastMessageAt::getLastMessageAt
+                ));
+
+        return visibleChannels.stream()
                 .map(channel -> createResult(
                         channel,
-                        participantIdsByChannelId.getOrDefault(channel.getId(), List.of())
+                        participantIdsByChannelId.getOrDefault(channel.getId(), List.of()),
+                        lastMessageAtByChannelId.get(channel.getId())
                 ))
                 .toList();
     }
@@ -136,9 +153,25 @@ public class ChannelServiceImpl implements ChannelControllerService {
         if (!channelRepository.existsById(id)) {
             throw new EntityNotFoundException(Channel.class, id);
         }
+        // 채널을 참조하는 읽음 상태와 메시지를 먼저 지우고 채널을 지운다.
         readStatusRepository.deleteAllByChannelId(id);
+        deleteMessages(id);
         channelRepository.deleteById(id);
-        Events.raise(new ChannelDeletedEvent(id));
+    }
+
+    // 채널의 메시지를 지운다. 메시지에 달린 첨부파일도 함께 지운다.
+    private void deleteMessages(UUID channelId) {
+        for (Message message : messageRepository.findAllByChannelId(channelId)) {
+            message.getAttachmentIds().forEach(binaryContentRepository::deleteById);
+            messageRepository.deleteById(message.getId());
+        }
+    }
+
+    // 사용자가 존재하는지 확인하고, 없으면 예외를 던지는 헬퍼 메서드
+    private void requireUserExists(UUID userId) {
+        if (!userRepository.existsById(userId)) {
+            throw new EntityNotFoundException(User.class, userId);
+        }
     }
 
     // ID로 채널을 조회하고, 없으면 예외를 던지는 헬퍼 메서드
@@ -147,23 +180,30 @@ public class ChannelServiceImpl implements ChannelControllerService {
                 .orElseThrow(() -> new EntityNotFoundException(Channel.class, id));
     }
 
-    // 단건 조회 경로: 해당 채널의 ReadStatus만 조회한다.
+    // 단건 조회 경로: 해당 채널의 ReadStatus와 마지막 메시지 시각만 조회한다.
     private ChannelResult createResult(Channel channel) {
         List<UUID> participantIds = channel.getType() == ChannelType.PRIVATE
                 ? readStatusRepository.findAllByChannelId(channel.getId()).stream()
                 .map(ReadStatus::getUserId)
                 .toList()
                 : List.of();
-        return createResult(channel, participantIds);
+        Instant lastMessageAt = messageRepository
+                .findLastMessageAtByChannelIdIn(List.of(channel.getId()))
+                .stream()
+                .findFirst()
+                .map(ChannelLastMessageAt::getLastMessageAt)
+                .orElse(null); // 메시지가 없으면 null
+        return createResult(channel, participantIds, lastMessageAt);
     }
 
     // Channel 엔티티를 application 결과로 변환하는 헬퍼 메서드.
     // 조회 전략은 호출 경로에 따라 다르지만 변환 규칙은 이 메서드 한 벌로 유지한다.
-    private ChannelResult createResult(Channel channel, List<UUID> participantIds) {
+    private ChannelResult createResult(Channel channel, List<UUID> participantIds, Instant lastMessageAt) {
         // private면 참여자 ID 받고 public이면 빈값을 보낸다.
         return ChannelResult.from(
                 channel,
-                channel.getType() == ChannelType.PRIVATE ? participantIds : List.of()
+                channel.getType() == ChannelType.PRIVATE ? participantIds : List.of(),
+                lastMessageAt
         );
     }
 
