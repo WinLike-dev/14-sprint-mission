@@ -3,6 +3,7 @@ package com.sprint.mission.discodeit.content.controller;
 import com.sprint.mission.discodeit.content.mapper.BinaryContentRestMapper;
 import com.sprint.mission.discodeit.content.service.ContentControllerService;
 import com.sprint.mission.discodeit.content.dto.response.BinaryContentDto;
+import com.sprint.mission.discodeit.content.storage.BinaryContentStorage;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,7 +17,7 @@ import java.util.UUID;
 
 /**
  * 바이너리 콘텐츠 REST 컨트롤러.
- * 조회만 HTTP로 연다. 생성/삭제는 프로필·첨부를 다루는 서비스가 처리한다.
+ * 조회와 다운로드만 HTTP로 연다. 생성/삭제는 프로필·첨부를 다루는 서비스가 처리한다.
  * 엔드포인트: /api/binaryContents
  */
 @RestController
@@ -26,6 +27,7 @@ public class BinaryContentController implements BinaryContentApi {
 
     private final ContentControllerService contentService;
     private final BinaryContentRestMapper contentMapper;
+    private final BinaryContentStorage binaryContentStorage;
 
     @Override
     @GetMapping("/{binaryContentId}")
@@ -45,5 +47,15 @@ public class BinaryContentController implements BinaryContentApi {
         return ResponseEntity.ok(
                 contentMapper.toResponses(contentService.findAllByIdIn(binaryContentIds))
         );
+    }
+
+    // JSON 응답이 아니라 파일 자체를 내려주므로 DTO로 바꾸지 않고 조회 결과를 스토리지에 넘긴다.
+    // 없는 id면 find에서 EntityNotFoundException이 나 404로 응답한다.
+    @Override
+    @GetMapping("/{binaryContentId}/download")
+    public ResponseEntity<?> download(
+            @PathVariable UUID binaryContentId
+    ) {
+        return binaryContentStorage.download(contentService.find(binaryContentId));
     }
 }
