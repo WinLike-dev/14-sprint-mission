@@ -10,7 +10,7 @@ import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
  * 자동으로 스캔하고 등록한다.
  *
  * @SpringBootApplication: 자동 설정, 컴포넌트 스캔, 추가 설정 등록을 한꺼번에 해주는 어노테이션이다.
- * @ConfigurationPropertiesScan: RepositoryProperties처럼 설정값을 타입으로 표현한 클래스를 찾아 바인딩한다.
+ * @ConfigurationPropertiesScan: @ConfigurationProperties로 설정값을 타입으로 표현한 클래스를 찾아 바인딩한다.
  */
 // Spring Boot가 현재 패키지 아래의 Configuration과 Service Bean을 탐색하는 진입점이다.
 @SpringBootApplication

@@ -2,6 +2,8 @@ package com.sprint.mission.discodeit.channel.application.internal;
 
 import com.sprint.mission.discodeit.channel.application.port.out.ChannelRepository;
 import com.sprint.mission.discodeit.channel.api.ChannelInternalApi;
+import com.sprint.mission.discodeit.channel.domain.channel.Channel;
+import com.sprint.mission.discodeit.common.exception.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -17,9 +19,11 @@ public class ChannelInternalService implements ChannelInternalApi {
 
     private final ChannelRepository channelRepository;
 
-    // 채널이 존재하는지 확인하고, 없으면 예외를 던진다 (getById 내부에서 처리)
+    // 채널이 존재하는지 확인하고, 없으면 예외를 던진다
     @Override
     public void requireExists(UUID channelId) {
-        channelRepository.getById(channelId);
+        if (!channelRepository.existsById(channelId)) {
+            throw new EntityNotFoundException(Channel.class, channelId);
+        }
     }
 }

@@ -1,11 +1,14 @@
 package com.sprint.mission.discodeit.user.domain.user;
 
 import com.sprint.mission.discodeit.common.exception.InvalidValueException;
-import com.sprint.mission.discodeit.common.entity.BaseEntity;
+import com.sprint.mission.discodeit.common.entity.BaseUpdatableEntity;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
-import java.io.Serial;
-import java.time.Instant;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
@@ -16,18 +19,26 @@ import java.util.regex.Pattern;
  * 생성 시점부터 이메일 형식 검증 같은 불변식(항상 지켜야 하는 규칙)을 스스로 보장한다.
  */
 @Getter
-public class User extends BaseEntity {
-
-    @Serial
-    private static final long serialVersionUID = 1L;
+@Entity
+@Table(name = "users")
+@NoArgsConstructor(access = AccessLevel.PROTECTED) // JPA가 조회 결과를 담을 때 사용한다
+public class User extends BaseUpdatableEntity {
 
     // 설계: 이메일 형식은 User가 항상 지켜야 하는 불변식이므로 Entity가 검증한다.
     // 이메일 정규식 패턴 - "@" 앞뒤로 공백이 아닌 문자가 있어야 유효하다.
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$");
 
+    @Column(nullable = false, unique = true, length = 50)
     private String username;   // 사용자 이름 (로그인 ID로도 사용됨)
+
+    @Column(nullable = false, unique = true, length = 100)
     private String email;      // 이메일 주소
+
+    @Column(nullable = false, length = 60)
     private String password;   // 비밀번호
+
+    // 연관관계 매핑 전까지는 FK 컬럼 값만 UUID로 다룬다.
+    @Column(unique = true)
     private UUID profileId;    // 프로필 이미지(BinaryContent)의 ID, 없으면 null
 
     // 새 사용자를 생성하는 생성자 - 필수 값 검증을 수행한다.
@@ -35,23 +46,6 @@ public class User extends BaseEntity {
         this.username = requireNonBlank(username, "username");
         this.email = requireValidEmail(email);
         this.password = requireNonBlank(password, "password");
-        this.profileId = profileId;
-    }
-
-    // DB나 파일에서 복원할 때 사용하는 내부 생성자 - id, 생성/수정 시각까지 모두 받는다.
-    private User(
-            UUID id,
-            Instant createdAt,
-            Instant updatedAt,
-            String username,
-            String email,
-            String password,
-            UUID profileId
-    ) {
-        super(id, createdAt, updatedAt);
-        this.username = username;
-        this.email = email;
-        this.password = password;
         this.profileId = profileId;
     }
 
@@ -70,20 +64,6 @@ public class User extends BaseEntity {
         this.email = nextEmail;
         this.password = nextPassword;
         this.profileId = profileId;
-        markUpdated(); // 수정 시각을 현재 시각으로 갱신
-    }
-
-    // 깊은 복사본을 만든다. 원본 객체 변경 없이 안전하게 다룰 때 사용한다.
-    public User copy() {
-        return new User(
-                getId(),
-                getCreatedAt(),
-                getUpdatedAt(),
-                username,
-                email,
-                password,
-                profileId
-        );
     }
 
     // 값이 null이거나 빈 문자열이면 예외를 던진다. 필수 입력 값 검증용.

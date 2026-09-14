@@ -2,21 +2,37 @@ spring:
   application:
     name: discodeit
 
+  # compose.yml과 같은 .env를 읽어 DB 접속 정보를 한 곳에서 관리한다.
+  # 경로는 실행 디렉터리 기준이므로 프로젝트 루트에서 실행해야 한다.
+  # 파일이 없으면 무시하고 OS 환경 변수로 값을 받는다.
+  config:
+    import: optional:file:.env[.properties]
+
+  datasource:
+    url: jdbc:postgresql://localhost:${DB_PORT:5432}/${DB_NAME}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+
+  jpa:
+    hibernate:
+      # 스키마는 직접 관리하고 Hibernate는 엔티티와 테이블이 맞는지만 확인한다.
+      # 개발 중 자동 생성이 필요하면 JPA_DDL_AUTO=update 등으로 덮어쓴다.
+      ddl-auto: ${JPA_DDL_AUTO:validate}
+    # 뷰 렌더링까지 영속성 컨텍스트를 열어두지 않는다. 지연 로딩은 트랜잭션 안에서 끝낸다.
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+        # 도메인이 Instant를 쓰므로 JVM 기본 시간대와 무관하게 UTC로 저장한다.
+        jdbc:
+          time_zone: UTC
+
   # 프로필 이미지와 메시지 첨부파일을 multipart로 받는다.
   # 기본값(파일 1MB, 요청 10MB)은 이미지 한 장에도 걸리기 쉬워 올려둔다.
   servlet:
     multipart:
       max-file-size: 10MB
       max-request-size: 30MB
-
-discodeit:
-  repository:
-    # 저장소 구현체 선택: jcf | file
-    # 값을 바꾸면 Java 코드 수정 없이 저장 기술이 교체된다.
-    # 설정이 누락되면 file로 fallback하고, 허용되지 않은 값이면 기동 단계에서 실패한다(fail-fast).
-    type: ${DISCODEIT_REPOSITORY_TYPE:file}
-    # type=file 일 때 사용할 데이터 루트 경로. 누락 시 data로 fallback한다.
-    data-root: ${DISCODEIT_DATA_ROOT:data}
 
 springdoc:
   # OpenAPI 문서(JSON) 경로. oasdiff로 제공 스펙과 비교할 때 이 경로를 사용한다.
@@ -27,3 +43,8 @@ springdoc:
     path: /swagger-ui.html
     operations-sorter: alpha
     tags-sorter: alpha
+
+logging:
+  level:
+    # 실행되는 SQL을 로그로 확인한다. 바인딩 값까지 보려면 org.hibernate.orm.jdbc.bind: trace
+    org.hibernate.SQL: debug

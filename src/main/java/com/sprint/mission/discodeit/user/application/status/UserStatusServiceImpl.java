@@ -39,7 +39,7 @@ public class UserStatusServiceImpl implements UserStatusControllerService {
     public UserStatusResult update(UUID userId, Instant newLastActiveAt) {
         UserStatus status = getStatusByUserId(userId);
         status.updateLastActiveAt(newLastActiveAt);
-        return UserStatusResult.from(userStatusRepository.update(status));
+        return UserStatusResult.from(userStatusRepository.save(status));
     }
 
     // userId로 UserStatus를 찾는 내부 헬퍼 메서드. 없으면 예외를 던진다.

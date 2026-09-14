@@ -55,7 +55,7 @@ docker compose down
 
 ## Spring Boot 실행
 
-프로젝트 루트에서 실행합니다. 현재 파일 저장소 방식은 DB가 꺼져 있어도 동작합니다.
+프로젝트 루트에서 실행합니다. 데이터는 PostgreSQL에 저장하므로 DB가 먼저 실행 중이어야 합니다.
 
 ```bash
 ./gradlew bootRun
@@ -69,13 +69,6 @@ docker compose down
 
 앱 포트는 Spring Boot 기본값인 8080입니다. 변경하려면 실행 환경에 `SERVER_PORT`를 지정합니다.
 파일 업로드 제한은 파일당 10MB, 요청당 30MB입니다.
-
-| 앱 환경 변수 | 기본값 | 용도 |
-| --- | --- | --- |
-| `DISCODEIT_REPOSITORY_TYPE` | `file` | `file`: 파일 저장, `jcf`: 메모리 저장 |
-| `DISCODEIT_DATA_ROOT` | `data` | 파일 저장소 경로 |
-
-`jcf`의 데이터는 앱 종료 시 사라집니다. `data/`의 앱 파일과 Docker 볼륨의 DB 데이터는 서로 별개입니다.
 
 ## 빌드와 테스트
 

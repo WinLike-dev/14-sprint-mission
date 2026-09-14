@@ -24,8 +24,6 @@ public interface ChannelRestMapper {
 
     CreatePrivateChannelCommand toCommand(PrivateChannelCreateRequest request);
 
-    @Mapping(target = "newName", source = "newName")
-    @Mapping(target = "newDescription", source = "newDescription")
     UpdatePublicChannelCommand toCommand(PublicChannelUpdateRequest request);
 
     ChannelDto toResponse(ChannelResult result);

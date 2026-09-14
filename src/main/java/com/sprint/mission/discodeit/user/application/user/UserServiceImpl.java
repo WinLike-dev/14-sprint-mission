@@ -56,14 +56,14 @@ public class UserServiceImpl implements UserControllerService {
             createdProfileId = target.profile() == null
                     ? null
                     : contentManager.create(toContentData(target.profile()));
-            // User 생성자가 id를 만들고, repository.create는 그 엔티티를 저장한 뒤 같은 인스턴스를 돌려준다.
-            user = userRepository.create(new User(
+            // 새 엔티티는 id가 없으므로 save가 persist하고, 그때 id와 생성 시각이 채워진다.
+            user = userRepository.save(new User(
                     target.username(),
                     target.email(),
                     target.password(),
                     createdProfileId
             ));
-            userStatusRepository.create(new UserStatus(user.getId(), Instant.now())); // 온라인 상태 초기화
+            userStatusRepository.save(new UserStatus(user.getId(), Instant.now())); // 온라인 상태 초기화
             return createResponse(user);
         } catch (RuntimeException exception) {
             // 생성 중 실패하면 이미 만든 리소스를 정리한다 (수동 롤백)
@@ -75,7 +75,7 @@ public class UserServiceImpl implements UserControllerService {
     // ID로 사용자 한 명을 조회하여 DTO로 변환한다.
     @Override
     public UserResult find(UUID id) {
-        return createResponse(userRepository.getById(id));
+        return createResponse(getUser(id));
     }
 
     // 전체 사용자를 조회하여 DTO 리스트로 반환한다.
@@ -94,7 +94,7 @@ public class UserServiceImpl implements UserControllerService {
     // 사용자 정보를 수정한다. 프로필 이미지가 새로 들어오면 교체하고 기존 것은 삭제한다.
     @Override
     public UserResult update(UUID id, UpdateUserCommand command) {
-        User user = userRepository.getById(id);
+        User user = getUser(id);
         UpdateUserCommand target = Objects.requireNonNull(command);
         validateUniqueFields(id, target.username(), target.email());
 
@@ -113,7 +113,7 @@ public class UserServiceImpl implements UserControllerService {
                     target.password() == null ? user.getPassword() : target.password(),
                     nextProfileId
             );
-            userRepository.update(user);
+            userRepository.save(user);
         } catch (RuntimeException exception) {
             // 업데이트 실패 시 새로 만든 프로필만 정리한다
             if (newProfileId != null) {
@@ -134,7 +134,7 @@ public class UserServiceImpl implements UserControllerService {
     // 사용자를 삭제한다. 상태, 프로필, 관련 이벤트까지 함께 처리한다.
     @Override
     public void delete(UUID id) {
-        User user = userRepository.getById(id);
+        User user = getUser(id);
         UserStatus status = userStatusRepository.findByUserId(id)
                 .orElseThrow(() -> new EntityNotFoundException(UserStatus.class, id));
         userStatusRepository.deleteById(status.getId()); // 상태 먼저 삭제
@@ -151,15 +151,32 @@ public class UserServiceImpl implements UserControllerService {
     // currentId가 있으면 자기 자신은 제외한다(수정 시).
     // 필요한 정보는 사용자 객체가 아니라 "그 값을 쓰는 다른 사용자가 있는가" 하나뿐이다.
     // 전체 목록을 가져와 훑는 대신 존재 여부를 저장소에 묻는다.
-    // File 구현에서 가입 한 번마다 전체 .ser을 역직렬화하던 비용이 사라지지는 않지만,
-    // 판단이 저장소로 넘어가면서 호출부에 의도가 드러나고 구현체가 인덱스로 최적화할 자리가 생긴다.
     private void validateUniqueFields(UUID currentId, String username, String email) {
-        if (username != null && userRepository.existsByUsername(username, currentId)) {
+        if (username != null && isUsernameTaken(username, currentId)) {
             throw new DuplicateFieldValueException(User.class, "username", username);
         }
-        if (email != null && userRepository.existsByEmail(email, currentId)) {
+        if (email != null && isEmailTaken(email, currentId)) {
             throw new DuplicateFieldValueException(User.class, "email", email);
         }
+    }
+
+    // 가입(currentId == null)이면 전체에서, 수정이면 자기 자신을 뺀 나머지에서 찾는다.
+    private boolean isUsernameTaken(String username, UUID currentId) {
+        return currentId == null
+                ? userRepository.existsByUsername(username)
+                : userRepository.existsByUsernameAndIdNot(username, currentId);
+    }
+
+    private boolean isEmailTaken(String email, UUID currentId) {
+        return currentId == null
+                ? userRepository.existsByEmail(email)
+                : userRepository.existsByEmailAndIdNot(email, currentId);
+    }
+
+    // ID로 사용자를 조회하고, 없으면 예외를 던지는 헬퍼 메서드
+    private User getUser(UUID id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException(User.class, id));
     }
 
     // 단건 조회 경로: 필요한 상태 하나만 직접 조회한다.

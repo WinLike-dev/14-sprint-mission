@@ -8,7 +8,6 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -46,8 +45,8 @@ class UserStatusTest {
 
         status.updateLastActiveAt(newActiveAt);
 
+        // updatedAt은 저장 시점에 JPA 콜백이 채우므로 도메인 단위 테스트에서는 확인하지 않는다.
         assertEquals(newActiveAt, status.getLastActiveAt());
-        assertNotNull(status.getUpdatedAt());
         assertThrows(NullPointerException.class, () -> status.updateLastActiveAt(null));
     }
 }

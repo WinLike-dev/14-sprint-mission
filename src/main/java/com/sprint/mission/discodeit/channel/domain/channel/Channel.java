@@ -1,14 +1,15 @@
 package com.sprint.mission.discodeit.channel.domain.channel;
 
 import com.sprint.mission.discodeit.common.exception.InvalidValueException;
-import com.sprint.mission.discodeit.common.entity.BaseEntity;
+import com.sprint.mission.discodeit.common.entity.BaseUpdatableEntity;
 import com.sprint.mission.discodeit.channel.domain.channel.exception.UnsupportedChannelOperationException;
+import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
-import java.io.Serial;
 import java.time.Instant;
 import java.util.Objects;
-import java.util.UUID;
 
 /**
  * 채널 도메인 엔티티.
@@ -16,40 +17,33 @@ import java.util.UUID;
  * PUBLIC 채널은 이름과 설명을 가지고, PRIVATE 채널은 이름/설명 없이 참여자 목록으로만 구분된다.
  */
 @Getter
-public class Channel extends BaseEntity {
+@Entity
+@Table(name = "channels")
+@NoArgsConstructor(access = AccessLevel.PROTECTED) // JPA가 조회 결과를 담을 때 사용한다
+public class Channel extends BaseUpdatableEntity {
 
-    @Serial
-    private static final long serialVersionUID = 1L; // 직렬화 버전 관리용 ID (JCF 파일 저장 시 필요)
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, updatable = false, length = 10)
+    private ChannelType type; // 채널 유형 (PUBLIC 또는 PRIVATE), setter가 없어 한번 정해지면 변경 불가
 
-    private final ChannelType type; // 채널 유형 (PUBLIC 또는 PRIVATE), 한번 정해지면 변경 불가
+    @Column(length = 100)
     private String name; // 채널 이름 (PUBLIC만 사용, PRIVATE은 null)
+
+    @Column(length = 500)
     private String description; // 채널 설명 (PUBLIC만 사용, PRIVATE은 null)
+
+    // ERD에 없는 값이라 매핑하지 않는다. 저장되지 않으므로 조회한 채널에서는 항상 null이다.
+    // 메시지 저장소에서 최신 메시지 시각을 조회하는 방식으로 옮긴 뒤 필드를 제거한다.
+    @Transient
     private Instant lastMessageAt; // 이 채널에 마지막으로 메시지가 작성된 시각
 
-    // 새 채널을 처음 만들 때 사용하는 생성자 (ID와 시각은 BaseEntity에서 자동 생성)
+    // 새 채널을 처음 만들 때 사용하는 생성자 (ID와 시각은 저장 시 BaseEntity가 부여)
     private Channel(ChannelType type, String name, String description) {
         this.type = Objects.requireNonNull(type, "type은 null일 수 없습니다.");
         validateFields(type, name, description);
         this.name = name;
         this.description = description;
         this.lastMessageAt = null;
-    }
-
-    // 기존 데이터를 복원할 때 사용하는 생성자 (copy 메서드에서 호출)
-    private Channel(
-            UUID id,
-            Instant createdAt,
-            Instant updatedAt,
-            ChannelType type,
-            String name,
-            String description,
-            Instant lastMessageAt
-    ) {
-        super(id, createdAt, updatedAt);
-        this.type = type;
-        this.name = name;
-        this.description = description;
-        this.lastMessageAt = lastMessageAt;
     }
 
     // 공개 채널을 생성하는 팩토리 메서드 (이름과 설명 필수)
@@ -70,26 +64,11 @@ public class Channel extends BaseEntity {
         validateFields(type, name, description);
         this.name = name;
         this.description = description;
-        markUpdated();
     }
 
     // 채널의 마지막 메시지 시각을 갱신한다 (메시지가 생성/삭제될 때 호출됨)
     public void updateLastMessageAt(Instant lastMessageAt) {
         this.lastMessageAt = lastMessageAt;
-        markUpdated();
-    }
-
-    // JCF 객체 카피를 위한 오퍼레이터
-    public Channel copy() {
-        return new Channel(
-                getId(),
-                getCreatedAt(),
-                getUpdatedAt(),
-                type,
-                name,
-                description,
-                lastMessageAt
-        );
     }
 
     // PRIVATE는 DM이므로 이름과 채널 설명 필요 없음

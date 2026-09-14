@@ -1,11 +1,13 @@
 package com.sprint.mission.discodeit.channel.application.port.out;
 
-import com.sprint.mission.discodeit.common.repository.CrudRepository;
 import com.sprint.mission.discodeit.channel.domain.channel.Channel;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.UUID;
 
 /**
  * 채널 저장소 outbound 포트.
- * 파일/JCF 구현은 adapter.out.persistence가 담당한다.
+ * 구현은 Spring Data JPA가 런타임에 만든다.
  */
-public interface ChannelRepository extends CrudRepository<Channel> {
+public interface ChannelRepository extends JpaRepository<Channel, UUID> {
 }

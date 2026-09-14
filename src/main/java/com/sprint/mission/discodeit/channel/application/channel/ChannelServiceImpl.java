@@ -8,6 +8,7 @@ import com.sprint.mission.discodeit.channel.domain.channel.Channel;
 import com.sprint.mission.discodeit.channel.domain.channel.ChannelType;
 import com.sprint.mission.discodeit.channel.domain.readstatus.ReadStatus;
 import com.sprint.mission.discodeit.common.exception.DuplicateRequestValueException;
+import com.sprint.mission.discodeit.common.exception.EntityNotFoundException;
 import com.sprint.mission.discodeit.channel.application.port.out.ChannelRepository;
 import com.sprint.mission.discodeit.channel.application.port.out.ReadStatusRepository;
 import com.sprint.mission.discodeit.channel.application.port.out.ChannelUserReader;
@@ -44,7 +45,7 @@ public class ChannelServiceImpl implements ChannelControllerService {
     public ChannelResult createPublic(CreatePublicChannelCommand command) {
         CreatePublicChannelCommand target = Objects.requireNonNull(command);
         Channel channel = Channel.publicChannel(target.name(), target.description());
-        return createResult(channelRepository.create(channel));
+        return createResult(channelRepository.save(channel));
     }
 
     // 프라이빗 채널 생성 -> 1. 참여자 명단 올바른 지 체크 2. 채널 생성 3. 읽기상태 생성
@@ -59,12 +60,12 @@ public class ChannelServiceImpl implements ChannelControllerService {
         // 멤버체크 exception
         uniqueParticipantIds.forEach(userReader::requireExists);
 
-        Channel channel = channelRepository.create(Channel.privateChannel());
+        Channel channel = channelRepository.save(Channel.privateChannel());
         List<ReadStatus> createdStatuses = new ArrayList<>();
         try {
             for (UUID userId : uniqueParticipantIds) {
                 ReadStatus status = new ReadStatus(userId, channel.getId(), Instant.now());
-                readStatusRepository.create(status);
+                readStatusRepository.save(status);
                 createdStatuses.add(status);
             }
             return createResult(channel);
@@ -83,7 +84,7 @@ public class ChannelServiceImpl implements ChannelControllerService {
     // ID로 채널을 조회하고 application 결과로 변환하여 반환
     @Override
     public ChannelResult find(UUID id) {
-        return createResult(channelRepository.getById(id));
+        return createResult(getChannel(id));
     }
 
     // 사용자가 볼 수 있는 모든 채널을 조회 (PUBLIC 채널 전체 + 참여 중인 PRIVATE 채널)
@@ -119,7 +120,7 @@ public class ChannelServiceImpl implements ChannelControllerService {
     // 채널 정보 수정 (요청에 없는 필드는 기존 값 유지)
     @Override
     public ChannelResult update(UUID id, UpdatePublicChannelCommand command) {
-        Channel channel = channelRepository.getById(id);
+        Channel channel = getChannel(id);
         UpdatePublicChannelCommand target = Objects.requireNonNull(command);
         channel.update(
                 target.newName() == null ? channel.getName() : target.newName(),
@@ -127,15 +128,23 @@ public class ChannelServiceImpl implements ChannelControllerService {
                         ? channel.getDescription()
                         : target.newDescription()
         );
-        return createResult(channelRepository.update(channel));
+        return createResult(channelRepository.save(channel));
     }
 
     @Override
     public void delete(UUID id) {
-        channelRepository.getById(id);
+        if (!channelRepository.existsById(id)) {
+            throw new EntityNotFoundException(Channel.class, id);
+        }
         readStatusRepository.deleteAllByChannelId(id);
         channelRepository.deleteById(id);
         Events.raise(new ChannelDeletedEvent(id));
+    }
+
+    // ID로 채널을 조회하고, 없으면 예외를 던지는 헬퍼 메서드
+    private Channel getChannel(UUID id) {
+        return channelRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException(Channel.class, id));
     }
 
     // 단건 조회 경로: 해당 채널의 ReadStatus만 조회한다.

@@ -4,7 +4,6 @@ import com.sprint.mission.discodeit.common.exception.ConflictingStateException;
 import com.sprint.mission.discodeit.common.exception.DuplicateDataException;
 import com.sprint.mission.discodeit.common.exception.EntityNotFoundException;
 import com.sprint.mission.discodeit.common.exception.InvalidValueException;
-import com.sprint.mission.discodeit.common.exception.StorageOperationException;
 import com.sprint.mission.discodeit.common.exception.UploadedFileReadException;
 import com.sprint.mission.discodeit.user.application.auth.exception.AuthenticationFailedException;
 import org.slf4j.Logger;
@@ -160,13 +159,6 @@ public class GlobalExceptionHandler {
                 HttpStatus.BAD_REQUEST,
                 "%s 파라미터가 필요합니다.".formatted(e.getParameterName())
         );
-    }
-
-    // 파일/DB 등 저장소 관련 작업 실패 시 -> 500 Internal Server Error 응답
-    @ExceptionHandler(StorageOperationException.class)
-    public ResponseEntity<Map<String, Object>> handleStorageOperation(StorageOperationException e) {
-        log.error("저장소 작업이 실패했습니다.", e);
-        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, INTERNAL_MESSAGE);
     }
 
     // InvalidValueException으로 분류되지 않은 잘못된 인자는 코드의 결함으로 본다.

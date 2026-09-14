@@ -12,6 +12,7 @@ import com.sprint.mission.discodeit.message.application.port.out.MessageContentM
 import com.sprint.mission.discodeit.message.application.port.out.MessageContentData;
 import com.sprint.mission.discodeit.message.api.event.ChannelMessageChangedEvent;
 import com.sprint.mission.discodeit.common.event.Events;
+import com.sprint.mission.discodeit.common.exception.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -47,7 +48,7 @@ public class MessageServiceImpl implements MessageControllerService {
         );
         Message created = null;
         try {
-            created = messageRepository.create(message);
+            created = messageRepository.save(message);
             // 채널에 새 메시지가 추가되었음을 이벤트로 알린다 (채널의 lastMessageAt 갱신 등에 사용)
             Events.raise(new ChannelMessageChangedEvent(
                     created.getChannelId(), created.getCreatedAt()
@@ -79,24 +80,30 @@ public class MessageServiceImpl implements MessageControllerService {
     // 메시지 내용을 수정한다
     @Override
     public MessageResult update(UUID id, UpdateMessageCommand command) {
-        Message message = messageRepository.getById(id);
+        Message message = getMessage(id);
         message.update(Objects.requireNonNull(command).content());
-        return MessageResult.from(messageRepository.update(message));
+        return MessageResult.from(messageRepository.save(message));
     }
 
     // 메시지를 삭제하고, 채널에 메시지 변경 이벤트를 발행한다
     @Override
     public void delete(UUID id) {
-        Message message = messageRepository.getById(id);
+        Message message = getMessage(id);
         UUID channelId = message.getChannelId();
         deleteMessage(message);
         // 삭제 후 해당 채널의 최신 메시지 시각을 이벤트로 전달 (채널의 lastMessageAt 갱신용)
         Events.raise(new ChannelMessageChangedEvent(
                 channelId,
-                messageRepository.findLatestByChannelId(channelId)
+                messageRepository.findTopByChannelIdOrderByCreatedAtDesc(channelId)
                         .map(Message::getCreatedAt)
                         .orElse(null) // 메시지가 하나도 없으면 null
         ));
+    }
+
+    // ID로 메시지를 조회하고, 없으면 예외를 던지는 헬퍼 메서드
+    private Message getMessage(UUID id) {
+        return messageRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException(Message.class, id));
     }
 
     // 첨부파일 목록을 순회하며 BinaryContent를 생성하고, 생성된 ID 목록을 반환한다

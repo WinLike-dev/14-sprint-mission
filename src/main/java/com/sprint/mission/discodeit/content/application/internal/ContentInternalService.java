@@ -27,7 +27,7 @@ public class ContentInternalService implements ContentInternalApi {
         BinaryContent content = new BinaryContent(
                 target.fileName(), target.contentType(), target.bytes()
         );
-        return binaryContentRepository.create(content).getId(); // 저장 후 생성된 ID를 반환
+        return binaryContentRepository.save(content).getId(); // 저장 후 생성된 ID를 반환
     }
 
     // ID로 바이너리 콘텐츠를 삭제한다

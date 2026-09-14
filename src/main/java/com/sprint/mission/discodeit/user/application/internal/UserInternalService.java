@@ -1,7 +1,9 @@
 package com.sprint.mission.discodeit.user.application.internal;
 
+import com.sprint.mission.discodeit.common.exception.EntityNotFoundException;
 import com.sprint.mission.discodeit.user.application.port.out.UserRepository;
 import com.sprint.mission.discodeit.user.api.UserInternalApi;
+import com.sprint.mission.discodeit.user.domain.user.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -17,9 +19,11 @@ public class UserInternalService implements UserInternalApi {
 
     private final UserRepository userRepository;
 
-    // 해당 userId의 사용자가 존재하는지 확인한다. 존재하지 않으면 getById 내부에서 예외가 발생한다.
+    // 해당 userId의 사용자가 존재하는지 확인한다. 존재하지 않으면 예외를 던진다.
     @Override
     public void requireExists(UUID userId) {
-        userRepository.getById(userId);
+        if (!userRepository.existsById(userId)) {
+            throw new EntityNotFoundException(User.class, userId);
+        }
     }
 }

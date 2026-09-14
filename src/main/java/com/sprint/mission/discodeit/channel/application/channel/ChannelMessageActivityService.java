@@ -2,6 +2,7 @@ package com.sprint.mission.discodeit.channel.application.channel;
 
 import com.sprint.mission.discodeit.channel.domain.channel.Channel;
 import com.sprint.mission.discodeit.channel.application.port.out.ChannelRepository;
+import com.sprint.mission.discodeit.common.exception.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -20,8 +21,9 @@ public class ChannelMessageActivityService {
 
     // 채널의 마지막 메시지 시각을 갱신하고 저장소에 반영
     public void updateLastMessageAt(UUID channelId, Instant lastMessageAt) {
-        Channel channel = channelRepository.getById(channelId);
+        Channel channel = channelRepository.findById(channelId)
+                .orElseThrow(() -> new EntityNotFoundException(Channel.class, channelId));
         channel.updateLastMessageAt(lastMessageAt);
-        channelRepository.update(channel);
+        channelRepository.save(channel);
     }
 }

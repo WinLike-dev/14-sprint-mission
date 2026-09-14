@@ -6,7 +6,6 @@ import java.time.Instant;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ReadStatusTest {
@@ -23,8 +22,8 @@ class ReadStatusTest {
         Instant newReadAt = Instant.parse("2026-08-09T01:23:45Z");
         status.updateLastReadAt(newReadAt);
 
+        // updatedAt은 저장 시점에 JPA 콜백이 채우므로 도메인 단위 테스트에서는 확인하지 않는다.
         assertEquals(newReadAt, status.getLastReadAt());
-        assertNotNull(status.getUpdatedAt());
     }
 
     @Test

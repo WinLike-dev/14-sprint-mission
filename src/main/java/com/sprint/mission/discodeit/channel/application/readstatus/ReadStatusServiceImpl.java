@@ -45,7 +45,8 @@ public class ReadStatusServiceImpl implements ReadStatusControllerService {
                 "channelId는 null일 수 없습니다."
         );
         userReader.requireExists(userId);
-        Channel channel = channelRepository.getById(channelId);
+        Channel channel = channelRepository.findById(channelId)
+                .orElseThrow(() -> new EntityNotFoundException(Channel.class, channelId));
         if (channel.getType() == ChannelType.PRIVATE) { // PRIVATE 채널은 별도 생성 불가
             throw new ReadStatusCreationNotAllowedException(channelId);
         }
@@ -59,7 +60,7 @@ public class ReadStatusServiceImpl implements ReadStatusControllerService {
             );
         }
         ReadStatus status = new ReadStatus(userId, channelId, target.lastReadAt());
-        return ReadStatusResult.from(readStatusRepository.create(status));
+        return ReadStatusResult.from(readStatusRepository.save(status));
     }
 
     // 특정 사용자 + 특정 채널의 읽음 상태를 조회
@@ -81,9 +82,10 @@ public class ReadStatusServiceImpl implements ReadStatusControllerService {
     // 마지막 읽음 시각을 현재 시각으로 갱신 (사용자가 채널을 확인했을 때 호출)
     @Override
     public ReadStatusResult updateLastReadAt(UUID readStatusId, UpdateReadStatusCommand command) {
-        ReadStatus status = readStatusRepository.getById(readStatusId);
+        ReadStatus status = readStatusRepository.findById(readStatusId)
+                .orElseThrow(() -> new EntityNotFoundException(ReadStatus.class, readStatusId));
         status.updateLastReadAt(Objects.requireNonNull(command).lastReadAt());
-        return ReadStatusResult.from(readStatusRepository.update(status));
+        return ReadStatusResult.from(readStatusRepository.save(status));
     }
 
     // 읽음 상태 삭제 (사용자 + 채널 조합으로 찾아서 삭제)
