@@ -1,6 +1,6 @@
 package com.sprint.mission.discodeit.channel.entity;
 
-import com.sprint.mission.discodeit.common.exception.InvalidValueException;
+import com.sprint.mission.discodeit.common.exception.exceptions.InvalidValueException;
 import com.sprint.mission.discodeit.common.entity.base.BaseUpdatableEntity;
 import com.sprint.mission.discodeit.channel.exception.UnsupportedChannelOperationException;
 import jakarta.persistence.*;

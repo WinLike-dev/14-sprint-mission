@@ -1,4 +1,4 @@
-package com.sprint.mission.discodeit.common.exception;
+package com.sprint.mission.discodeit.common.exception.exceptions;
 
 /**
  * 요청 하나 안에 같은 값이 중복해서 들어왔을 때 발생한다.

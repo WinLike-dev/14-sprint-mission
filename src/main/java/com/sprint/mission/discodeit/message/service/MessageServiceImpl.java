@@ -12,7 +12,7 @@ import com.sprint.mission.discodeit.message.application.port.out.MessageContentM
 import com.sprint.mission.discodeit.message.application.port.out.MessageContentData;
 import com.sprint.mission.discodeit.message.api.event.ChannelMessageChangedEvent;
 import com.sprint.mission.discodeit.common.event.Events;
-import com.sprint.mission.discodeit.common.exception.EntityNotFoundException;
+import com.sprint.mission.discodeit.common.exception.exceptions.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

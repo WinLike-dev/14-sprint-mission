@@ -1,4 +1,4 @@
-package com.sprint.mission.discodeit.common.exception;
+package com.sprint.mission.discodeit.common.exception.exceptions;
 
 /**
  * 요청 자체는 올바르지만 대상의 현재 상태 때문에 처리할 수 없을 때 사용하는 예외.

@@ -7,8 +7,8 @@ import com.sprint.mission.discodeit.user.service.dto.UserResult;
 
 import com.sprint.mission.discodeit.user.entity.User;
 import com.sprint.mission.discodeit.user.entity.UserStatus;
-import com.sprint.mission.discodeit.common.exception.EntityNotFoundException;
-import com.sprint.mission.discodeit.common.exception.DuplicateFieldValueException;
+import com.sprint.mission.discodeit.common.exception.exceptions.EntityNotFoundException;
+import com.sprint.mission.discodeit.common.exception.exceptions.DuplicateFieldValueException;
 import com.sprint.mission.discodeit.user.repository.UserRepository;
 import com.sprint.mission.discodeit.user.repository.UserStatusRepository;
 import com.sprint.mission.discodeit.user.application.port.out.UserContentManager;

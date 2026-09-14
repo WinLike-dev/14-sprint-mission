@@ -1,4 +1,4 @@
-package com.sprint.mission.discodeit.common.exception;
+package com.sprint.mission.discodeit.common.exception.exceptions;
 
 /**
  * 이미 저장된 데이터와 충돌해서 요청을 처리할 수 없을 때 사용하는 예외.

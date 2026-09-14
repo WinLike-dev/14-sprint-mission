@@ -1,4 +1,4 @@
-package com.sprint.mission.discodeit.common.exception;
+package com.sprint.mission.discodeit.common.exception.exceptions;
 
 public class UploadedFileReadException extends RuntimeException {
 

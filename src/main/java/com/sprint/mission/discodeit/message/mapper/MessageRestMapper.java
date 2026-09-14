@@ -1,6 +1,6 @@
 package com.sprint.mission.discodeit.message.mapper;
 
-import com.sprint.mission.discodeit.common.exception.UploadedFileReadException;
+import com.sprint.mission.discodeit.common.exception.exceptions.UploadedFileReadException;
 import com.sprint.mission.discodeit.message.dto.request.MessageCreateRequest;
 import com.sprint.mission.discodeit.message.dto.request.MessageUpdateRequest;
 import com.sprint.mission.discodeit.message.dto.response.MessageDto;

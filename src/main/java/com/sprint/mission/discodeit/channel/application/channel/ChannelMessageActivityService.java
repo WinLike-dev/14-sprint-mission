@@ -2,7 +2,7 @@ package com.sprint.mission.discodeit.channel.application.channel;
 
 import com.sprint.mission.discodeit.channel.entity.Channel;
 import com.sprint.mission.discodeit.channel.repository.ChannelRepository;
-import com.sprint.mission.discodeit.common.exception.EntityNotFoundException;
+import com.sprint.mission.discodeit.common.exception.exceptions.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

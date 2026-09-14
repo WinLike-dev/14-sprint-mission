@@ -1,6 +1,6 @@
 package com.sprint.mission.discodeit.message.entity;
 
-import com.sprint.mission.discodeit.common.exception.InvalidValueException;
+import com.sprint.mission.discodeit.common.exception.exceptions.InvalidValueException;
 import com.sprint.mission.discodeit.common.entity.base.BaseUpdatableEntity;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;

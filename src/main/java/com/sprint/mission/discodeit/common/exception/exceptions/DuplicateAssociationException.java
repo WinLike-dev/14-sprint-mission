@@ -1,4 +1,4 @@
-package com.sprint.mission.discodeit.common.exception;
+package com.sprint.mission.discodeit.common.exception.exceptions;
 
 /**
  * 엔티티 간의 연관 관계가 이미 존재할 때 발생하는 예외.

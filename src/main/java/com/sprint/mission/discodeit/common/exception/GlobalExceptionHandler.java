@@ -1,10 +1,10 @@
 package com.sprint.mission.discodeit.common.exception;
 
-import com.sprint.mission.discodeit.common.exception.ConflictingStateException;
-import com.sprint.mission.discodeit.common.exception.DuplicateDataException;
-import com.sprint.mission.discodeit.common.exception.EntityNotFoundException;
-import com.sprint.mission.discodeit.common.exception.InvalidValueException;
-import com.sprint.mission.discodeit.common.exception.UploadedFileReadException;
+import com.sprint.mission.discodeit.common.exception.exceptions.ConflictingStateException;
+import com.sprint.mission.discodeit.common.exception.exceptions.DuplicateDataException;
+import com.sprint.mission.discodeit.common.exception.exceptions.EntityNotFoundException;
+import com.sprint.mission.discodeit.common.exception.exceptions.InvalidValueException;
+import com.sprint.mission.discodeit.common.exception.exceptions.UploadedFileReadException;
 import com.sprint.mission.discodeit.user.exception.AuthenticationFailedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

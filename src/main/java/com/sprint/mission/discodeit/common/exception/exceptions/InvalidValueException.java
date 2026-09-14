@@ -1,4 +1,4 @@
-package com.sprint.mission.discodeit.common.exception;
+package com.sprint.mission.discodeit.common.exception.exceptions;
 
 /**
  * 도메인 규칙을 만족하지 못하는 값이 들어왔을 때 사용하는 예외.

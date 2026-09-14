@@ -2,7 +2,7 @@ package com.sprint.mission.discodeit.user.service;
 
 import com.sprint.mission.discodeit.user.service.dto.UserStatusResult;
 import com.sprint.mission.discodeit.user.entity.UserStatus;
-import com.sprint.mission.discodeit.common.exception.EntityNotFoundException;
+import com.sprint.mission.discodeit.common.exception.exceptions.EntityNotFoundException;
 import com.sprint.mission.discodeit.user.repository.UserStatusRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

@@ -7,8 +7,8 @@ import com.sprint.mission.discodeit.channel.service.dto.UpdatePublicChannelComma
 import com.sprint.mission.discodeit.channel.entity.Channel;
 import com.sprint.mission.discodeit.channel.entity.ChannelType;
 import com.sprint.mission.discodeit.channel.entity.ReadStatus;
-import com.sprint.mission.discodeit.common.exception.DuplicateRequestValueException;
-import com.sprint.mission.discodeit.common.exception.EntityNotFoundException;
+import com.sprint.mission.discodeit.common.exception.exceptions.DuplicateRequestValueException;
+import com.sprint.mission.discodeit.common.exception.exceptions.EntityNotFoundException;
 import com.sprint.mission.discodeit.channel.repository.ChannelRepository;
 import com.sprint.mission.discodeit.channel.repository.ReadStatusRepository;
 import com.sprint.mission.discodeit.channel.application.port.out.ChannelUserReader;

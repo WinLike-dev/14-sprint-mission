@@ -1,6 +1,6 @@
 package com.sprint.mission.discodeit.common.exception;
 
-import com.sprint.mission.discodeit.common.exception.UploadedFileReadException;
+import com.sprint.mission.discodeit.common.exception.exceptions.UploadedFileReadException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

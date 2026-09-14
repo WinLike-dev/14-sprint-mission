@@ -1,6 +1,6 @@
 package com.sprint.mission.discodeit.channel.exception;
 
-import com.sprint.mission.discodeit.common.exception.ConflictingStateException;
+import com.sprint.mission.discodeit.common.exception.exceptions.ConflictingStateException;
 
 import java.util.UUID;
 
