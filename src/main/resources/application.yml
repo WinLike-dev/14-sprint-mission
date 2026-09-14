@@ -48,3 +48,11 @@ logging:
   level:
     # 실행되는 SQL을 로그로 확인한다. 바인딩 값까지 보려면 org.hibernate.orm.jdbc.bind: trace
     org.hibernate.SQL: debug
+
+discodeit:
+  storage:
+    # 바이너리 파일 저장 방식. 지금은 local만 지원하고, 다른 값이면 기동 단계에서 실패한다.
+    type: ${DISCODEIT_STORAGE_TYPE:local}
+    local:
+      # 파일을 저장할 루트 경로. 상대 경로는 실행 디렉터리 기준이다.
+      root-path: ${DISCODEIT_STORAGE_LOCAL_ROOT_PATH:.discodeit/storage}

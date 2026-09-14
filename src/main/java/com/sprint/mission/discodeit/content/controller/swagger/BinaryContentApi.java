@@ -4,6 +4,7 @@ import com.sprint.mission.discodeit.content.dto.response.BinaryContentDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -32,5 +33,25 @@ public interface BinaryContentApi {
     @ApiResponse(responseCode = "200", description = "첨부 파일 목록 조회 성공")
     ResponseEntity<List<BinaryContentDto>> findAllByIdIn(
             @Parameter(description = "조회할 첨부 파일 ID 목록") List<UUID> binaryContentIds
+    );
+
+    @Operation(summary = "파일 다운로드", operationId = "download")
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "파일 다운로드 성공",
+                    content = @Content(
+                            mediaType = "*/*",
+                            schema = @Schema(type = "string", format = "binary")
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "첨부 파일을 찾을 수 없음",
+                    content = @Content
+            )
+    })
+    ResponseEntity<?> download(
+            @Parameter(description = "다운로드할 파일 ID") UUID binaryContentId
     );
 }

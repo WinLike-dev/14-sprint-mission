@@ -22,6 +22,9 @@ replay_pid*
 .env.*
 !.env.example
 
+# 업로드된 파일 (discodeit.storage.local.root-path 기본값)
+/.discodeit/
+
 # 미션이 제공한 원본 자료 (스펙은 docs/openapi, 프론트엔드는 src/main/resources/static으로 옮겨 관리)
 /resource/
 
