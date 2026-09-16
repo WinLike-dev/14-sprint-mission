@@ -20,6 +20,10 @@ public interface BinaryContentStorage {
     // BinaryContent id로 저장된 데이터를 읽는다. 스트림은 호출자가 닫는다.
     InputStream get(UUID binaryContentId);
 
+    // BinaryContent id로 저장된 데이터를 지운다. 없으면 아무 일도 하지 않는다.
+    // 과제 클래스 다이어그램에는 없지만, 프로필 교체와 삭제 때 파일이 남지 않게 하려고 추가했다.
+    void delete(UUID binaryContentId);
+
     // 메타 정보와 저장된 데이터로 파일 다운로드 응답을 만든다.
     ResponseEntity<Resource> download(BinaryContentResult binaryContent);
 }

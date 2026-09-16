@@ -3,26 +3,16 @@ package com.sprint.mission.discodeit.content.service.dto;
 import com.sprint.mission.discodeit.content.entity.BinaryContent;
 
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.Objects;
 import java.util.UUID;
 
+// 바이너리 콘텐츠의 메타 정보. 실제 파일은 다운로드 API로 받는다.
 public record BinaryContentResult(
         UUID id,
         Instant createdAt,
         String fileName,
         long size,
-        String contentType,
-        byte[] bytes
+        String contentType
 ) {
-    public BinaryContentResult {
-        bytes = Arrays.copyOf(Objects.requireNonNull(bytes), bytes.length);
-    }
-
-    @Override
-    public byte[] bytes() {
-        return Arrays.copyOf(bytes, bytes.length);
-    }
 
     public static BinaryContentResult from(BinaryContent content) {
         return new BinaryContentResult(
@@ -30,8 +20,7 @@ public record BinaryContentResult(
                 content.getCreatedAt(),
                 content.getFileName(),
                 content.getSize(),
-                content.getContentType(),
-                content.getBytes()
+                content.getContentType()
         );
     }
 }

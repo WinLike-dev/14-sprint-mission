@@ -21,7 +21,7 @@ class UserTest {
 
         assertThrows(
                 IllegalArgumentException.class,
-                () -> user.update("after", "invalid-email", null, null)
+                () -> user.update("after", "invalid-email", null)
         );
 
         assertEquals("before", user.getUsername());

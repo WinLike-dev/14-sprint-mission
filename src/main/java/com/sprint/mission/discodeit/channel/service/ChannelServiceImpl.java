@@ -12,6 +12,7 @@ import com.sprint.mission.discodeit.common.exception.exceptions.EntityNotFoundEx
 import com.sprint.mission.discodeit.channel.repository.ChannelRepository;
 import com.sprint.mission.discodeit.channel.repository.ReadStatusRepository;
 import com.sprint.mission.discodeit.content.repository.BinaryContentRepository;
+import com.sprint.mission.discodeit.content.storage.BinaryContentFileManager;
 import com.sprint.mission.discodeit.message.entity.Message;
 import com.sprint.mission.discodeit.message.repository.MessageRepository;
 import com.sprint.mission.discodeit.message.repository.MessageRepository.ChannelLastMessageAt;
@@ -19,6 +20,7 @@ import com.sprint.mission.discodeit.user.entity.User;
 import com.sprint.mission.discodeit.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -44,6 +46,7 @@ public class ChannelServiceImpl implements ChannelControllerService {
     private final UserRepository userRepository; // 사용자 존재 확인용
     private final MessageRepository messageRepository; // 마지막 메시지 시각 조회, 채널 삭제 시 메시지 정리용
     private final BinaryContentRepository binaryContentRepository; // 채널 삭제 시 첨부파일 정리용
+    private final BinaryContentFileManager fileManager; // 채널 삭제 시 첨부파일의 실제 파일 정리용
 
     // 퍼블릭 채널 생성 -> 바로 저장
     @Override
@@ -148,7 +151,9 @@ public class ChannelServiceImpl implements ChannelControllerService {
         return createResult(channelRepository.save(channel));
     }
 
+    // 첨부 목록(지연 로딩)을 읽고 파일 삭제를 커밋 뒤로 미루려면 트랜잭션이 필요하다.
     @Override
+    @Transactional
     public void delete(UUID id) {
         if (!channelRepository.existsById(id)) {
             throw new EntityNotFoundException(Channel.class, id);
@@ -162,7 +167,10 @@ public class ChannelServiceImpl implements ChannelControllerService {
     // 채널의 메시지를 지운다. 메시지에 달린 첨부파일도 함께 지운다.
     private void deleteMessages(UUID channelId) {
         for (Message message : messageRepository.findAllByChannelId(channelId)) {
-            message.getAttachmentIds().forEach(binaryContentRepository::deleteById);
+            for (UUID attachmentId : message.getAttachmentIds()) {
+                binaryContentRepository.deleteById(attachmentId);
+                fileManager.deleteAfterCommit(attachmentId); // 실제 파일은 커밋이 확정된 뒤 삭제한다
+            }
             messageRepository.deleteById(message.getId());
         }
     }

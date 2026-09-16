@@ -2,14 +2,19 @@ package com.sprint.mission.discodeit.user.entity;
 
 import com.sprint.mission.discodeit.common.exception.exceptions.InvalidValueException;
 import com.sprint.mission.discodeit.common.entity.base.BaseUpdatableEntity;
+import com.sprint.mission.discodeit.content.entity.BinaryContent;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.util.UUID;
+import java.util.Objects;
 import java.util.regex.Pattern;
 
 /**
@@ -37,23 +42,31 @@ public class User extends BaseUpdatableEntity {
     @Column(nullable = false, length = 60)
     private String password;   // 비밀번호
 
-    // 연관관계 매핑 전까지는 FK 컬럼 값만 UUID로 다룬다.
-    @Column(unique = true)
-    private UUID profileId;    // 프로필 이미지(BinaryContent)의 ID, 없으면 null
+    // 부모 User가 프로필 이미지의 생명주기를 책임진다.
+    // User를 저장·삭제하면 프로필도 함께 저장·삭제되고, 교체되어 참조가 끊긴 프로필은 고아로 삭제된다.
+    // FK(profile_id)를 User가 가지므로 LAZY가 실제로 동작한다. (@OneToOne 기본값은 EAGER)
+    @OneToOne(
+            fetch = FetchType.LAZY,
+            cascade = {CascadeType.PERSIST, CascadeType.REMOVE},
+            orphanRemoval = true
+    )
+    @JoinColumn(name = "profile_id", unique = true) // 프로필 없는 사용자도 있으므로 null 허용
+    private BinaryContent profile;
 
-    // 새 사용자를 생성하는 생성자 - 필수 값 검증을 수행한다.
-    public User(String username, String email, String password, UUID profileId) {
+    // 새 사용자를 생성하는 생성자 - 필수 값 검증을 수행한다. 프로필이 없으면 null을 넘긴다.
+    public User(String username, String email, String password, BinaryContent profile) {
         this.username = requireNonBlank(username, "username");
         this.email = requireValidEmail(email);
         this.password = requireNonBlank(password, "password");
-        this.profileId = profileId;
+        this.profile = profile;
     }
 
-    // 사용자 정보를 수정한다. 전달된 값을 그대로 반영한다.
+    // 계정 정보를 수정한다. 전달된 값을 그대로 반영한다.
     // Channel.update, Message.update와 같은 계약이다. 같은 이름의 update가 엔티티마다
     // 다른 의미를 가지면 호출자가 매번 어느 규칙인지 확인해야 하므로 하나로 맞췄다.
-    // "값이 없으면 기존 유지"라는 부분 수정 해석은 요청을 아는 application 계층이 담당한다.
-    public void update(String username, String email, String password, UUID profileId) {
+    // "값이 없으면 기존 유지"라는 부분 수정 해석은 요청을 아는 service 계층이 담당한다.
+    // 프로필 교체는 파일 저장이 얽혀 있어 updateProfile로 따로 둔다.
+    public void update(String username, String email, String password) {
         // 검증을 모두 통과한 뒤에 대입한다.
         // 대입과 검증을 섞으면 중간에 예외가 났을 때 일부 필드만 바뀐 상태가 남는다.
         String nextUsername = requireNonBlank(username, "username");
@@ -63,7 +76,11 @@ public class User extends BaseUpdatableEntity {
         this.username = nextUsername;
         this.email = nextEmail;
         this.password = nextPassword;
-        this.profileId = profileId;
+    }
+
+    // 프로필 이미지를 교체한다. 이전 프로필은 참조가 끊겨 orphanRemoval로 flush 때 행이 삭제된다.
+    public void updateProfile(BinaryContent newProfile) {
+        this.profile = Objects.requireNonNull(newProfile, "newProfile은 null일 수 없습니다.");
     }
 
     // 값이 null이거나 빈 문자열이면 예외를 던진다. 필수 입력 값 검증용.

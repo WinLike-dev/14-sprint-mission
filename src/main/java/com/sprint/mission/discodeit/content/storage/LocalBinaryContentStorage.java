@@ -71,6 +71,15 @@ public class LocalBinaryContentStorage implements BinaryContentStorage {
         }
     }
 
+    @Override
+    public void delete(UUID binaryContentId) {
+        try {
+            Files.deleteIfExists(resolvePath(binaryContentId));
+        } catch (IOException exception) {
+            throw new UncheckedIOException("파일을 삭제하지 못했습니다. id=" + binaryContentId, exception);
+        }
+    }
+
     // 스트림은 응답을 쓰고 난 뒤 Spring이 닫는다.
     @Override
     public ResponseEntity<Resource> download(BinaryContentResult binaryContent) {
