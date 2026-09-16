@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.message.service.dto;
 
+import com.sprint.mission.discodeit.content.entity.BinaryContent;
 import com.sprint.mission.discodeit.message.entity.Message;
 
 import java.time.Instant;
@@ -25,9 +26,10 @@ public record MessageResult(
                 message.getCreatedAt(),
                 message.getUpdatedAt(),
                 message.getContent(),
-                message.getChannelId(),
-                message.getAuthorId(),
-                message.getAttachmentIds()
+                message.getChannel().getId(),
+                // 작성자가 탈퇴하면 null이 된다. 프록시의 id는 초기화 없이 읽는다.
+                message.getAuthor() == null ? null : message.getAuthor().getId(),
+                message.getAttachments().stream().map(BinaryContent::getId).toList()
         );
     }
 }

@@ -9,8 +9,8 @@ import com.sprint.mission.discodeit.message.repository.MessageRepository;
 import com.sprint.mission.discodeit.channel.entity.Channel;
 import com.sprint.mission.discodeit.channel.repository.ChannelRepository;
 import com.sprint.mission.discodeit.content.entity.BinaryContent;
-import com.sprint.mission.discodeit.content.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.content.storage.BinaryContentFileManager;
+import com.sprint.mission.discodeit.content.storage.BinaryContentFileManager.FileToSave;
 import com.sprint.mission.discodeit.user.entity.User;
 import com.sprint.mission.discodeit.user.repository.UserRepository;
 import com.sprint.mission.discodeit.common.exception.exceptions.EntityNotFoundException;
@@ -26,7 +26,7 @@ import java.util.UUID;
 /**
  * MessageControllerService의 구현체.
  * 메시지 생성/조회/수정/삭제의 실제 비즈니스 로직을 담당한다.
- * 채널/작성자 검증과 첨부파일 관리는 각 저장소를 직접 사용하고,
+ * 채널/작성자 검증은 각 저장소를 직접 사용하고, 첨부파일 행은 Message의 cascade로 함께 저장·삭제된다.
  * 첨부파일의 실제 파일은 BinaryContentFileManager가 트랜잭션에 맞춰 다룬다.
  */
 @Service
@@ -36,7 +36,6 @@ public class MessageServiceImpl implements MessageControllerService {
     private final MessageRepository messageRepository;             // 메시지 저장소
     private final UserRepository userRepository;                   // 작성자 존재 확인용
     private final ChannelRepository channelRepository;             // 채널 존재 확인용
-    private final BinaryContentRepository binaryContentRepository; // 첨부파일 메타 정보 생성/삭제용
     private final BinaryContentFileManager fileManager;            // 첨부파일의 실제 파일 저장/삭제용
 
     // 새 메시지를 생성한다. 채널/작성자 존재 확인 후 첨부파일을 먼저 저장하고, 메시지를 저장한다.
@@ -48,11 +47,19 @@ public class MessageServiceImpl implements MessageControllerService {
         requireChannelExists(target.channelId());   // 채널이 존재하지 않으면 예외 발생
         requireAuthorExists(target.authorId());     // 작성자가 존재하지 않으면 예외 발생
 
-        List<UUID> attachmentIds = createAttachments(target.attachments()); // 첨부파일들을 먼저 저장
+        List<BinaryContent> attachments = toBinaryContents(target.attachments());
+        // 존재는 위에서 확인했으므로 SELECT 없이 프록시 참조만 얻는다.
+        // findById로 불러오면 지연 로딩이 안 되는 User.status까지 조회가 따라온다.
         Message message = new Message(
-                target.content(), target.channelId(), target.authorId(), attachmentIds
+                target.content(),
+                channelRepository.getReferenceById(target.channelId()),
+                userRepository.getReferenceById(target.authorId()),
+                attachments
         );
-        return MessageResult.from(messageRepository.save(message));
+        // persist가 cascade되어 첨부 행도 이 시점에 저장되고 id를 받는다.
+        Message created = messageRepository.save(message);
+        fileManager.saveAll(toFilesToSave(attachments, target.attachments()));
+        return MessageResult.from(created);
     }
 
     // 특정 채널의 모든 메시지를 조회한다
@@ -100,26 +107,33 @@ public class MessageServiceImpl implements MessageControllerService {
         }
     }
 
-    // 첨부파일마다 메타 정보를 저장해 id를 받고, 그 id로 실제 파일을 저장한다. 생성된 ID 목록을 반환한다.
-    private List<UUID> createAttachments(List<MessageAttachmentCommand> attachments) {
-        List<UUID> createdIds = new ArrayList<>();
-        for (MessageAttachmentCommand attachment : attachments) {
-            BinaryContent content = binaryContentRepository.save(new BinaryContent(
-                    attachment.fileName(), attachment.bytes().length, attachment.contentType()
-            ));
-            fileManager.save(content.getId(), attachment.bytes());
-            createdIds.add(content.getId());
-        }
-        return List.copyOf(createdIds);
+    // 첨부 입력을 메타 정보만 가진 BinaryContent로 만든다. 저장은 Message의 cascade가 맡는다.
+    private List<BinaryContent> toBinaryContents(List<MessageAttachmentCommand> attachments) {
+        return attachments.stream()
+                .map(attachment -> new BinaryContent(
+                        attachment.fileName(), attachment.bytes().length, attachment.contentType()
+                ))
+                .toList();
     }
 
-    // 메시지에 연결된 첨부파일들을 먼저 삭제한 뒤, 메시지를 삭제한다
+    // 저장된 첨부의 id와 업로드된 바이트를 순서대로 짝지어 파일 저장 목록을 만든다.
+    private List<FileToSave> toFilesToSave(
+            List<BinaryContent> attachments,
+            List<MessageAttachmentCommand> commands
+    ) {
+        List<FileToSave> files = new ArrayList<>();
+        for (int i = 0; i < attachments.size(); i++) {
+            files.add(new FileToSave(attachments.get(i).getId(), commands.get(i).bytes()));
+        }
+        return files;
+    }
+
+    // 메시지를 삭제한다. 첨부 행은 cascade REMOVE로 함께 지워지고, 실제 파일만 따로 정리한다.
     private void deleteMessage(Message message) {
-        for (UUID attachmentId : message.getAttachmentIds()) {
-            binaryContentRepository.deleteById(attachmentId);
-            fileManager.deleteAfterCommit(attachmentId); // 실제 파일은 커밋이 확정된 뒤 삭제한다
-        }
-        messageRepository.deleteById(message.getId());
+        List<UUID> attachmentIds = message.getAttachments().stream()
+                .map(BinaryContent::getId)
+                .toList();
+        messageRepository.delete(message);
+        fileManager.deleteAllAfterCommit(attachmentIds); // 실제 파일은 커밋이 확정된 뒤 삭제한다
     }
-
 }

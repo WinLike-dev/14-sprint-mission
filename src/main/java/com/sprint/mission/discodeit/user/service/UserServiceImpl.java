@@ -13,6 +13,7 @@ import com.sprint.mission.discodeit.content.entity.BinaryContent;
 import com.sprint.mission.discodeit.content.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.content.storage.BinaryContentFileManager;
 import com.sprint.mission.discodeit.channel.repository.ReadStatusRepository;
+import com.sprint.mission.discodeit.message.repository.MessageRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,6 +38,7 @@ public class UserServiceImpl implements UserControllerService {
     private final BinaryContentRepository binaryContentRepository; // 프로필 교체 시 새 프로필 저장용
     private final BinaryContentFileManager fileManager;            // 프로필 파일 저장·삭제
     private final ReadStatusRepository readStatusRepository;       // 사용자 삭제 시 읽음 상태 정리용
+    private final MessageRepository messageRepository;             // 사용자 삭제 시 작성한 메시지의 작성자 정리용
 
     // 새 사용자를 생성한다. User 저장(프로필·상태 포함) -> 프로필 파일 저장 순서로 진행한다.
     // 중간에 실패하면 트랜잭션이 롤백되어 저장한 행이 사라지고, 저장한 파일은 fileManager가 지운다.
@@ -107,6 +109,7 @@ public class UserServiceImpl implements UserControllerService {
         User user = getUser(id);
         UUID profileId = user.getProfile() == null ? null : user.getProfile().getId();
 
+        messageRepository.detachAuthor(id);              // 작성한 메시지는 남기고 작성자만 비운다
         readStatusRepository.deleteAllByUserId(id);      // 사용자의 읽음 상태 삭제
         // cascade REMOVE로 상태와 프로필 행이 함께 삭제된다.
         // Hibernate가 FK 방향을 보고 user_statuses -> users -> binary_contents 순서로 지운다.

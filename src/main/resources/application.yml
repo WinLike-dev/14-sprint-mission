@@ -23,8 +23,15 @@ spring:
     properties:
       hibernate:
         format_sql: true
-        # 도메인이 Instant를 쓰므로 JVM 기본 시간대와 무관하게 UTC로 저장한다.
+        # INSERT/UPDATE를 묶어 한 번에 보낸다. id를 애플리케이션이 만들기 때문에(GenerationType.UUID) 배치가 동작한다.
+        order_inserts: true
+        order_updates: true
+        # 지연 로딩할 연관관계를 건별로 묻지 않고 in (...)으로 묶어 조회한다.
+        # 메시지 첨부처럼 페이지네이션과 함께 쓰는 컬렉션은 fetch join 대신 이 방식으로 N+1을 줄인다.
+        default_batch_fetch_size: 100
         jdbc:
+          batch_size: 50
+          # 도메인이 Instant를 쓰므로 JVM 기본 시간대와 무관하게 UTC로 저장한다.
           time_zone: UTC
 
   # 프로필 이미지와 메시지 첨부파일을 multipart로 받는다.
