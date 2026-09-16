@@ -15,6 +15,7 @@ import com.sprint.mission.discodeit.user.entity.User;
 import com.sprint.mission.discodeit.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Objects;
@@ -36,6 +37,7 @@ public class ReadStatusServiceImpl implements ReadStatusControllerService {
 
     // 읽음 상태 생성 (PUBLIC 채널에서만 가능, PRIVATE 채널은 채널 생성 시 자동 생성됨)
     @Override
+    @Transactional // 참조 조회와 저장을 한 영속성 컨텍스트에서 처리한다
     public ReadStatusResult create(CreateReadStatusCommand command) {
         CreateReadStatusCommand target = Objects.requireNonNull(command);
         UUID userId = target.userId();
@@ -46,6 +48,7 @@ public class ReadStatusServiceImpl implements ReadStatusControllerService {
                 "channelId는 null일 수 없습니다."
         );
         requireUserExists(userId);
+        // PRIVATE 여부를 확인해야 해서 채널은 실제로 불러오고, 그 객체를 그대로 연결에 쓴다.
         Channel channel = channelRepository.findById(channelId)
                 .orElseThrow(() -> new EntityNotFoundException(Channel.class, channelId));
         if (channel.getType() == ChannelType.PRIVATE) { // PRIVATE 채널은 별도 생성 불가
@@ -60,7 +63,10 @@ public class ReadStatusServiceImpl implements ReadStatusControllerService {
                     associationContext(userId, channelId)
             );
         }
-        ReadStatus status = new ReadStatus(userId, channelId, target.lastReadAt());
+        // 존재는 위에서 확인했으므로 SELECT 없이 프록시 참조만 얻는다.
+        // findById로 불러오면 지연 로딩이 안 되는 User.status까지 조회가 따라온다.
+        User user = userRepository.getReferenceById(userId);
+        ReadStatus status = new ReadStatus(user, channel, target.lastReadAt());
         return ReadStatusResult.from(readStatusRepository.save(status));
     }
 

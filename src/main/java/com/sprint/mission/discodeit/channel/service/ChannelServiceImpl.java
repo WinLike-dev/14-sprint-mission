@@ -22,7 +22,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.time.Instant;
 import java.util.List;
@@ -57,7 +56,9 @@ public class ChannelServiceImpl implements ChannelControllerService {
     }
 
     // 프라이빗 채널 생성 -> 1. 참여자 명단 올바른 지 체크 2. 채널 생성 3. 읽기상태 생성
+    // 참여자 중 한 명이라도 저장에 실패하면 트랜잭션이 롤백되어 채널까지 함께 사라진다.
     @Override
+    @Transactional
     public ChannelResult createPrivate(CreatePrivateChannelCommand command) {
         List<UUID> participantIds = Objects.requireNonNull(command).participantIds();
         // set을 이용해 중복을 없게 하고, 입력 순서 유지시키기 (큰 의미는 모르겠지만 일단 디코에는 그렇게 구현되니)
@@ -68,25 +69,18 @@ public class ChannelServiceImpl implements ChannelControllerService {
         // 멤버체크 exception
         uniqueParticipantIds.forEach(this::requireUserExists);
 
+        // 저장하면 @PrePersist가 createdAt을 채운다.
         Channel channel = channelRepository.save(Channel.privateChannel());
-        List<ReadStatus> createdStatuses = new ArrayList<>();
-        try {
-            for (UUID userId : uniqueParticipantIds) {
-                ReadStatus status = new ReadStatus(userId, channel.getId(), Instant.now());
-                readStatusRepository.save(status);
-                createdStatuses.add(status);
-            }
-            return createChannelResult(channel);
-        } catch (RuntimeException exception) {
-            // 실패했다면 저장소에 저장된 것들도 지워주는 원자성을 확보하기 위해 (다중 저장이므로 레포지토리 책임이라기에 애매함)
-            for (ReadStatus status : createdStatuses) {
-                // 삭제하는데 실패했으면 catch로 후속 오류 쌓고 다시 삭제 재개하고
-                suppressCleanupFailure(exception, () -> readStatusRepository.deleteById(status.getId()));
-            }
-            suppressCleanupFailure(exception, () -> channelRepository.deleteById(channel.getId()));
-            // 최종적으로 합쳐진 exception 보내기
-            throw exception;
-        }
+        // 존재는 위에서 확인했으므로 SELECT 없이 프록시 참조만 얻는다.
+        // findById로 불러오면 지연 로딩이 안 되는 User.status까지 조회가 따라온다.
+        // 과제 베이스 코드 변경: 참여자의 마지막 읽음 시각은 채널이 만들어진 시각에서 시작한다.
+        List<ReadStatus> statuses = uniqueParticipantIds.stream()
+                .map(userId -> new ReadStatus(
+                        userRepository.getReferenceById(userId), channel, channel.getCreatedAt()
+                ))
+                .toList();
+        readStatusRepository.saveAll(statuses);
+        return createChannelResult(channel);
     }
 
     // ID로 채널을 조회하고 application 결과로 변환하여 반환
@@ -104,15 +98,16 @@ public class ChannelServiceImpl implements ChannelControllerService {
 
         List<ReadStatus> allStatuses = readStatusRepository.findAll();
         // 채널별 참여자 목록 (PRIVATE 채널 응답 조립용)
+        // 지연 로딩 프록시의 id는 초기화 없이 읽을 수 있어 User·Channel 조회가 추가로 나가지 않는다.
         Map<UUID, List<UUID>> participantIdsByChannelId = allStatuses.stream()
                 .collect(Collectors.groupingBy(
-                        ReadStatus::getChannelId,
-                        Collectors.mapping(ReadStatus::getUserId, Collectors.toList())
+                        status -> status.getChannel().getId(),
+                        Collectors.mapping(status -> status.getUser().getId(), Collectors.toList())
                 ));
         // set을 이용해 채널 id 중복을 없게 하기 + 등록된 ReadStatus를 통해 userid로 channelId 찾기
         Set<UUID> participatedChannelIds = allStatuses.stream()
-                .filter(status -> status.getUserId().equals(userId))
-                .map(ReadStatus::getChannelId)
+                .filter(status -> status.getUser().getId().equals(userId))
+                .map(status -> status.getChannel().getId())
                 .collect(Collectors.toSet());
 
         List<Channel> visibleChannels = channelRepository.findAll().stream()
@@ -192,7 +187,7 @@ public class ChannelServiceImpl implements ChannelControllerService {
     private ChannelResult createChannelResult(Channel channel) {
         List<UUID> participantIds = channel.getType() == ChannelType.PRIVATE
                 ? readStatusRepository.findAllByChannelId(channel.getId()).stream()
-                .map(ReadStatus::getUserId)
+                .map(status -> status.getUser().getId())
                 .toList()
                 : List.of();
         Instant lastMessageAt = messageRepository
@@ -213,15 +208,5 @@ public class ChannelServiceImpl implements ChannelControllerService {
                 channel.getType() == ChannelType.PRIVATE ? participantIds : List.of(),
                 lastMessageAt
         );
-    }
-
-    // 정리(cleanup) 작업 중 발생한 예외를 원본 예외에 억제(suppressed) 예외로 추가하는 유틸 메서드
-    // 정리 작업이 실패해도 원래 예외 정보를 잃지 않기 위해 사용한다
-    private void suppressCleanupFailure(RuntimeException original, Runnable cleanup) {
-        try {
-            cleanup.run();
-        } catch (RuntimeException cleanupFailure) {
-            original.addSuppressed(cleanupFailure);
-        }
     }
 }

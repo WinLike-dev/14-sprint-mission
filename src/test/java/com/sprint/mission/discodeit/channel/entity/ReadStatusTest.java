@@ -1,9 +1,9 @@
 package com.sprint.mission.discodeit.channel.entity;
 
+import com.sprint.mission.discodeit.user.entity.User;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
-import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -15,7 +15,7 @@ class ReadStatusTest {
     @Test
     void creationAndUpdateKeepGivenTime() {
         Instant readAt = Instant.parse("2026-08-09T00:00:00Z");
-        ReadStatus status = new ReadStatus(UUID.randomUUID(), UUID.randomUUID(), readAt);
+        ReadStatus status = new ReadStatus(newUser(), newChannel(), readAt);
 
         assertEquals(readAt, status.getLastReadAt());
 
@@ -28,15 +28,23 @@ class ReadStatusTest {
 
     @Test
     void timeIsRequired() {
-        UUID userId = UUID.randomUUID();
-        UUID channelId = UUID.randomUUID();
+        User user = newUser();
+        Channel channel = newChannel();
 
         assertThrows(
                 NullPointerException.class,
-                () -> new ReadStatus(userId, channelId, null)
+                () -> new ReadStatus(user, channel, null)
         );
 
-        ReadStatus status = new ReadStatus(userId, channelId, Instant.now());
+        ReadStatus status = new ReadStatus(user, channel, Instant.now());
         assertThrows(NullPointerException.class, () -> status.updateLastReadAt(null));
+    }
+
+    private static User newUser() {
+        return new User("user", "user@example.com", "password", null, Instant.now());
+    }
+
+    private static Channel newChannel() {
+        return Channel.publicChannel("general", "general channel");
     }
 }

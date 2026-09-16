@@ -1,8 +1,12 @@
 package com.sprint.mission.discodeit.channel.entity;
 
 import com.sprint.mission.discodeit.common.entity.base.BaseUpdatableEntity;
+import com.sprint.mission.discodeit.user.entity.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import lombok.AccessLevel;
@@ -11,7 +15,6 @@ import lombok.NoArgsConstructor;
 
 import java.time.Instant;
 import java.util.Objects;
-import java.util.UUID;
 
 /**
  * 읽음 상태(ReadStatus) 도메인 엔티티.
@@ -29,20 +32,24 @@ import java.util.UUID;
 @NoArgsConstructor(access = AccessLevel.PROTECTED) // JPA가 조회 결과를 담을 때 사용한다
 public class ReadStatus extends BaseUpdatableEntity {
 
-    // 연관관계 매핑 전까지는 FK 컬럼 값만 UUID로 다룬다.
-    @Column(nullable = false, updatable = false)
-    private UUID userId; // 이 읽음 상태의 대상 사용자 ID
+    // 부모 User를 가리키는 단방향 N:1. FK를 가진 쪽이라 LAZY가 실제로 동작한다.
+    // 자식에서 부모로는 cascade를 걸지 않는다. 읽음 상태를 지운다고 사용자가 지워지면 안 되기 때문이다.
+    @ManyToOne(fetch = FetchType.LAZY, optional = false) // @ManyToOne 기본값은 EAGER라 명시한다
+    @JoinColumn(name = "user_id", nullable = false, updatable = false)
+    private User user; // 이 읽음 상태의 대상 사용자
 
-    @Column(nullable = false, updatable = false)
-    private UUID channelId; // 이 읽음 상태가 연결된 채널 ID
+    // 부모 Channel을 가리키는 단방향 N:1.
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "channel_id", nullable = false, updatable = false)
+    private Channel channel; // 이 읽음 상태가 연결된 채널
 
     @Column(nullable = false)
     private Instant lastReadAt; // 사용자가 이 채널을 마지막으로 읽은 시각
 
     // 새로운 읽음 상태를 생성할 때 사용 (lastReadAt은 호출자가 정한다)
-    public ReadStatus(UUID userId, UUID channelId, Instant lastReadAt) {
-        this.userId = Objects.requireNonNull(userId, "userId는 null일 수 없습니다.");
-        this.channelId = Objects.requireNonNull(channelId, "channelId는 null일 수 없습니다.");
+    public ReadStatus(User user, Channel channel, Instant lastReadAt) {
+        this.user = Objects.requireNonNull(user, "user는 null일 수 없습니다.");
+        this.channel = Objects.requireNonNull(channel, "channel은 null일 수 없습니다.");
         this.lastReadAt = Objects.requireNonNull(lastReadAt, "lastReadAt은 null일 수 없습니다.");
     }
 
