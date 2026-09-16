@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.user.controller;
 
+import com.sprint.mission.discodeit.user.controller.swagger.AuthApi;
 import com.sprint.mission.discodeit.user.mapper.AuthRestMapper;
 import jakarta.validation.Valid;
 import com.sprint.mission.discodeit.user.service.AuthControllerService;

@@ -1,6 +1,8 @@
 package com.sprint.mission.discodeit.channel.controller;
 
 import java.net.URI;
+
+import com.sprint.mission.discodeit.channel.controller.swagger.ChannelApi;
 import jakarta.validation.Valid;
 import com.sprint.mission.discodeit.channel.service.ChannelControllerService;
 import com.sprint.mission.discodeit.channel.dto.request.PublicChannelUpdateRequest;

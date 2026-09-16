@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.message.controller;
 
+import com.sprint.mission.discodeit.message.controller.swagger.MessageApi;
 import com.sprint.mission.discodeit.message.mapper.MessageRestMapper;
 import com.sprint.mission.discodeit.message.dto.request.MessageCreateRequest;
 import com.sprint.mission.discodeit.message.dto.request.MessageUpdateRequest;

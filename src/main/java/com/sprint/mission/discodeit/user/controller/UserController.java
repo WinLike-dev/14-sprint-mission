@@ -1,5 +1,6 @@
 package com.sprint.mission.discodeit.user.controller;
 
+import com.sprint.mission.discodeit.user.controller.swagger.UserApi;
 import com.sprint.mission.discodeit.user.mapper.UserRestMapper;
 import com.sprint.mission.discodeit.user.mapper.UserStatusRestMapper;
 import com.sprint.mission.discodeit.user.dto.request.UserStatusUpdateRequest;

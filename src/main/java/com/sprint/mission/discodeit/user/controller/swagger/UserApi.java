@@ -1,4 +1,4 @@
-package com.sprint.mission.discodeit.user.controller;
+package com.sprint.mission.discodeit.user.controller.swagger;
 
 import com.sprint.mission.discodeit.user.dto.request.UserStatusUpdateRequest;
 import com.sprint.mission.discodeit.user.dto.response.UserStatusDto;

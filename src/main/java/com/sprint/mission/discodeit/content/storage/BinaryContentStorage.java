@@ -1,6 +1,7 @@
 package com.sprint.mission.discodeit.content.storage;
 
 import com.sprint.mission.discodeit.content.service.dto.BinaryContentResult;
+import org.springframework.core.io.Resource;
 import org.springframework.http.ResponseEntity;
 
 import java.io.InputStream;
@@ -20,5 +21,5 @@ public interface BinaryContentStorage {
     InputStream get(UUID binaryContentId);
 
     // 메타 정보와 저장된 데이터로 파일 다운로드 응답을 만든다.
-    ResponseEntity<?> download(BinaryContentResult binaryContent);
+    ResponseEntity<Resource> download(BinaryContentResult binaryContent);
 }

@@ -1,4 +1,4 @@
-package com.sprint.mission.discodeit.channel.controller;
+package com.sprint.mission.discodeit.channel.controller.swagger;
 
 import com.sprint.mission.discodeit.channel.dto.request.PrivateChannelCreateRequest;
 import com.sprint.mission.discodeit.channel.dto.request.PublicChannelCreateRequest;

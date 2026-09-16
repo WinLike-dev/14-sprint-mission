@@ -1,10 +1,12 @@
 package com.sprint.mission.discodeit.content.controller;
 
+import com.sprint.mission.discodeit.content.controller.swagger.BinaryContentApi;
 import com.sprint.mission.discodeit.content.mapper.BinaryContentRestMapper;
 import com.sprint.mission.discodeit.content.service.ContentControllerService;
 import com.sprint.mission.discodeit.content.dto.response.BinaryContentDto;
 import com.sprint.mission.discodeit.content.storage.BinaryContentStorage;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.Resource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -53,7 +55,7 @@ public class BinaryContentController implements BinaryContentApi {
     // 없는 id면 find에서 EntityNotFoundException이 나 404로 응답한다.
     @Override
     @GetMapping("/{binaryContentId}/download")
-    public ResponseEntity<?> download(
+    public ResponseEntity<Resource> download(
             @PathVariable UUID binaryContentId
     ) {
         return binaryContentStorage.download(contentService.find(binaryContentId));

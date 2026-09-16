@@ -1,4 +1,4 @@
-package com.sprint.mission.discodeit.message.controller;
+package com.sprint.mission.discodeit.message.controller.swagger;
 
 import com.sprint.mission.discodeit.message.dto.request.MessageCreateRequest;
 import com.sprint.mission.discodeit.message.dto.request.MessageUpdateRequest;
