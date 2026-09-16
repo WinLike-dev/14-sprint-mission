@@ -28,10 +28,13 @@ import java.util.UUID;
  * 사용자 생성, 조회, 수정, 삭제 등 핵심 비즈니스 로직을 처리한다.
  * 프로필 이미지와 온라인 상태 행은 User의 cascade로 함께 저장·삭제되고,
  * 프로필 파일은 BinaryContentFileManager가 트랜잭션에 맞춰 다룬다.
+ * 읽기는 클래스에 걸린 readOnly 트랜잭션에서, 쓰기는 메서드의 @Transactional에서 처리한다.
  */
 @Service
 // final 협력 객체를 받는 생성자를 Lombok이 만들고 Spring이 Bean을 주입한다.
 @RequiredArgsConstructor
+// 기본은 읽기 전용 트랜잭션이다. 쓰기 메서드만 @Transactional로 덮어쓴다.
+@Transactional(readOnly = true)
 public class UserServiceImpl implements UserControllerService {
 
     private final UserRepository userRepository;

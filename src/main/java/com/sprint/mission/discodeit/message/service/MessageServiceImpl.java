@@ -28,9 +28,12 @@ import java.util.UUID;
  * 메시지 생성/조회/수정/삭제의 실제 비즈니스 로직을 담당한다.
  * 채널/작성자 검증은 각 저장소를 직접 사용하고, 첨부파일 행은 Message의 cascade로 함께 저장·삭제된다.
  * 첨부파일의 실제 파일은 BinaryContentFileManager가 트랜잭션에 맞춰 다룬다.
+ * 읽기는 클래스에 걸린 readOnly 트랜잭션에서, 쓰기는 메서드의 @Transactional에서 처리한다.
  */
 @Service
 @RequiredArgsConstructor
+// 기본은 읽기 전용 트랜잭션이다. 쓰기 메서드만 @Transactional로 덮어쓴다.
+@Transactional(readOnly = true)
 public class MessageServiceImpl implements MessageControllerService {
 
     private final MessageRepository messageRepository;             // 메시지 저장소
@@ -73,10 +76,12 @@ public class MessageServiceImpl implements MessageControllerService {
 
     // 메시지 내용을 수정한다
     @Override
+    @Transactional
     public MessageResult update(UUID id, UpdateMessageCommand command) {
         Message message = getMessage(id);
         message.update(Objects.requireNonNull(command).content());
-        return MessageResult.from(messageRepository.save(message));
+        // 영속 상태라 변경 감지로 반영되므로 save를 부르지 않는다.
+        return MessageResult.from(message);
     }
 
     // 메시지를 삭제한다. 채널의 마지막 메시지 시각은 채널 조회 때 메시지에서 다시 구하므로 따로 갱신하지 않는다.

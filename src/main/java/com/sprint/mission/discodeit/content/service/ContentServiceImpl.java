@@ -6,6 +6,7 @@ import com.sprint.mission.discodeit.content.entity.BinaryContent;
 import com.sprint.mission.discodeit.common.exception.exceptions.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
@@ -17,6 +18,8 @@ import java.util.UUID;
  */
 @Service
 @RequiredArgsConstructor
+// 조회만 하므로 클래스 전체가 읽기 전용 트랜잭션이다.
+@Transactional(readOnly = true)
 public class ContentServiceImpl implements ContentControllerService {
 
     private final BinaryContentRepository binaryContentRepository;

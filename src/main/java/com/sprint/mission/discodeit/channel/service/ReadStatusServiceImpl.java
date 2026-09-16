@@ -26,9 +26,12 @@ import java.util.UUID;
  * 읽음 상태의 생성, 조회, 갱신, 삭제를 처리한다.
  * PRIVATE 채널의 경우 채널 생성 시에만 ReadStatus가 자동으로 만들어지므로,
  * 이 서비스에서 직접 생성하는 것은 PUBLIC 채널에 대해서만 가능하다.
+ * 읽기는 클래스에 걸린 readOnly 트랜잭션에서, 쓰기는 메서드의 @Transactional에서 처리한다.
  */
 @Service
 @RequiredArgsConstructor
+// 기본은 읽기 전용 트랜잭션이다. 쓰기 메서드만 @Transactional로 덮어쓴다.
+@Transactional(readOnly = true)
 public class ReadStatusServiceImpl implements ReadStatusControllerService {
 
     private final ReadStatusRepository readStatusRepository; // 읽음 상태 저장소
@@ -37,7 +40,7 @@ public class ReadStatusServiceImpl implements ReadStatusControllerService {
 
     // 읽음 상태 생성 (PUBLIC 채널에서만 가능, PRIVATE 채널은 채널 생성 시 자동 생성됨)
     @Override
-    @Transactional // 참조 조회와 저장을 한 영속성 컨텍스트에서 처리한다
+    @Transactional
     public ReadStatusResult create(CreateReadStatusCommand command) {
         CreateReadStatusCommand target = Objects.requireNonNull(command);
         UUID userId = target.userId();
@@ -88,15 +91,18 @@ public class ReadStatusServiceImpl implements ReadStatusControllerService {
 
     // 마지막 읽음 시각을 현재 시각으로 갱신 (사용자가 채널을 확인했을 때 호출)
     @Override
+    @Transactional
     public ReadStatusResult updateLastReadAt(UUID readStatusId, UpdateReadStatusCommand command) {
         ReadStatus status = readStatusRepository.findById(readStatusId)
                 .orElseThrow(() -> new EntityNotFoundException(ReadStatus.class, readStatusId));
         status.updateLastReadAt(Objects.requireNonNull(command).lastReadAt());
-        return ReadStatusResult.from(readStatusRepository.save(status));
+        // 영속 상태라 변경 감지로 반영되므로 save를 부르지 않는다.
+        return ReadStatusResult.from(status);
     }
 
     // 읽음 상태 삭제 (사용자 + 채널 조합으로 찾아서 삭제)
     @Override
+    @Transactional
     public void delete(UUID userId, UUID channelId) {
         ReadStatus status = getByUserIdAndChannelId(userId, channelId);
         readStatusRepository.deleteById(status.getId());

@@ -35,9 +35,12 @@ import java.util.stream.Collectors;
  * 채널 비즈니스 로직의 실제 구현 클래스.
  * 공개/비공개 채널의 생성, 조회, 수정, 삭제를 처리한다.
  * 비공개 채널 생성 시에는 참여자별 읽음 상태(ReadStatus)도 함께 생성한다.
+ * 읽기는 클래스에 걸린 readOnly 트랜잭션에서, 쓰기는 메서드의 @Transactional에서 처리한다.
  */
 @Service
 @RequiredArgsConstructor
+// 기본은 읽기 전용 트랜잭션이다. 쓰기 메서드만 @Transactional로 덮어쓴다.
+@Transactional(readOnly = true)
 public class ChannelServiceImpl implements ChannelControllerService {
 
     private final ChannelRepository channelRepository; // 채널 저장소
@@ -48,6 +51,7 @@ public class ChannelServiceImpl implements ChannelControllerService {
 
     // 퍼블릭 채널 생성 -> 바로 저장
     @Override
+    @Transactional
     public ChannelResult createPublic(CreatePublicChannelCommand command) {
         CreatePublicChannelCommand target = Objects.requireNonNull(command);
         Channel channel = Channel.publicChannel(target.name(), target.description());
@@ -133,6 +137,7 @@ public class ChannelServiceImpl implements ChannelControllerService {
 
     // 채널 정보 수정 (요청에 없는 필드는 기존 값 유지)
     @Override
+    @Transactional
     public ChannelResult update(UUID id, UpdatePublicChannelCommand command) {
         Channel channel = getChannel(id);
         UpdatePublicChannelCommand target = Objects.requireNonNull(command);
@@ -142,7 +147,8 @@ public class ChannelServiceImpl implements ChannelControllerService {
                         ? channel.getDescription()
                         : target.newDescription()
         );
-        return createChannelResult(channelRepository.save(channel));
+        // 영속 상태라 변경 감지로 반영되므로 save를 부르지 않는다.
+        return createChannelResult(channel);
     }
 
     // 첨부 목록(지연 로딩)을 읽고 파일 삭제를 커밋 뒤로 미루려면 트랜잭션이 필요하다.

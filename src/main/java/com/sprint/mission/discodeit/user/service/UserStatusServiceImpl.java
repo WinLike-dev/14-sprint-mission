@@ -19,6 +19,8 @@ import java.util.UUID;
  */
 @Service
 @RequiredArgsConstructor
+// 기본은 읽기 전용 트랜잭션이다. 쓰기 메서드만 @Transactional로 덮어쓴다.
+@Transactional(readOnly = true)
 public class UserStatusServiceImpl implements UserStatusControllerService {
 
     private final UserStatusRepository userStatusRepository;
