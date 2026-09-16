@@ -3,8 +3,11 @@
 Java 17 · Spring Boot 3.4.0 · Gradle 8.11.1 프로젝트입니다.
 Spring Boot는 로컬에서 실행하고, Docker Compose는 PostgreSQL 17 서버만 실행합니다.
 
-현재 앱은 기본적으로 `data/`의 파일 저장소를 사용합니다. DB 컨테이너는 향후 DB 연동을 위한 환경이며,
-아직 앱에 DB 드라이버·JPA/JDBC·DB 저장소 구현이 없어 DB를 시작해도 앱 데이터가 DB에 저장되지는 않습니다.
+앱 데이터는 PostgreSQL에 저장합니다. 스키마는 `src/main/resources/schema.sql`이 만들고,
+JPA는 엔티티와 테이블이 맞는지만 확인합니다(`ddl-auto: validate`).
+프로필 이미지와 첨부파일의 실제 파일은 DB가 아니라 `discodeit.storage.local.root-path`가 가리키는
+로컬 디스크에 두고, DB에는 파일명·크기·유형 같은 메타 정보만 저장합니다.
+따라서 앱을 실행하려면 DB 컨테이너가 먼저 떠 있어야 합니다.
 
 ## 준비
 
