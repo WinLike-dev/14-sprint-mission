@@ -4,10 +4,15 @@ import com.sprint.mission.discodeit.message.controller.swagger.MessageApi;
 import com.sprint.mission.discodeit.message.mapper.MessageRestMapper;
 import com.sprint.mission.discodeit.message.dto.request.MessageCreateRequest;
 import com.sprint.mission.discodeit.message.dto.request.MessageUpdateRequest;
+import com.sprint.mission.discodeit.common.dto.response.PageResponse;
+import com.sprint.mission.discodeit.common.mapper.PageResponseMapper;
 import com.sprint.mission.discodeit.message.dto.response.MessageDto;
 import com.sprint.mission.discodeit.message.service.MessageControllerService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -38,6 +43,7 @@ public class MessageController implements MessageApi {
 
     private final MessageControllerService messageService;
     private final MessageRestMapper messageMapper;
+    private final PageResponseMapper pageResponseMapper;
 
     // 첨부파일을 함께 받을 수 있으므로 multipart로 받는다.
     @Override
@@ -52,13 +58,19 @@ public class MessageController implements MessageApi {
         return ResponseEntity.created(URI.create("/api/messages/" + created.id())).body(created);
     }
 
+    // 최근 메시지부터 50개씩 내려준다. 전체 개수는 세지 않는다.
     @Override
     @GetMapping
-    public ResponseEntity<List<MessageDto>> findAllByChannelId(
-            @RequestParam UUID channelId
+    public ResponseEntity<PageResponse<MessageDto>> findAllByChannelId(
+            @RequestParam UUID channelId,
+            @PageableDefault(size = 50, sort = "createdAt", direction = Sort.Direction.DESC)
+            Pageable pageable
     ) {
         return ResponseEntity.ok(
-                messageMapper.toResponses(messageService.findAllByChannelId(channelId))
+                pageResponseMapper.fromSlice(
+                        messageService.findAllByChannelId(channelId, pageable)
+                                .map(messageMapper::toResponse)
+                )
         );
     }
 

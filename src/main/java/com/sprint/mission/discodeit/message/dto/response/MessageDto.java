@@ -1,5 +1,8 @@
 package com.sprint.mission.discodeit.message.dto.response;
 
+import com.sprint.mission.discodeit.content.dto.response.BinaryContentDto;
+import com.sprint.mission.discodeit.user.dto.response.UserDto;
+
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -11,17 +14,16 @@ import java.util.UUID;
  * 내부 도메인 구조가 변경되더라도 API 응답 형식은 유지할 수 있기 때문이다.
  */
 public record MessageDto(
-        UUID id,                    // 메시지 고유 ID
-        Instant createdAt,          // 생성 시각
-        Instant updatedAt,          // 마지막 수정 시각
-        String content,             // 메시지 본문
-        UUID channelId,             // 메시지가 속한 채널 ID
-        UUID authorId,              // 작성자 ID
-        List<UUID> attachmentIds    // 첨부파일 ID 목록
+        UUID id,                              // 메시지 고유 ID
+        Instant createdAt,                    // 생성 시각
+        Instant updatedAt,                    // 마지막 수정 시각
+        String content,                       // 메시지 본문
+        UUID channelId,                       // 메시지가 속한 채널 ID
+        UserDto author,                       // 작성자 (탈퇴했으면 null)
+        List<BinaryContentDto> attachments    // 첨부파일 목록
 ) {
-    // 컴팩트 생성자: 첨부파일 ID 목록을 불변 리스트로 복사한다
+    // 컴팩트 생성자: 첨부파일 목록을 불변 리스트로 복사한다
     public MessageDto {
-        attachmentIds = List.copyOf(attachmentIds);
+        attachments = List.copyOf(attachments);
     }
-
 }

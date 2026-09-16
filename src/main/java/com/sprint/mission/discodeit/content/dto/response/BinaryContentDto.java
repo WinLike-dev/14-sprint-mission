@@ -1,6 +1,5 @@
 package com.sprint.mission.discodeit.content.dto.response;
 
-import java.time.Instant;
 import java.util.UUID;
 
 /**
@@ -10,7 +9,6 @@ import java.util.UUID;
  */
 public record BinaryContentDto(
         UUID id,              // 고유 식별자
-        Instant createdAt,    // 생성 시각
         String fileName,      // 파일 이름
         long size,            // 파일 크기 (바이트 단위)
         String contentType    // MIME 타입

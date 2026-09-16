@@ -2,6 +2,7 @@ package com.sprint.mission.discodeit.message.controller.swagger;
 
 import com.sprint.mission.discodeit.message.dto.request.MessageCreateRequest;
 import com.sprint.mission.discodeit.message.dto.request.MessageUpdateRequest;
+import com.sprint.mission.discodeit.common.dto.response.PageResponse;
 import com.sprint.mission.discodeit.message.dto.response.MessageDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -10,6 +11,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -46,8 +48,9 @@ public interface MessageApi {
 
     @Operation(summary = "Channel의 Message 목록 조회")
     @ApiResponse(responseCode = "200", description = "Message 목록 조회 성공")
-    ResponseEntity<List<MessageDto>> findAllByChannelId(
-            @Parameter(description = "조회할 Channel ID") UUID channelId
+    ResponseEntity<PageResponse<MessageDto>> findAllByChannelId(
+            @Parameter(description = "조회할 Channel ID") UUID channelId,
+            @Parameter(description = "페이지 정보. 기본값은 최근 순 50개") Pageable pageable
     );
 
     @Operation(summary = "Message 내용 수정")

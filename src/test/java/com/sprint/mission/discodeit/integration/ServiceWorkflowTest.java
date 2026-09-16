@@ -11,6 +11,7 @@ import com.sprint.mission.discodeit.channel.service.dto.CreateReadStatusCommand;
 import com.sprint.mission.discodeit.channel.service.dto.ReadStatusResult;
 import com.sprint.mission.discodeit.channel.service.dto.UpdateReadStatusCommand;
 import com.sprint.mission.discodeit.user.service.dto.CreateUserCommand;
+import com.sprint.mission.discodeit.user.service.dto.UpdateUserCommand;
 import com.sprint.mission.discodeit.user.service.dto.UserProfileCommand;
 import com.sprint.mission.discodeit.user.service.dto.UserResult;
 import com.sprint.mission.discodeit.user.service.dto.UserStatusResult;
@@ -30,13 +31,21 @@ import com.sprint.mission.discodeit.user.service.UserStatusControllerService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.Sort;
+import com.sprint.mission.discodeit.content.storage.StorageProperties;
+import com.sprint.mission.discodeit.message.entity.Message;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -77,6 +86,9 @@ class ServiceWorkflowTest {
 
     @Autowired
     private BinaryContentRepository binaryContentRepository;
+
+    @Autowired
+    private StorageProperties storageProperties;
 
     @Test
     void userChannelMessageLifecycleUsesInternalCollaborators() {
@@ -121,7 +133,7 @@ class ServiceWorkflowTest {
         ChannelResult channel = channelControllerService.createPrivate(
                 new CreatePrivateChannelCommand(List.of(author.id(), participant.id()))
         );
-        assertEquals(2, channel.participantIds().size());
+        assertEquals(2, channel.participants().size());
 
         MessageResult message = messageControllerService.create(
                 new CreateMessageCommand(
@@ -134,8 +146,10 @@ class ServiceWorkflowTest {
                 )
         );
 
-        assertEquals(1, message.attachmentIds().size());
-        UUID attachmentId = message.attachmentIds().get(0);
+        assertEquals(1, message.attachments().size());
+        assertEquals("attachment.txt", message.attachments().get(0).fileName());
+        assertEquals(author.id(), message.author().id());
+        UUID attachmentId = message.attachments().get(0).id();
 
         ReadStatusResult foundReadStatus = readStatusControllerService.find(
                 author.id(), channel.id()
@@ -152,7 +166,7 @@ class ServiceWorkflowTest {
         assertTrue(messageRepository.findAllByChannelId(channel.id()).isEmpty());
         assertTrue(readStatusRepository.findParticipantsByChannelIdIn(List.of(channel.id())).isEmpty());
         assertFalse(binaryContentRepository.existsById(attachmentId));
-        assertTrue(binaryContentRepository.existsById(author.profileId()));
+        assertTrue(binaryContentRepository.existsById(author.profile().id()));
 
         userControllerService.delete(author.id());
         userControllerService.delete(participant.id());
@@ -160,7 +174,7 @@ class ServiceWorkflowTest {
         // 사용자를 지우면 사용자 상태와 프로필 이미지가 함께 정리된다.
         assertTrue(userStatusRepository.findByUserId(author.id()).isEmpty());
         assertTrue(userStatusRepository.findByUserId(participant.id()).isEmpty());
-        assertFalse(binaryContentRepository.existsById(author.profileId()));
+        assertFalse(binaryContentRepository.existsById(author.profile().id()));
     }
 
     @Test
@@ -333,5 +347,148 @@ class ServiceWorkflowTest {
 
         // 먼저 저장된 프로필 이미지가 정리되어 개수가 그대로여야 한다.
         assertEquals(contentCountBefore, binaryContentRepository.count());
+    }
+
+    // 작성자가 탈퇴해도 메시지는 남고 작성자 자리만 비워진다.
+    @Test
+    void deletingUserKeepsMessagesWithoutAuthor() {
+        String suffix = UUID.randomUUID().toString().substring(0, 8);
+        UserResult author = userControllerService.create(
+                new CreateUserCommand(
+                        "leaving-" + suffix,
+                        "leaving-" + suffix + "@example.com",
+                        "password",
+                        null
+                )
+        );
+        ChannelResult channel = channelControllerService.createPublic(
+                new CreatePublicChannelCommand("leftover-" + suffix, "작성자 정리 테스트")
+        );
+        MessageResult message = messageControllerService.create(
+                new CreateMessageCommand("남는 메시지", channel.id(), author.id(), List.of())
+        );
+
+        userControllerService.delete(author.id());
+
+        Message stored = messageRepository.findById(message.id()).orElseThrow();
+        assertNull(stored.getAuthor());
+
+        channelControllerService.delete(channel.id());
+    }
+
+    // 프로필을 바꾸면 이전 프로필 행과 파일이 함께 사라진다.
+    @Test
+    void replacingProfileRemovesPreviousProfile() {
+        String suffix = UUID.randomUUID().toString().substring(0, 8);
+        UserResult created = userControllerService.create(
+                new CreateUserCommand(
+                        "profile-" + suffix,
+                        "profile-" + suffix + "@example.com",
+                        "password",
+                        new UserProfileCommand("old.png", "image/png", new byte[]{1, 2, 3})
+                )
+        );
+        UUID oldProfileId = created.profile().id();
+        assertTrue(Files.exists(storedFile(oldProfileId)));
+
+        UserResult updated = userControllerService.update(
+                created.id(),
+                new UpdateUserCommand(
+                        null, null, null,
+                        new UserProfileCommand("new.png", "image/png", new byte[]{4, 5, 6})
+                )
+        );
+
+        assertNotEquals(oldProfileId, updated.profile().id());
+        assertEquals("new.png", updated.profile().fileName());
+        assertFalse(binaryContentRepository.existsById(oldProfileId));
+        assertFalse(Files.exists(storedFile(oldProfileId)));
+        assertTrue(Files.exists(storedFile(updated.profile().id())));
+
+        userControllerService.delete(created.id());
+        assertFalse(Files.exists(storedFile(updated.profile().id())));
+    }
+
+    // 메시지를 지우면 첨부 행과 실제 파일이 모두 사라진다.
+    @Test
+    void deletingMessageRemovesAttachmentFile() {
+        String suffix = UUID.randomUUID().toString().substring(0, 8);
+        UserResult author = userControllerService.create(
+                new CreateUserCommand(
+                        "file-" + suffix,
+                        "file-" + suffix + "@example.com",
+                        "password",
+                        null
+                )
+        );
+        ChannelResult channel = channelControllerService.createPublic(
+                new CreatePublicChannelCommand("file-channel-" + suffix, "첨부 파일 정리 테스트")
+        );
+        MessageResult message = messageControllerService.create(
+                new CreateMessageCommand(
+                        "첨부 포함", channel.id(), author.id(),
+                        List.of(new MessageAttachmentCommand("note.txt", "text/plain", new byte[]{7, 8}))
+                )
+        );
+        UUID attachmentId = message.attachments().get(0).id();
+        assertTrue(Files.exists(storedFile(attachmentId)));
+
+        messageControllerService.delete(message.id());
+
+        assertFalse(binaryContentRepository.existsById(attachmentId));
+        assertFalse(Files.exists(storedFile(attachmentId)));
+
+        channelControllerService.delete(channel.id());
+        userControllerService.delete(author.id());
+    }
+
+    // 메시지 목록은 최근 순으로 페이지 단위로 끊어서 준다.
+    @Test
+    void messagesArePagedFromNewest() {
+        String suffix = UUID.randomUUID().toString().substring(0, 8);
+        UserResult author = userControllerService.create(
+                new CreateUserCommand(
+                        "paged-" + suffix,
+                        "paged-" + suffix + "@example.com",
+                        "password",
+                        null
+                )
+        );
+        ChannelResult channel = channelControllerService.createPublic(
+                new CreatePublicChannelCommand("paged-channel-" + suffix, "페이지네이션 테스트")
+        );
+        for (int index = 0; index < 3; index++) {
+            messageControllerService.create(
+                    new CreateMessageCommand("message-" + index, channel.id(), author.id(), List.of())
+            );
+        }
+
+        Slice<MessageResult> firstPage = messageControllerService.findAllByChannelId(
+                channel.id(),
+                PageRequest.of(0, 2, Sort.by(Sort.Direction.DESC, "createdAt"))
+        );
+        Slice<MessageResult> secondPage = messageControllerService.findAllByChannelId(
+                channel.id(),
+                PageRequest.of(1, 2, Sort.by(Sort.Direction.DESC, "createdAt"))
+        );
+
+        assertEquals(2, firstPage.getContent().size());
+        assertTrue(firstPage.hasNext());
+        assertEquals(1, secondPage.getContent().size());
+        assertFalse(secondPage.hasNext());
+        // 최근 메시지가 먼저 온다.
+        assertEquals("message-2", firstPage.getContent().get(0).content());
+        assertEquals("message-0", secondPage.getContent().get(0).content());
+
+        channelControllerService.delete(channel.id());
+        userControllerService.delete(author.id());
+    }
+
+    // 스토리지에 저장된 파일 경로. LocalBinaryContentStorage의 규칙({root}/{id})과 같다.
+    private Path storedFile(UUID binaryContentId) {
+        return Path.of(storageProperties.local().rootPath())
+                .toAbsolutePath()
+                .normalize()
+                .resolve(binaryContentId.toString());
     }
 }

@@ -1,6 +1,9 @@
 package com.sprint.mission.discodeit.message.repository;
 
 import com.sprint.mission.discodeit.message.entity.Message;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -17,8 +20,15 @@ import java.util.UUID;
  */
 public interface MessageRepository extends JpaRepository<Message, UUID> {
 
-    // 특정 채널에 속한 모든 메시지를 조회한다
+    // 특정 채널에 속한 모든 메시지를 조회한다 (채널 삭제처럼 전부 필요한 경우)
     List<Message> findAllByChannelId(UUID channelId);
+
+    // 특정 채널의 메시지를 페이지 단위로 조회한다.
+    // 전체 개수는 필요 없으므로 Page가 아니라 Slice로 받아 count 쿼리를 생략한다.
+    // 작성자와 그 상태·프로필은 응답에 들어가므로 함께 가져온다. 첨부는 컬렉션이라
+    // 함께 조인하면 페이지 크기가 깨지므로 배치 조회(default_batch_fetch_size)에 맡긴다.
+    @EntityGraph(attributePaths = {"author", "author.status", "author.profile"})
+    Slice<Message> findAllByChannelId(UUID channelId, Pageable pageable);
 
     // 여러 채널의 마지막 메시지 시각을 한 번의 쿼리로 구한다.
     // 채널마다 따로 조회하면 채널 목록 한 번에 쿼리가 채널 수만큼 늘어나기 때문이다(N+1).

@@ -1,6 +1,7 @@
 package com.sprint.mission.discodeit.channel.dto.response;
 
 import com.sprint.mission.discodeit.channel.entity.ChannelType;
+import com.sprint.mission.discodeit.user.dto.response.UserDto;
 
 import java.time.Instant;
 import java.util.List;
@@ -13,19 +14,19 @@ import java.util.UUID;
  * 도메인 엔티티(Channel)를 직접 노출하지 않고, 필요한 정보만 담아서 반환한다.
  */
 public record ChannelDto(
-        UUID id,                   // 채널 고유 ID
-        ChannelType type,          // 채널 유형 (PUBLIC / PRIVATE)
-        String name,               // 채널 이름 (PRIVATE은 null)
-        String description,        // 채널 설명 (PRIVATE은 null)
-        List<UUID> participantIds, // 참여자 ID 목록 (PUBLIC은 빈 리스트)
-        Instant lastMessageAt      // 마지막 메시지 시각
+        UUID id,                     // 채널 고유 ID
+        ChannelType type,            // 채널 유형 (PUBLIC / PRIVATE)
+        String name,                 // 채널 이름 (PRIVATE은 null)
+        String description,          // 채널 설명 (PRIVATE은 null)
+        List<UserDto> participants,  // 참여자 목록 (PUBLIC은 빈 리스트)
+        Instant lastMessageAt        // 마지막 메시지 시각
 ) {
     // 참여자 목록을 불변 리스트로 복사하여, 외부에서 수정하는 것을 방지
     public ChannelDto {
-        participantIds = List.copyOf(
+        participants = List.copyOf(
                 Objects.requireNonNull(
-                        participantIds,
-                        "participantIds는 null일 수 없습니다."
+                        participants,
+                        "participants는 null일 수 없습니다."
                 )
         );
     }

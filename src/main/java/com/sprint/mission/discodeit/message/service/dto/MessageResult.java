@@ -1,7 +1,8 @@
 package com.sprint.mission.discodeit.message.service.dto;
 
-import com.sprint.mission.discodeit.content.entity.BinaryContent;
+import com.sprint.mission.discodeit.content.service.dto.BinaryContentResult;
 import com.sprint.mission.discodeit.message.entity.Message;
+import com.sprint.mission.discodeit.user.service.dto.UserResult;
 
 import java.time.Instant;
 import java.util.List;
@@ -13,11 +14,12 @@ public record MessageResult(
         Instant updatedAt,
         String content,
         UUID channelId,
-        UUID authorId,
-        List<UUID> attachmentIds
+        UserResult author,
+        List<BinaryContentResult> attachments
 ) {
+
     public MessageResult {
-        attachmentIds = List.copyOf(attachmentIds);
+        attachments = List.copyOf(attachments);
     }
 
     public static MessageResult from(Message message) {
@@ -26,10 +28,11 @@ public record MessageResult(
                 message.getCreatedAt(),
                 message.getUpdatedAt(),
                 message.getContent(),
+                // 지연 로딩 프록시의 id는 초기화 없이 읽을 수 있어 채널 조회가 추가로 나가지 않는다.
                 message.getChannel().getId(),
-                // 작성자가 탈퇴하면 null이 된다. 프록시의 id는 초기화 없이 읽는다.
-                message.getAuthor() == null ? null : message.getAuthor().getId(),
-                message.getAttachments().stream().map(BinaryContent::getId).toList()
+                // 작성자가 탈퇴하면 null이 된다.
+                message.getAuthor() == null ? null : UserResult.from(message.getAuthor()),
+                message.getAttachments().stream().map(BinaryContentResult::from).toList()
         );
     }
 }

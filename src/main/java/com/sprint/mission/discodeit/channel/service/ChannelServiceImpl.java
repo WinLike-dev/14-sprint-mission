@@ -19,6 +19,7 @@ import com.sprint.mission.discodeit.message.repository.MessageRepository;
 import com.sprint.mission.discodeit.message.repository.MessageRepository.ChannelLastMessageAt;
 import com.sprint.mission.discodeit.user.entity.User;
 import com.sprint.mission.discodeit.user.repository.UserRepository;
+import com.sprint.mission.discodeit.user.service.dto.UserResult;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -107,7 +108,7 @@ public class ChannelServiceImpl implements ChannelControllerService {
                 : channelRepository.findAllByTypeOrIdIn(ChannelType.PUBLIC, participatedChannelIds);
 
         // 참여자 목록은 PRIVATE 채널 응답에만 들어가므로 그 채널들만 묻는다.
-        Map<UUID, List<UUID>> participantIdsByChannelId = findParticipantIds(
+        Map<UUID, List<UserResult>> participantsByChannelId = findParticipants(
                 visibleChannels.stream()
                         .filter(channel -> channel.getType() == ChannelType.PRIVATE)
                         .map(Channel::getId)
@@ -120,7 +121,7 @@ public class ChannelServiceImpl implements ChannelControllerService {
         return visibleChannels.stream()
                 .map(channel -> createChannelResult(
                         channel,
-                        participantIdsByChannelId.getOrDefault(channel.getId(), List.of()),
+                        participantsByChannelId.getOrDefault(channel.getId(), List.of()),
                         lastMessageAtByChannelId.get(channel.getId())
                 ))
                 .toList();
@@ -182,23 +183,40 @@ public class ChannelServiceImpl implements ChannelControllerService {
     // 단건 조회 경로: 목록과 같은 조회를 채널 하나에 대해서만 수행한다.
     private ChannelResult createChannelResult(Channel channel) {
         List<UUID> channelIds = List.of(channel.getId());
-        List<UUID> participantIds = channel.getType() == ChannelType.PRIVATE
-                ? findParticipantIds(channelIds).getOrDefault(channel.getId(), List.of())
+        List<UserResult> participants = channel.getType() == ChannelType.PRIVATE
+                ? findParticipants(channelIds).getOrDefault(channel.getId(), List.of())
                 : List.of();
         // 메시지가 없으면 결과에 없으므로 null이 된다.
         Instant lastMessageAt = findLastMessageAt(channelIds).get(channel.getId());
-        return createChannelResult(channel, participantIds, lastMessageAt);
+        return createChannelResult(channel, participants, lastMessageAt);
     }
 
-    // 채널별 참여자 id를 한 번에 모은다. 대상이 없으면 쿼리를 보내지 않는다.
-    private Map<UUID, List<UUID>> findParticipantIds(List<UUID> channelIds) {
+    // 채널별 참여자를 한 번에 모은다. 대상이 없으면 쿼리를 보내지 않는다.
+    // 읽음 상태에서 (채널, 사용자) 짝을 얻고, 사용자만 따로 한 번에 조회해 붙인다.
+    private Map<UUID, List<UserResult>> findParticipants(List<UUID> channelIds) {
         if (channelIds.isEmpty()) {
             return Map.of();
         }
-        return readStatusRepository.findParticipantsByChannelIdIn(channelIds).stream()
+        List<ChannelParticipant> participants =
+                readStatusRepository.findParticipantsByChannelIdIn(channelIds);
+        if (participants.isEmpty()) {
+            return Map.of();
+        }
+        Map<UUID, UserResult> resultsByUserId = userRepository.findAllByIdIn(
+                        participants.stream()
+                                .map(ChannelParticipant::getUserId)
+                                .distinct()
+                                .toList()
+                ).stream()
+                .collect(Collectors.toMap(User::getId, UserResult::from));
+
+        return participants.stream()
                 .collect(Collectors.groupingBy(
                         ChannelParticipant::getChannelId,
-                        Collectors.mapping(ChannelParticipant::getUserId, Collectors.toList())
+                        Collectors.mapping(
+                                participant -> resultsByUserId.get(participant.getUserId()),
+                                Collectors.toList()
+                        )
                 ));
     }
 
@@ -216,11 +234,15 @@ public class ChannelServiceImpl implements ChannelControllerService {
 
     // Channel 엔티티를 application 결과로 변환하는 헬퍼 메서드.
     // 조회 전략은 호출 경로에 따라 다르지만 변환 규칙은 이 메서드 한 벌로 유지한다.
-    private ChannelResult createChannelResult(Channel channel, List<UUID> participantIds, Instant lastMessageAt) {
-        // private면 참여자 ID 받고 public이면 빈값을 보낸다.
+    private ChannelResult createChannelResult(
+            Channel channel,
+            List<UserResult> participants,
+            Instant lastMessageAt
+    ) {
+        // private면 참여자를 담고 public이면 빈값을 보낸다.
         return ChannelResult.from(
                 channel,
-                channel.getType() == ChannelType.PRIVATE ? participantIds : List.of(),
+                channel.getType() == ChannelType.PRIVATE ? participants : List.of(),
                 lastMessageAt
         );
     }

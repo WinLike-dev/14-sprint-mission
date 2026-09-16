@@ -5,14 +5,11 @@ import java.util.UUID;
 
 /**
  * 사용자 접속 상태 응답 DTO.
- * online은 저장된 값이 아니라 lastActiveAt으로 그때그때 판단한 결과다.
+ * 온라인 여부는 lastActiveAt으로 그때그때 판단하는 값이라 UserDto.online으로만 알린다.
  */
 public record UserStatusDto(
         UUID id,
-        Instant createdAt,
-        Instant updatedAt,
         UUID userId,
-        Instant lastActiveAt,
-        boolean online
+        Instant lastActiveAt
 ) {
 }

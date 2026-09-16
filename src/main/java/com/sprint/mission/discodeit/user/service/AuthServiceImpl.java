@@ -3,7 +3,6 @@ package com.sprint.mission.discodeit.user.service;
 import com.sprint.mission.discodeit.user.service.dto.LoginCommand;
 import com.sprint.mission.discodeit.user.service.dto.UserResult;
 import com.sprint.mission.discodeit.user.entity.User;
-import com.sprint.mission.discodeit.user.entity.UserStatus;
 import com.sprint.mission.discodeit.user.exception.AuthenticationFailedException;
 import com.sprint.mission.discodeit.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -38,9 +37,8 @@ public class AuthServiceImpl implements AuthControllerService {
 
         // 가장 최근 ActiveAt이 된 기간 업데이트
         // 영속 상태라 변경 감지로 반영되므로 save를 부르지 않는다.
-        UserStatus status = user.getStatus();
-        status.updateLastActiveAt(Instant.now()); // 로그인했으므로 "지금 활동 중"으로 갱신
+        user.getStatus().updateLastActiveAt(Instant.now()); // 로그인했으므로 "지금 활동 중"으로 갱신
 
-        return UserResult.from(user, status.isOnline());
+        return UserResult.from(user);
     }
 }

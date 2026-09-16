@@ -15,6 +15,8 @@ import com.sprint.mission.discodeit.user.entity.User;
 import com.sprint.mission.discodeit.user.repository.UserRepository;
 import com.sprint.mission.discodeit.common.exception.exceptions.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -65,13 +67,13 @@ public class MessageServiceImpl implements MessageControllerService {
         return MessageResult.from(created);
     }
 
-    // 특정 채널의 모든 메시지를 조회한다
+    // 특정 채널의 메시지를 페이지 단위로 조회한다.
+    // 정렬과 페이지 크기는 호출자가 Pageable로 넘긴다.
     @Override
-    public List<MessageResult> findAllByChannelId(UUID channelId) {
+    public Slice<MessageResult> findAllByChannelId(UUID channelId, Pageable pageable) {
         requireChannelExists(channelId); // 채널 존재 여부 먼저 확인
-        return messageRepository.findAllByChannelId(channelId).stream()
-                .map(MessageResult::from)
-                .toList();
+        return messageRepository.findAllByChannelId(channelId, pageable)
+                .map(MessageResult::from);
     }
 
     // 메시지 내용을 수정한다

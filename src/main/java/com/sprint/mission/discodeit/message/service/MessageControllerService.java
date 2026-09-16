@@ -4,7 +4,9 @@ import com.sprint.mission.discodeit.message.service.dto.CreateMessageCommand;
 import com.sprint.mission.discodeit.message.service.dto.MessageResult;
 import com.sprint.mission.discodeit.message.service.dto.UpdateMessageCommand;
 
-import java.util.List;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
+
 import java.util.UUID;
 
 /**
@@ -15,8 +17,8 @@ public interface MessageControllerService {
     // 새 메시지를 생성한다
     MessageResult create(CreateMessageCommand command);
 
-    // 특정 채널의 모든 메시지를 조회한다
-    List<MessageResult> findAllByChannelId(UUID channelId);
+    // 특정 채널의 메시지를 페이지 단위로 조회한다
+    Slice<MessageResult> findAllByChannelId(UUID channelId, Pageable pageable);
 
     // 메시지 내용을 수정한다
     MessageResult update(UUID id, UpdateMessageCommand command);

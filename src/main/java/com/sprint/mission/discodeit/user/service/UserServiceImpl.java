@@ -65,21 +65,21 @@ public class UserServiceImpl implements UserControllerService {
         if (profile != null) {
             fileManager.save(profile.getId(), target.profile().bytes());
         }
-        return createUserResult(user);
+        return UserResult.from(user);
     }
 
     // ID로 사용자 한 명을 조회하여 DTO로 변환한다.
     @Override
     public UserResult find(UUID id) {
-        return createUserResult(getUser(id));
+        return UserResult.from(getUser(id));
     }
 
     // 전체 사용자를 조회하여 DTO 리스트로 반환한다.
-    // UserRepository.findAll이 상태까지 한 번의 조인으로 가져오므로 사용자마다 상태를 다시 조회하지 않는다.
+    // UserRepository.findAll이 상태와 프로필까지 한 번의 조인으로 가져오므로 사용자마다 다시 조회하지 않는다.
     @Override
     public List<UserResult> findAll() {
         return userRepository.findAll().stream()
-                .map(this::createUserResult)
+                .map(UserResult::from)
                 .toList();
     }
 
@@ -102,7 +102,7 @@ public class UserServiceImpl implements UserControllerService {
             replaceProfile(user, target.profile());
         }
         // 영속 상태라 변경 감지로 반영되므로 save를 부르지 않는다.
-        return createUserResult(user);
+        return UserResult.from(user);
     }
 
     // 사용자를 삭제한다. 상태, 읽음 상태, 프로필까지 함께 처리한다.
@@ -152,11 +152,6 @@ public class UserServiceImpl implements UserControllerService {
     private User getUser(UUID id) {
         return userRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException(User.class, id));
-    }
-
-    // User와 상태의 online을 유스케이스 결과로 합친다. password는 넣지 않는다.
-    private UserResult createUserResult(User user) {
-        return UserResult.from(user, user.getStatus().isOnline());
     }
 
     // 프로필 이미지를 교체한다.
