@@ -150,7 +150,7 @@ class ServiceWorkflowTest {
 
         // 채널을 지우면 메시지, 읽음 상태, 메시지 첨부파일이 함께 정리되고 프로필은 남는다.
         assertTrue(messageRepository.findAllByChannelId(channel.id()).isEmpty());
-        assertTrue(readStatusRepository.findAllByChannelId(channel.id()).isEmpty());
+        assertTrue(readStatusRepository.findParticipantsByChannelIdIn(List.of(channel.id())).isEmpty());
         assertFalse(binaryContentRepository.existsById(attachmentId));
         assertTrue(binaryContentRepository.existsById(author.profileId()));
 

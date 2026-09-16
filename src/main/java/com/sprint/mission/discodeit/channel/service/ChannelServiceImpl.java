@@ -11,6 +11,7 @@ import com.sprint.mission.discodeit.common.exception.exceptions.DuplicateRequest
 import com.sprint.mission.discodeit.common.exception.exceptions.EntityNotFoundException;
 import com.sprint.mission.discodeit.channel.repository.ChannelRepository;
 import com.sprint.mission.discodeit.channel.repository.ReadStatusRepository;
+import com.sprint.mission.discodeit.channel.repository.ReadStatusRepository.ChannelParticipant;
 import com.sprint.mission.discodeit.content.entity.BinaryContent;
 import com.sprint.mission.discodeit.content.storage.BinaryContentFileManager;
 import com.sprint.mission.discodeit.message.entity.Message;
@@ -93,38 +94,28 @@ public class ChannelServiceImpl implements ChannelControllerService {
     }
 
     // 사용자가 볼 수 있는 모든 채널을 조회 (PUBLIC 채널 전체 + 참여 중인 PRIVATE 채널)
-    // 채널마다 참여자를 다시 조회하면 목록 한 번이 조회 C회로 늘어나므로(N+1),
-    // ReadStatus를 한 번만 읽어 참여 채널 판별과 참여자 목록 조립에 함께 사용한다.
+    // 참여 채널 id -> 볼 수 있는 채널 -> 참여자 -> 마지막 메시지 시각 순으로,
+    // 필요한 행만 네 번의 쿼리로 모은다. 채널마다 되묻지도(N+1), 전체를 읽어 거르지도 않는다.
     @Override
     public List<ChannelResult> findAllByUserId(UUID userId) {
         requireUserExists(userId);
 
-        List<ReadStatus> allStatuses = readStatusRepository.findAll();
-        // 채널별 참여자 목록 (PRIVATE 채널 응답 조립용)
-        // 지연 로딩 프록시의 id는 초기화 없이 읽을 수 있어 User·Channel 조회가 추가로 나가지 않는다.
-        Map<UUID, List<UUID>> participantIdsByChannelId = allStatuses.stream()
-                .collect(Collectors.groupingBy(
-                        status -> status.getChannel().getId(),
-                        Collectors.mapping(status -> status.getUser().getId(), Collectors.toList())
-                ));
-        // set을 이용해 채널 id 중복을 없게 하기 + 등록된 ReadStatus를 통해 userid로 channelId 찾기
-        Set<UUID> participatedChannelIds = allStatuses.stream()
-                .filter(status -> status.getUser().getId().equals(userId))
-                .map(status -> status.getChannel().getId())
-                .collect(Collectors.toSet());
+        List<UUID> participatedChannelIds = readStatusRepository.findChannelIdsByUserId(userId);
+        // 참여 중인 PRIVATE 채널이 없으면 조건을 하나 줄인다.
+        List<Channel> visibleChannels = participatedChannelIds.isEmpty()
+                ? channelRepository.findAllByType(ChannelType.PUBLIC)
+                : channelRepository.findAllByTypeOrIdIn(ChannelType.PUBLIC, participatedChannelIds);
 
-        List<Channel> visibleChannels = channelRepository.findAll().stream()
-                .filter(channel -> channel.getType() == ChannelType.PUBLIC
-                        || participatedChannelIds.contains(channel.getId()))
-                .toList();
-        // 마지막 메시지 시각도 채널마다 묻지 않고 한 번에 구한다.
-        Map<UUID, Instant> lastMessageAtByChannelId = messageRepository
-                .findLastMessageAtByChannelIdIn(visibleChannels.stream().map(Channel::getId).toList())
-                .stream()
-                .collect(Collectors.toMap(
-                        ChannelLastMessageAt::getChannelId,
-                        ChannelLastMessageAt::getLastMessageAt
-                ));
+        // 참여자 목록은 PRIVATE 채널 응답에만 들어가므로 그 채널들만 묻는다.
+        Map<UUID, List<UUID>> participantIdsByChannelId = findParticipantIds(
+                visibleChannels.stream()
+                        .filter(channel -> channel.getType() == ChannelType.PRIVATE)
+                        .map(Channel::getId)
+                        .toList()
+        );
+        Map<UUID, Instant> lastMessageAtByChannelId = findLastMessageAt(
+                visibleChannels.stream().map(Channel::getId).toList()
+        );
 
         return visibleChannels.stream()
                 .map(channel -> createChannelResult(
@@ -188,20 +179,39 @@ public class ChannelServiceImpl implements ChannelControllerService {
                 .orElseThrow(() -> new EntityNotFoundException(Channel.class, id));
     }
 
-    // 단건 조회 경로: 해당 채널의 ReadStatus와 마지막 메시지 시각만 조회한다.
+    // 단건 조회 경로: 목록과 같은 조회를 채널 하나에 대해서만 수행한다.
     private ChannelResult createChannelResult(Channel channel) {
+        List<UUID> channelIds = List.of(channel.getId());
         List<UUID> participantIds = channel.getType() == ChannelType.PRIVATE
-                ? readStatusRepository.findAllByChannelId(channel.getId()).stream()
-                .map(status -> status.getUser().getId())
-                .toList()
+                ? findParticipantIds(channelIds).getOrDefault(channel.getId(), List.of())
                 : List.of();
-        Instant lastMessageAt = messageRepository
-                .findLastMessageAtByChannelIdIn(List.of(channel.getId()))
-                .stream()
-                .findFirst()
-                .map(ChannelLastMessageAt::getLastMessageAt)
-                .orElse(null); // 메시지가 없으면 null
+        // 메시지가 없으면 결과에 없으므로 null이 된다.
+        Instant lastMessageAt = findLastMessageAt(channelIds).get(channel.getId());
         return createChannelResult(channel, participantIds, lastMessageAt);
+    }
+
+    // 채널별 참여자 id를 한 번에 모은다. 대상이 없으면 쿼리를 보내지 않는다.
+    private Map<UUID, List<UUID>> findParticipantIds(List<UUID> channelIds) {
+        if (channelIds.isEmpty()) {
+            return Map.of();
+        }
+        return readStatusRepository.findParticipantsByChannelIdIn(channelIds).stream()
+                .collect(Collectors.groupingBy(
+                        ChannelParticipant::getChannelId,
+                        Collectors.mapping(ChannelParticipant::getUserId, Collectors.toList())
+                ));
+    }
+
+    // 채널별 마지막 메시지 시각을 한 번에 모은다. 메시지가 없는 채널은 결과에 없다.
+    private Map<UUID, Instant> findLastMessageAt(List<UUID> channelIds) {
+        if (channelIds.isEmpty()) {
+            return Map.of();
+        }
+        return messageRepository.findLastMessageAtByChannelIdIn(channelIds).stream()
+                .collect(Collectors.toMap(
+                        ChannelLastMessageAt::getChannelId,
+                        ChannelLastMessageAt::getLastMessageAt
+                ));
     }
 
     // Channel 엔티티를 application 결과로 변환하는 헬퍼 메서드.

@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -21,8 +22,19 @@ public interface ReadStatusRepository extends JpaRepository<ReadStatus, UUID> {
     // 특정 사용자의 모든 읽음 상태를 조회 (사용자가 참여 중인 모든 채널의 읽음 상태)
     List<ReadStatus> findAllByUserId(UUID userId);
 
-    // 특정 채널의 모든 읽음 상태를 조회 (해당 채널에 참여 중인 모든 사용자의 읽음 상태)
-    List<ReadStatus> findAllByChannelId(UUID channelId);
+    // 사용자가 참여 중인 채널 id만 조회한다.
+    // 참여 여부 판별에는 읽음 상태 전체가 필요 없으므로 엔티티를 만들지 않는다.
+    @Query("select r.channel.id from ReadStatus r where r.user.id = :userId")
+    List<UUID> findChannelIdsByUserId(@Param("userId") UUID userId);
+
+    // 여러 채널의 참여자 id를 한 번에 조회한다.
+    // 채널마다 참여자를 물으면 채널 목록 한 번이 조회 N회로 늘어난다(N+1).
+    @Query("""
+            select r.channel.id as channelId, r.user.id as userId
+            from ReadStatus r
+            where r.channel.id in :channelIds
+            """)
+    List<ChannelParticipant> findParticipantsByChannelIdIn(@Param("channelIds") Collection<UUID> channelIds);
 
     // 특정 사용자 + 특정 채널 조합의 읽음 상태를 조회 (1:1 매핑)
     Optional<ReadStatus> findByUserIdAndChannelId(UUID userId, UUID channelId);
@@ -45,4 +57,12 @@ public interface ReadStatusRepository extends JpaRepository<ReadStatus, UUID> {
     @Modifying(flushAutomatically = true)
     @Query("delete from ReadStatus r where r.channel.id = :channelId")
     void deleteAllByChannelId(@Param("channelId") UUID channelId);
+
+    // 채널별 참여자 조회 결과
+    interface ChannelParticipant {
+
+        UUID getChannelId();
+
+        UUID getUserId();
+    }
 }
