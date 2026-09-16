@@ -5,7 +5,6 @@ import com.sprint.mission.discodeit.user.service.dto.UserStatusResult;
 import org.mapstruct.Mapper;
 import org.mapstruct.ReportingPolicy;
 
-import java.util.List;
 
 @Mapper(
         componentModel = "spring",
@@ -14,6 +13,4 @@ import java.util.List;
 public interface UserStatusRestMapper {
 
     UserStatusDto toResponse(UserStatusResult result);
-
-    List<UserStatusDto> toResponses(List<UserStatusResult> results);
 }

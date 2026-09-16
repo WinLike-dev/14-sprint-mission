@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -29,12 +28,6 @@ public class UserStatusServiceImpl implements UserStatusControllerService {
     @Override
     public UserStatusResult find(UUID userId) {
         return UserStatusResult.from(getStatusByUserId(userId));
-    }
-
-    // 모든 사용자의 온라인 상태를 조회하여 결과 모델 목록으로 반환한다.
-    @Override
-    public List<UserStatusResult> findAll() {
-        return userStatusRepository.findAll().stream().map(UserStatusResult::from).toList();
     }
 
     // 사용자의 마지막 활동 시각을 갱신하고, 갱신된 상태를 반환한다.

@@ -33,8 +33,6 @@ public interface MessageRestMapper {
 
     MessageDto toResponse(MessageResult result);
 
-    List<MessageDto> toResponses(List<MessageResult> results);
-
     default List<MessageAttachmentCommand> toAttachmentCommands(
             List<MultipartFile> attachments
     ) {
