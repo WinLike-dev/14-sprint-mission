@@ -6,6 +6,7 @@ import com.sprint.mission.discodeit.common.exception.exceptions.EntityNotFoundEx
 import com.sprint.mission.discodeit.user.repository.UserStatusRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
@@ -34,12 +35,14 @@ public class UserStatusServiceImpl implements UserStatusControllerService {
         return userStatusRepository.findAll().stream().map(UserStatusResult::from).toList();
     }
 
-    // 사용자의 마지막 활동 시각을 현재 시각으로 갱신하고, 갱신된 상태를 반환한다.
+    // 사용자의 마지막 활동 시각을 갱신하고, 갱신된 상태를 반환한다.
+    // 영속 상태라 변경 감지로 반영되므로 save를 부르지 않는다.
     @Override
+    @Transactional
     public UserStatusResult update(UUID userId, Instant newLastActiveAt) {
         UserStatus status = getStatusByUserId(userId);
         status.updateLastActiveAt(newLastActiveAt);
-        return UserStatusResult.from(userStatusRepository.save(status));
+        return UserStatusResult.from(status);
     }
 
     // userId로 UserStatus를 찾는 내부 헬퍼 메서드. 없으면 예외를 던진다.

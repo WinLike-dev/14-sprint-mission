@@ -6,11 +6,9 @@ import com.sprint.mission.discodeit.user.service.dto.UserProfileCommand;
 import com.sprint.mission.discodeit.user.service.dto.UserResult;
 
 import com.sprint.mission.discodeit.user.entity.User;
-import com.sprint.mission.discodeit.user.entity.UserStatus;
 import com.sprint.mission.discodeit.common.exception.exceptions.EntityNotFoundException;
 import com.sprint.mission.discodeit.common.exception.exceptions.DuplicateFieldValueException;
 import com.sprint.mission.discodeit.user.repository.UserRepository;
-import com.sprint.mission.discodeit.user.repository.UserStatusRepository;
 import com.sprint.mission.discodeit.content.entity.BinaryContent;
 import com.sprint.mission.discodeit.content.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.content.storage.BinaryContentFileManager;
@@ -21,17 +19,14 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
  * UserControllerService의 구현체.
  * 사용자 생성, 조회, 수정, 삭제 등 핵심 비즈니스 로직을 처리한다.
- * 프로필 이미지 행은 User의 cascade로 함께 저장·삭제되고, 파일은 BinaryContentFileManager가 트랜잭션에 맞춰 다룬다.
- * 온라인 상태는 UserStatusRepository로 관리한다.
+ * 프로필 이미지와 온라인 상태 행은 User의 cascade로 함께 저장·삭제되고,
+ * 프로필 파일은 BinaryContentFileManager가 트랜잭션에 맞춰 다룬다.
  */
 @Service
 // final 협력 객체를 받는 생성자를 Lombok이 만들고 Spring이 Bean을 주입한다.
@@ -39,12 +34,11 @@ import java.util.stream.Collectors;
 public class UserServiceImpl implements UserControllerService {
 
     private final UserRepository userRepository;
-    private final UserStatusRepository userStatusRepository;
     private final BinaryContentRepository binaryContentRepository; // 프로필 교체 시 새 프로필 저장용
     private final BinaryContentFileManager fileManager;            // 프로필 파일 저장·삭제
     private final ReadStatusRepository readStatusRepository;       // 사용자 삭제 시 읽음 상태 정리용
 
-    // 새 사용자를 생성한다. User 저장(프로필 포함) -> 프로필 파일 저장 -> UserStatus 생성 순서로 진행한다.
+    // 새 사용자를 생성한다. User 저장(프로필·상태 포함) -> 프로필 파일 저장 순서로 진행한다.
     // 중간에 실패하면 트랜잭션이 롤백되어 저장한 행이 사라지고, 저장한 파일은 fileManager가 지운다.
     @Override
     @Transactional
@@ -54,36 +48,33 @@ public class UserServiceImpl implements UserControllerService {
         validateUniqueFields(null, target.username(), target.email());
 
         BinaryContent profile = target.profile() == null ? null : toBinaryContent(target.profile());
-        // 새 엔티티는 id가 없으므로 save가 persist하고, persist가 cascade되어 profile도 이 시점에 id를 받는다.
+        // User 생성자가 온라인 상태도 함께 만든다. 가입한 순간을 마지막 활동 시각으로 둔다.
+        // 새 엔티티는 id가 없으므로 save가 persist하고, persist가 cascade되어 profile과 상태도 이 시점에 id를 받는다.
         User user = userRepository.save(new User(
                 target.username(),
                 target.email(),
                 target.password(),
-                profile
+                profile,
+                Instant.now()
         ));
         if (profile != null) {
             fileManager.save(profile.getId(), target.profile().bytes());
         }
-        userStatusRepository.save(new UserStatus(user.getId(), Instant.now())); // 온라인 상태 초기화
-        return createResponse(user);
+        return createUserResult(user);
     }
 
     // ID로 사용자 한 명을 조회하여 DTO로 변환한다.
     @Override
     public UserResult find(UUID id) {
-        return createResponse(getUser(id));
+        return createUserResult(getUser(id));
     }
 
     // 전체 사용자를 조회하여 DTO 리스트로 반환한다.
-    // 유저마다 상태를 다시 조회하면 목록 한 번이 조회 N회로 늘어나므로 O(n * n),
-    // 유저검색, 유저 상태 검색 따로 각각 해주고 (O(n + n)) map으로 연결 짓기 (o(1)) 이다. O(n)
+    // UserRepository.findAll이 상태까지 한 번의 조인으로 가져오므로 사용자마다 상태를 다시 조회하지 않는다.
     @Override
     public List<UserResult> findAll() {
-        Map<UUID, UserStatus> statusByUserId = userStatusRepository.findAll().stream()
-                .collect(Collectors.toMap(UserStatus::getUserId, Function.identity()));
-
         return userRepository.findAll().stream()
-                .map(user -> createResponse(user, statusByUserId.get(user.getId())))
+                .map(this::createUserResult)
                 .toList();
     }
 
@@ -106,7 +97,7 @@ public class UserServiceImpl implements UserControllerService {
             replaceProfile(user, target.profile());
         }
         // 영속 상태라 변경 감지로 반영되므로 save를 부르지 않는다.
-        return createResponse(user);
+        return createUserResult(user);
     }
 
     // 사용자를 삭제한다. 상태, 읽음 상태, 프로필까지 함께 처리한다.
@@ -114,13 +105,12 @@ public class UserServiceImpl implements UserControllerService {
     @Transactional
     public void delete(UUID id) {
         User user = getUser(id);
-        UserStatus status = userStatusRepository.findByUserId(id)
-                .orElseThrow(() -> new EntityNotFoundException(UserStatus.class, id));
         UUID profileId = user.getProfile() == null ? null : user.getProfile().getId();
 
-        userStatusRepository.delete(status);             // 상태 삭제
         readStatusRepository.deleteAllByUserId(id);      // 사용자의 읽음 상태 삭제
-        userRepository.delete(user);                     // 사용자 삭제. cascade REMOVE로 프로필 행도 함께 삭제된다
+        // cascade REMOVE로 상태와 프로필 행이 함께 삭제된다.
+        // Hibernate가 FK 방향을 보고 user_statuses -> users -> binary_contents 순서로 지운다.
+        userRepository.delete(user);
         if (profileId != null) {
             fileManager.deleteAfterCommit(profileId);    // 프로필 파일은 커밋이 확정된 뒤 삭제한다
         }
@@ -158,17 +148,9 @@ public class UserServiceImpl implements UserControllerService {
                 .orElseThrow(() -> new EntityNotFoundException(User.class, id));
     }
 
-    // 단건 조회 경로: 필요한 상태 하나만 직접 조회한다.
-    private UserResult createResponse(User user) {
-        return createResponse(user, userStatusRepository.findByUserId(user.getId()).orElse(null));
-    }
-
-    // User와 UserStatus.online을 유스케이스 결과로 합친다. password는 넣지 않는다.
-    private UserResult createResponse(User user, UserStatus status) {
-        if (status == null) {
-            throw new EntityNotFoundException(UserStatus.class, user.getId());
-        }
-        return UserResult.from(user, status.isOnline());
+    // User와 상태의 online을 유스케이스 결과로 합친다. password는 넣지 않는다.
+    private UserResult createUserResult(User user) {
+        return UserResult.from(user, user.getStatus().isOnline());
     }
 
     // 프로필 이미지를 교체한다.

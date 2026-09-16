@@ -53,7 +53,7 @@ public class ChannelServiceImpl implements ChannelControllerService {
     public ChannelResult createPublic(CreatePublicChannelCommand command) {
         CreatePublicChannelCommand target = Objects.requireNonNull(command);
         Channel channel = Channel.publicChannel(target.name(), target.description());
-        return createResult(channelRepository.save(channel));
+        return createChannelResult(channelRepository.save(channel));
     }
 
     // 프라이빗 채널 생성 -> 1. 참여자 명단 올바른 지 체크 2. 채널 생성 3. 읽기상태 생성
@@ -76,7 +76,7 @@ public class ChannelServiceImpl implements ChannelControllerService {
                 readStatusRepository.save(status);
                 createdStatuses.add(status);
             }
-            return createResult(channel);
+            return createChannelResult(channel);
         } catch (RuntimeException exception) {
             // 실패했다면 저장소에 저장된 것들도 지워주는 원자성을 확보하기 위해 (다중 저장이므로 레포지토리 책임이라기에 애매함)
             for (ReadStatus status : createdStatuses) {
@@ -92,7 +92,7 @@ public class ChannelServiceImpl implements ChannelControllerService {
     // ID로 채널을 조회하고 application 결과로 변환하여 반환
     @Override
     public ChannelResult find(UUID id) {
-        return createResult(getChannel(id));
+        return createChannelResult(getChannel(id));
     }
 
     // 사용자가 볼 수 있는 모든 채널을 조회 (PUBLIC 채널 전체 + 참여 중인 PRIVATE 채널)
@@ -129,7 +129,7 @@ public class ChannelServiceImpl implements ChannelControllerService {
                 ));
 
         return visibleChannels.stream()
-                .map(channel -> createResult(
+                .map(channel -> createChannelResult(
                         channel,
                         participantIdsByChannelId.getOrDefault(channel.getId(), List.of()),
                         lastMessageAtByChannelId.get(channel.getId())
@@ -148,7 +148,7 @@ public class ChannelServiceImpl implements ChannelControllerService {
                         ? channel.getDescription()
                         : target.newDescription()
         );
-        return createResult(channelRepository.save(channel));
+        return createChannelResult(channelRepository.save(channel));
     }
 
     // 첨부 목록(지연 로딩)을 읽고 파일 삭제를 커밋 뒤로 미루려면 트랜잭션이 필요하다.
@@ -189,7 +189,7 @@ public class ChannelServiceImpl implements ChannelControllerService {
     }
 
     // 단건 조회 경로: 해당 채널의 ReadStatus와 마지막 메시지 시각만 조회한다.
-    private ChannelResult createResult(Channel channel) {
+    private ChannelResult createChannelResult(Channel channel) {
         List<UUID> participantIds = channel.getType() == ChannelType.PRIVATE
                 ? readStatusRepository.findAllByChannelId(channel.getId()).stream()
                 .map(ReadStatus::getUserId)
@@ -201,12 +201,12 @@ public class ChannelServiceImpl implements ChannelControllerService {
                 .findFirst()
                 .map(ChannelLastMessageAt::getLastMessageAt)
                 .orElse(null); // 메시지가 없으면 null
-        return createResult(channel, participantIds, lastMessageAt);
+        return createChannelResult(channel, participantIds, lastMessageAt);
     }
 
     // Channel 엔티티를 application 결과로 변환하는 헬퍼 메서드.
     // 조회 전략은 호출 경로에 따라 다르지만 변환 규칙은 이 메서드 한 벌로 유지한다.
-    private ChannelResult createResult(Channel channel, List<UUID> participantIds, Instant lastMessageAt) {
+    private ChannelResult createChannelResult(Channel channel, List<UUID> participantIds, Instant lastMessageAt) {
         // private면 참여자 ID 받고 public이면 빈값을 보낸다.
         return ChannelResult.from(
                 channel,

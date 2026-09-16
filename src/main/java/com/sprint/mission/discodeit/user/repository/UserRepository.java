@@ -1,8 +1,10 @@
 package com.sprint.mission.discodeit.user.repository;
 
 import com.sprint.mission.discodeit.user.entity.User;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -11,6 +13,12 @@ import java.util.UUID;
  * username/email 조회 등 사용자 전용 쿼리를 메서드 이름 기반 쿼리로 정의한다.
  */
 public interface UserRepository extends JpaRepository<User, UUID> {
+
+    // 사용자 목록은 online 때문에 상태가 항상 필요하므로 한 번의 조인으로 함께 가져온다.
+    // User.status는 지연 로딩이 되지 않아, 이게 없으면 사용자마다 상태 조회가 한 번씩 더 나간다(N+1).
+    @Override
+    @EntityGraph(attributePaths = "status")
+    List<User> findAll();
 
     // username으로 사용자를 조회한다. 로그인 시 사용된다.
     Optional<User> findByUsername(String username);

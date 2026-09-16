@@ -14,6 +14,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.Instant;
 import java.util.Objects;
 import java.util.regex.Pattern;
 
@@ -53,12 +54,25 @@ public class User extends BaseUpdatableEntity {
     @JoinColumn(name = "profile_id", unique = true) // 프로필 없는 사용자도 있으므로 null 허용
     private BinaryContent profile;
 
+    // 부모 User가 상태의 생명주기를 책임진다. User를 저장·삭제하면 상태도 함께 저장·삭제된다.
+    // 주인이 아닌 쪽(mappedBy)이라 FK가 users 테이블에 없어 지연 로딩이 되지 않는다.
+    // 그래서 fetch 속성을 적지 않고, 목록 조회는 fetch join으로 한 번에 가져온다.
+    @OneToOne(
+            mappedBy = "user",
+            cascade = {CascadeType.PERSIST, CascadeType.REMOVE},
+            orphanRemoval = true
+    )
+    private UserStatus status;
+
     // 새 사용자를 생성하는 생성자 - 필수 값 검증을 수행한다. 프로필이 없으면 null을 넘긴다.
-    public User(String username, String email, String password, BinaryContent profile) {
+    // "사용자는 항상 상태를 가진다"는 규칙을 엔티티가 보장하도록 상태도 여기서 함께 만든다.
+    // 양방향 참조가 한곳에서 연결되므로 한쪽만 설정되는 일이 없다.
+    public User(String username, String email, String password, BinaryContent profile, Instant lastActiveAt) {
         this.username = requireNonBlank(username, "username");
         this.email = requireValidEmail(email);
         this.password = requireNonBlank(password, "password");
         this.profile = profile;
+        this.status = new UserStatus(this, lastActiveAt);
     }
 
     // 계정 정보를 수정한다. 전달된 값을 그대로 반영한다.

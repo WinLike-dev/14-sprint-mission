@@ -2,6 +2,8 @@ package com.sprint.mission.discodeit.user.entity;
 
 import org.junit.jupiter.api.Test;
 
+import java.time.Instant;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -11,13 +13,13 @@ class UserTest {
     void constructorRejectsInvalidEmailFormat() {
         assertThrows(
                 IllegalArgumentException.class,
-                () -> new User("username", "invalid-email", "password", null)
+                () -> new User("username", "invalid-email", "password", null, Instant.now())
         );
     }
 
     @Test
     void failedEmailUpdateDoesNotChangeOtherFields() {
-        User user = new User("before", "before@example.com", "password", null);
+        User user = new User("before", "before@example.com", "password", null, Instant.now());
 
         assertThrows(
                 IllegalArgumentException.class,
