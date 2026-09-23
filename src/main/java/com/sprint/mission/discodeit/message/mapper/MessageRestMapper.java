@@ -1,13 +1,13 @@
 package com.sprint.mission.discodeit.message.mapper;
 
 import com.sprint.mission.discodeit.common.exception.exceptions.UploadedFileReadException;
-import com.sprint.mission.discodeit.message.dto.request.MessageCreateRequest;
-import com.sprint.mission.discodeit.message.dto.request.MessageUpdateRequest;
-import com.sprint.mission.discodeit.message.dto.response.MessageDto;
-import com.sprint.mission.discodeit.message.service.dto.CreateMessageCommand;
-import com.sprint.mission.discodeit.message.service.dto.MessageAttachmentCommand;
-import com.sprint.mission.discodeit.message.service.dto.MessageResult;
-import com.sprint.mission.discodeit.message.service.dto.UpdateMessageCommand;
+import com.sprint.mission.discodeit.message.controller.dto.request.MessageCreateRequest;
+import com.sprint.mission.discodeit.message.controller.dto.request.MessageUpdateRequest;
+import com.sprint.mission.discodeit.message.controller.dto.response.MessageDto;
+import com.sprint.mission.discodeit.message.service.dto.command.CreateMessageCommand;
+import com.sprint.mission.discodeit.message.service.dto.command.MessageAttachmentCommand;
+import com.sprint.mission.discodeit.message.service.dto.result.MessageResult;
+import com.sprint.mission.discodeit.message.service.dto.command.UpdateMessageCommand;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;

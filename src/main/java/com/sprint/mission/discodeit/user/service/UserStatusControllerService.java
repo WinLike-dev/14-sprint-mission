@@ -1,6 +1,6 @@
 package com.sprint.mission.discodeit.user.service;
 
-import com.sprint.mission.discodeit.user.service.dto.UserStatusResult;
+import com.sprint.mission.discodeit.user.service.dto.result.UserStatusResult;
 
 import java.time.Instant;
 import java.util.UUID;

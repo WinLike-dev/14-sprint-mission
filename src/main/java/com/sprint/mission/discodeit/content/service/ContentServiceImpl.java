@@ -1,6 +1,6 @@
 package com.sprint.mission.discodeit.content.service;
 
-import com.sprint.mission.discodeit.content.service.dto.BinaryContentResult;
+import com.sprint.mission.discodeit.content.service.dto.result.BinaryContentResult;
 import com.sprint.mission.discodeit.content.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.content.entity.BinaryContent;
 import com.sprint.mission.discodeit.common.exception.exceptions.EntityNotFoundException;

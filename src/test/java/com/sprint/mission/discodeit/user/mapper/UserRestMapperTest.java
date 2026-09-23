@@ -1,7 +1,7 @@
 package com.sprint.mission.discodeit.user.mapper;
 
-import com.sprint.mission.discodeit.user.dto.request.UserCreateRequest;
-import com.sprint.mission.discodeit.user.service.dto.CreateUserCommand;
+import com.sprint.mission.discodeit.user.controller.dto.request.UserCreateRequest;
+import com.sprint.mission.discodeit.user.service.dto.command.CreateUserCommand;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
 import org.springframework.mock.web.MockMultipartFile;

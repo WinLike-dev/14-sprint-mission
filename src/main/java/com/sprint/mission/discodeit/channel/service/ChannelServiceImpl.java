@@ -1,9 +1,9 @@
 package com.sprint.mission.discodeit.channel.service;
 
-import com.sprint.mission.discodeit.channel.service.dto.ChannelResult;
-import com.sprint.mission.discodeit.channel.service.dto.CreatePrivateChannelCommand;
-import com.sprint.mission.discodeit.channel.service.dto.CreatePublicChannelCommand;
-import com.sprint.mission.discodeit.channel.service.dto.UpdatePublicChannelCommand;
+import com.sprint.mission.discodeit.channel.service.dto.result.ChannelResult;
+import com.sprint.mission.discodeit.channel.service.dto.command.CreatePrivateChannelCommand;
+import com.sprint.mission.discodeit.channel.service.dto.command.CreatePublicChannelCommand;
+import com.sprint.mission.discodeit.channel.service.dto.command.UpdatePublicChannelCommand;
 import com.sprint.mission.discodeit.channel.entity.Channel;
 import com.sprint.mission.discodeit.channel.entity.ChannelType;
 import com.sprint.mission.discodeit.channel.entity.ReadStatus;
@@ -19,7 +19,7 @@ import com.sprint.mission.discodeit.message.repository.MessageRepository;
 import com.sprint.mission.discodeit.message.repository.MessageRepository.ChannelLastMessageAt;
 import com.sprint.mission.discodeit.user.entity.User;
 import com.sprint.mission.discodeit.user.repository.UserRepository;
-import com.sprint.mission.discodeit.user.service.dto.UserResult;
+import com.sprint.mission.discodeit.user.service.dto.result.UserResult;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

@@ -1,6 +1,6 @@
 package com.sprint.mission.discodeit.content.storage;
 
-import com.sprint.mission.discodeit.content.service.dto.BinaryContentResult;
+import com.sprint.mission.discodeit.content.service.dto.result.BinaryContentResult;
 import jakarta.annotation.PostConstruct;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;

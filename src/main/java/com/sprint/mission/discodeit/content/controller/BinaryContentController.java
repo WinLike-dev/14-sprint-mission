@@ -3,7 +3,7 @@ package com.sprint.mission.discodeit.content.controller;
 import com.sprint.mission.discodeit.content.controller.swagger.BinaryContentApi;
 import com.sprint.mission.discodeit.content.mapper.BinaryContentRestMapper;
 import com.sprint.mission.discodeit.content.service.ContentControllerService;
-import com.sprint.mission.discodeit.content.dto.response.BinaryContentDto;
+import com.sprint.mission.discodeit.content.controller.dto.response.BinaryContentDto;
 import com.sprint.mission.discodeit.content.storage.BinaryContentStorage;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;

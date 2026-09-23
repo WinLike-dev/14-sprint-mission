@@ -18,17 +18,22 @@ import java.util.Objects;
 @Getter
 @Entity
 @Table(name = "channels")
-@NoArgsConstructor(access = AccessLevel.PROTECTED) // JPA가 조회 결과를 담을 때 사용한다
+@NoArgsConstructor(access = AccessLevel.PROTECTED) // JPA가 조회 결과를 담을 때 사용한다 * 학습용 테스트
 public class Channel extends BaseUpdatableEntity {
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, updatable = false, length = 10)
+    // channels 테이블의 컬럼 길이. @Column과 길이 검증이 같은 값을 쓴다.
+    private static final int TYPE_MAX_LENGTH = 10;
+    private static final int NAME_MAX_LENGTH = 100;
+    private static final int DESCRIPTION_MAX_LENGTH = 500;
+
+    @Enumerated(EnumType.STRING) // * 학습용 테스트
+    @Column(nullable = false, updatable = false, length = TYPE_MAX_LENGTH)
     private ChannelType type; // 채널 유형 (PUBLIC 또는 PRIVATE), setter가 없어 한번 정해지면 변경 불가
 
-    @Column(length = 100)
+    @Column(length = NAME_MAX_LENGTH)
     private String name; // 채널 이름 (PUBLIC만 사용, PRIVATE은 null)
 
-    @Column(length = 500)
+    @Column(length = DESCRIPTION_MAX_LENGTH)
     private String description; // 채널 설명 (PUBLIC만 사용, PRIVATE은 null)
 
     // 새 채널을 처음 만들 때 사용하는 생성자 (ID와 시각은 저장 시 BaseEntity가 부여)
@@ -71,5 +76,14 @@ public class Channel extends BaseUpdatableEntity {
             throw new InvalidValueException("PUBLIC 채널의 name은 비어 있을 수 없습니다.");
         }
         Objects.requireNonNull(description, "PUBLIC 채널의 description은 null일 수 없습니다.");
+        requireMaxLength(name, NAME_MAX_LENGTH, "name");
+        requireMaxLength(description, DESCRIPTION_MAX_LENGTH, "description");
+    }
+
+    // 컬럼 길이를 넘는 값은 insert/update가 DB에서 실패해 500이 되므로, 엔티티가 먼저 400으로 거절한다.
+    private static void requireMaxLength(String value, int maxLength, String fieldName) {
+        if (value.length() > maxLength) {
+            throw new InvalidValueException(fieldName + "은(는) " + maxLength + "자를 넘을 수 없습니다.");
+        }
     }
 }

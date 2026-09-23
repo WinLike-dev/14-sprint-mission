@@ -1,6 +1,6 @@
 package com.sprint.mission.discodeit.content.storage;
 
-import com.sprint.mission.discodeit.content.service.dto.BinaryContentResult;
+import com.sprint.mission.discodeit.content.service.dto.result.BinaryContentResult;
 import org.springframework.core.io.Resource;
 import org.springframework.http.ResponseEntity;
 

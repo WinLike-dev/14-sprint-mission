@@ -1,10 +1,10 @@
 package com.sprint.mission.discodeit.user.controller.swagger;
 
-import com.sprint.mission.discodeit.user.dto.request.UserStatusUpdateRequest;
-import com.sprint.mission.discodeit.user.dto.response.UserStatusDto;
-import com.sprint.mission.discodeit.user.dto.request.UserCreateRequest;
-import com.sprint.mission.discodeit.user.dto.request.UserUpdateRequest;
-import com.sprint.mission.discodeit.user.dto.response.UserDto;
+import com.sprint.mission.discodeit.user.controller.dto.request.UserStatusUpdateRequest;
+import com.sprint.mission.discodeit.user.controller.dto.response.UserStatusDto;
+import com.sprint.mission.discodeit.user.controller.dto.request.UserCreateRequest;
+import com.sprint.mission.discodeit.user.controller.dto.request.UserUpdateRequest;
+import com.sprint.mission.discodeit.user.controller.dto.response.UserDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;

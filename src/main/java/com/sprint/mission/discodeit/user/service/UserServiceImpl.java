@@ -1,9 +1,9 @@
 package com.sprint.mission.discodeit.user.service;
 
-import com.sprint.mission.discodeit.user.service.dto.CreateUserCommand;
-import com.sprint.mission.discodeit.user.service.dto.UpdateUserCommand;
-import com.sprint.mission.discodeit.user.service.dto.UserProfileCommand;
-import com.sprint.mission.discodeit.user.service.dto.UserResult;
+import com.sprint.mission.discodeit.user.service.dto.command.CreateUserCommand;
+import com.sprint.mission.discodeit.user.service.dto.command.UpdateUserCommand;
+import com.sprint.mission.discodeit.user.service.dto.command.UserProfileCommand;
+import com.sprint.mission.discodeit.user.service.dto.result.UserResult;
 
 import com.sprint.mission.discodeit.user.entity.User;
 import com.sprint.mission.discodeit.common.exception.exceptions.EntityNotFoundException;

@@ -29,4 +29,24 @@ class UserTest {
         assertEquals("before", user.getUsername());
         assertEquals("before@example.com", user.getEmail());
     }
+
+    @Test
+    void constructorRejectsPasswordLongerThanColumn() {
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> new User("username", "user@example.com", "a".repeat(61), null, Instant.now())
+        );
+    }
+
+    @Test
+    void updateRejectsUsernameLongerThanColumn() {
+        User user = new User("before", "before@example.com", "password", null, Instant.now());
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> user.update("a".repeat(51), "before@example.com", "password")
+        );
+
+        assertEquals("before", user.getUsername());
+    }
 }

@@ -1,6 +1,6 @@
 package com.sprint.mission.discodeit.content.service;
 
-import com.sprint.mission.discodeit.content.service.dto.BinaryContentResult;
+import com.sprint.mission.discodeit.content.service.dto.result.BinaryContentResult;
 
 import java.util.List;
 import java.util.UUID;

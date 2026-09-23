@@ -1,8 +1,8 @@
 package com.sprint.mission.discodeit.message.service;
 
-import com.sprint.mission.discodeit.message.service.dto.CreateMessageCommand;
-import com.sprint.mission.discodeit.message.service.dto.MessageResult;
-import com.sprint.mission.discodeit.message.service.dto.UpdateMessageCommand;
+import com.sprint.mission.discodeit.message.service.dto.command.CreateMessageCommand;
+import com.sprint.mission.discodeit.message.service.dto.result.MessageResult;
+import com.sprint.mission.discodeit.message.service.dto.command.UpdateMessageCommand;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;

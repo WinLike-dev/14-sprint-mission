@@ -1,9 +1,9 @@
 package com.sprint.mission.discodeit.channel.controller.swagger;
 
-import com.sprint.mission.discodeit.channel.dto.request.PrivateChannelCreateRequest;
-import com.sprint.mission.discodeit.channel.dto.request.PublicChannelCreateRequest;
-import com.sprint.mission.discodeit.channel.dto.request.PublicChannelUpdateRequest;
-import com.sprint.mission.discodeit.channel.dto.response.ChannelDto;
+import com.sprint.mission.discodeit.channel.controller.dto.request.PrivateChannelCreateRequest;
+import com.sprint.mission.discodeit.channel.controller.dto.request.PublicChannelCreateRequest;
+import com.sprint.mission.discodeit.channel.controller.dto.request.PublicChannelUpdateRequest;
+import com.sprint.mission.discodeit.channel.controller.dto.response.ChannelDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;

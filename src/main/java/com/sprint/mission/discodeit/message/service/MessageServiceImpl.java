@@ -1,9 +1,9 @@
 package com.sprint.mission.discodeit.message.service;
 
-import com.sprint.mission.discodeit.message.service.dto.CreateMessageCommand;
-import com.sprint.mission.discodeit.message.service.dto.MessageAttachmentCommand;
-import com.sprint.mission.discodeit.message.service.dto.MessageResult;
-import com.sprint.mission.discodeit.message.service.dto.UpdateMessageCommand;
+import com.sprint.mission.discodeit.message.service.dto.command.CreateMessageCommand;
+import com.sprint.mission.discodeit.message.service.dto.command.MessageAttachmentCommand;
+import com.sprint.mission.discodeit.message.service.dto.result.MessageResult;
+import com.sprint.mission.discodeit.message.service.dto.command.UpdateMessageCommand;
 import com.sprint.mission.discodeit.message.entity.Message;
 import com.sprint.mission.discodeit.message.repository.MessageRepository;
 import com.sprint.mission.discodeit.channel.entity.Channel;

@@ -34,13 +34,18 @@ public class User extends BaseUpdatableEntity {
     // 이메일 정규식 패턴 - "@" 앞뒤로 공백이 아닌 문자가 있어야 유효하다.
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$");
 
-    @Column(nullable = false, unique = true, length = 50)
+    // users 테이블의 컬럼 길이. @Column과 길이 검증이 같은 값을 쓴다.
+    private static final int USERNAME_MAX_LENGTH = 50;
+    private static final int EMAIL_MAX_LENGTH = 100;
+    private static final int PASSWORD_MAX_LENGTH = 60;
+
+    @Column(nullable = false, unique = true, length = USERNAME_MAX_LENGTH)
     private String username;   // 사용자 이름 (로그인 ID로도 사용됨)
 
-    @Column(nullable = false, unique = true, length = 100)
+    @Column(nullable = false, unique = true, length = EMAIL_MAX_LENGTH)
     private String email;      // 이메일 주소
 
-    @Column(nullable = false, length = 60)
+    @Column(nullable = false, length = PASSWORD_MAX_LENGTH)
     private String password;   // 비밀번호
 
     // 부모 User가 프로필 이미지의 생명주기를 책임진다.
@@ -68,9 +73,9 @@ public class User extends BaseUpdatableEntity {
     // "사용자는 항상 상태를 가진다"는 규칙을 엔티티가 보장하도록 상태도 여기서 함께 만든다.
     // 양방향 참조가 한곳에서 연결되므로 한쪽만 설정되는 일이 없다.
     public User(String username, String email, String password, BinaryContent profile, Instant lastActiveAt) {
-        this.username = requireNonBlank(username, "username");
-        this.email = requireValidEmail(email);
-        this.password = requireNonBlank(password, "password");
+        this.username = requireMaxLength(requireNonBlank(username, "username"), USERNAME_MAX_LENGTH, "username");
+        this.email = requireMaxLength(requireValidEmail(email), EMAIL_MAX_LENGTH, "email");
+        this.password = requireMaxLength(requireNonBlank(password, "password"), PASSWORD_MAX_LENGTH, "password");
         this.profile = profile;
         this.status = new UserStatus(this, lastActiveAt);
     }
@@ -83,9 +88,9 @@ public class User extends BaseUpdatableEntity {
     public void update(String username, String email, String password) {
         // 검증을 모두 통과한 뒤에 대입한다.
         // 대입과 검증을 섞으면 중간에 예외가 났을 때 일부 필드만 바뀐 상태가 남는다.
-        String nextUsername = requireNonBlank(username, "username");
-        String nextEmail = requireValidEmail(email);
-        String nextPassword = requireNonBlank(password, "password");
+        String nextUsername = requireMaxLength(requireNonBlank(username, "username"), USERNAME_MAX_LENGTH, "username");
+        String nextEmail = requireMaxLength(requireValidEmail(email), EMAIL_MAX_LENGTH, "email");
+        String nextPassword = requireMaxLength(requireNonBlank(password, "password"), PASSWORD_MAX_LENGTH, "password");
 
         this.username = nextUsername;
         this.email = nextEmail;
@@ -101,6 +106,14 @@ public class User extends BaseUpdatableEntity {
     private static String requireNonBlank(String value, String fieldName) {
         if (value == null || value.isBlank()) {
             throw new InvalidValueException(fieldName + "은(는) 비어 있을 수 없습니다.");
+        }
+        return value;
+    }
+
+    // 컬럼 길이를 넘는 값은 insert/update가 DB에서 실패해 500이 되므로, 엔티티가 먼저 400으로 거절한다.
+    private static String requireMaxLength(String value, int maxLength, String fieldName) {
+        if (value.length() > maxLength) {
+            throw new InvalidValueException(fieldName + "은(는) " + maxLength + "자를 넘을 수 없습니다.");
         }
         return value;
     }

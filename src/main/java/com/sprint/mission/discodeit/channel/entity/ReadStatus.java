@@ -34,12 +34,12 @@ public class ReadStatus extends BaseUpdatableEntity {
 
     // 부모 User를 가리키는 단방향 N:1. FK를 가진 쪽이라 LAZY가 실제로 동작한다.
     // 자식에서 부모로는 cascade를 걸지 않는다. 읽음 상태를 지운다고 사용자가 지워지면 안 되기 때문이다.
-    @ManyToOne(fetch = FetchType.LAZY, optional = false) // @ManyToOne 기본값은 EAGER라 명시한다
+    @ManyToOne(fetch = FetchType.LAZY, optional = false) // @ManyToOne 기본값은 EAGER라 LAZY로 명시한다 * 학습 테스트 (EAGER는 정말 N+1에 해결책이 못 되어 주나?)
     @JoinColumn(name = "user_id", nullable = false, updatable = false)
     private User user; // 이 읽음 상태의 대상 사용자
 
     // 부모 Channel을 가리키는 단방향 N:1.
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false) // * 학습 테스트 (User와 마찬가지로)
     @JoinColumn(name = "channel_id", nullable = false, updatable = false)
     private Channel channel; // 이 읽음 상태가 연결된 채널
 

@@ -22,26 +22,39 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED) // JPA가 조회 결과를 담을 때 사용한다
 public class BinaryContent extends BaseEntity {
 
-    @Column(nullable = false, updatable = false)
+    // binary_contents 테이블의 컬럼 길이. @Column과 길이 검증이 같은 값을 쓴다.
+    private static final int FILE_NAME_MAX_LENGTH = 255;
+    private static final int CONTENT_TYPE_MAX_LENGTH = 100;
+
+    @Column(nullable = false, updatable = false, length = FILE_NAME_MAX_LENGTH)
     private String fileName;    // 파일 이름 (예: "photo.png")
 
     @Column(nullable = false, updatable = false)
     private long size;          // 파일 크기 (바이트 단위)
 
-    @Column(nullable = false, updatable = false, length = 100)
+    @Column(nullable = false, updatable = false, length = CONTENT_TYPE_MAX_LENGTH)
     private String contentType; // MIME 타입 (예: "image/png")
 
     // 새 BinaryContent를 생성할 때 사용하는 공개 생성자 (id와 createdAt은 저장 시 부여)
     public BinaryContent(String fileName, long size, String contentType) {
-        this.fileName = requireNonBlank(fileName, "fileName");
+        // 파일 메타 정보는 multipart로 들어와 요청 DTO의 @Size를 거치지 않으므로 길이도 여기서 검사한다.
+        this.fileName = requireMaxLength(requireNonBlank(fileName, "fileName"), FILE_NAME_MAX_LENGTH, "fileName");
         this.size = requirePositive(size, "size");
-        this.contentType = requireNonBlank(contentType, "contentType");
+        this.contentType = requireMaxLength(requireNonBlank(contentType, "contentType"), CONTENT_TYPE_MAX_LENGTH, "contentType");
     }
 
     // 문자열이 null이거나 공백만 있으면 예외를 던지는 유효성 검증 헬퍼 메서드
     private static String requireNonBlank(String value, String fieldName) {
         if (value == null || value.isBlank()) {
             throw new InvalidValueException(fieldName + "은(는) 비어 있을 수 없습니다.");
+        }
+        return value;
+    }
+
+    // 컬럼 길이를 넘는 값은 insert/update가 DB에서 실패해 500이 되므로, 엔티티가 먼저 400으로 거절한다.
+    private static String requireMaxLength(String value, int maxLength, String fieldName) {
+        if (value.length() > maxLength) {
+            throw new InvalidValueException(fieldName + "은(는) " + maxLength + "자를 넘을 수 없습니다.");
         }
         return value;
     }

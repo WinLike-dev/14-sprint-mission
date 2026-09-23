@@ -1,6 +1,6 @@
 package com.sprint.mission.discodeit.content.controller.swagger;
 
-import com.sprint.mission.discodeit.content.dto.response.BinaryContentDto;
+import com.sprint.mission.discodeit.content.controller.dto.response.BinaryContentDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;

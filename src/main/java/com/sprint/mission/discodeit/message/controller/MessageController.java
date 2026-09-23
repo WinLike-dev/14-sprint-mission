@@ -2,11 +2,11 @@ package com.sprint.mission.discodeit.message.controller;
 
 import com.sprint.mission.discodeit.message.controller.swagger.MessageApi;
 import com.sprint.mission.discodeit.message.mapper.MessageRestMapper;
-import com.sprint.mission.discodeit.message.dto.request.MessageCreateRequest;
-import com.sprint.mission.discodeit.message.dto.request.MessageUpdateRequest;
+import com.sprint.mission.discodeit.message.controller.dto.request.MessageCreateRequest;
+import com.sprint.mission.discodeit.message.controller.dto.request.MessageUpdateRequest;
 import com.sprint.mission.discodeit.common.dto.response.PageResponse;
 import com.sprint.mission.discodeit.common.mapper.PageResponseMapper;
-import com.sprint.mission.discodeit.message.dto.response.MessageDto;
+import com.sprint.mission.discodeit.message.controller.dto.response.MessageDto;
 import com.sprint.mission.discodeit.message.service.MessageControllerService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

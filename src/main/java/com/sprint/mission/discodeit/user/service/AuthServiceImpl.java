@@ -1,7 +1,7 @@
 package com.sprint.mission.discodeit.user.service;
 
-import com.sprint.mission.discodeit.user.service.dto.LoginCommand;
-import com.sprint.mission.discodeit.user.service.dto.UserResult;
+import com.sprint.mission.discodeit.user.service.dto.command.LoginCommand;
+import com.sprint.mission.discodeit.user.service.dto.result.UserResult;
 import com.sprint.mission.discodeit.user.entity.User;
 import com.sprint.mission.discodeit.user.exception.AuthenticationFailedException;
 import com.sprint.mission.discodeit.user.repository.UserRepository;

@@ -1,11 +1,11 @@
 package com.sprint.mission.discodeit.channel.mapper;
 
-import com.sprint.mission.discodeit.channel.dto.request.ReadStatusCreateRequest;
-import com.sprint.mission.discodeit.channel.dto.request.ReadStatusUpdateRequest;
-import com.sprint.mission.discodeit.channel.dto.response.ReadStatusDto;
-import com.sprint.mission.discodeit.channel.service.dto.CreateReadStatusCommand;
-import com.sprint.mission.discodeit.channel.service.dto.ReadStatusResult;
-import com.sprint.mission.discodeit.channel.service.dto.UpdateReadStatusCommand;
+import com.sprint.mission.discodeit.channel.controller.dto.request.ReadStatusCreateRequest;
+import com.sprint.mission.discodeit.channel.controller.dto.request.ReadStatusUpdateRequest;
+import com.sprint.mission.discodeit.channel.controller.dto.response.ReadStatusDto;
+import com.sprint.mission.discodeit.channel.service.dto.command.CreateReadStatusCommand;
+import com.sprint.mission.discodeit.channel.service.dto.result.ReadStatusResult;
+import com.sprint.mission.discodeit.channel.service.dto.command.UpdateReadStatusCommand;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;

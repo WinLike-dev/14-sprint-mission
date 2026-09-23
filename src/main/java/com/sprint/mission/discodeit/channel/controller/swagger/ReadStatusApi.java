@@ -1,8 +1,8 @@
 package com.sprint.mission.discodeit.channel.controller.swagger;
 
-import com.sprint.mission.discodeit.channel.dto.request.ReadStatusCreateRequest;
-import com.sprint.mission.discodeit.channel.dto.request.ReadStatusUpdateRequest;
-import com.sprint.mission.discodeit.channel.dto.response.ReadStatusDto;
+import com.sprint.mission.discodeit.channel.controller.dto.request.ReadStatusCreateRequest;
+import com.sprint.mission.discodeit.channel.controller.dto.request.ReadStatusUpdateRequest;
+import com.sprint.mission.discodeit.channel.controller.dto.response.ReadStatusDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;

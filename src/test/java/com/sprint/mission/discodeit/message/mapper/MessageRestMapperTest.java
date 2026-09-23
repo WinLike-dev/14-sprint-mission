@@ -1,7 +1,7 @@
 package com.sprint.mission.discodeit.message.mapper;
 
-import com.sprint.mission.discodeit.message.dto.request.MessageCreateRequest;
-import com.sprint.mission.discodeit.message.service.dto.CreateMessageCommand;
+import com.sprint.mission.discodeit.message.controller.dto.request.MessageCreateRequest;
+import com.sprint.mission.discodeit.message.service.dto.command.CreateMessageCommand;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
 import org.springframework.mock.web.MockMultipartFile;

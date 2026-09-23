@@ -1,13 +1,13 @@
 package com.sprint.mission.discodeit.user.mapper;
 
 import com.sprint.mission.discodeit.common.exception.exceptions.UploadedFileReadException;
-import com.sprint.mission.discodeit.user.dto.request.UserCreateRequest;
-import com.sprint.mission.discodeit.user.dto.request.UserUpdateRequest;
-import com.sprint.mission.discodeit.user.dto.response.UserDto;
-import com.sprint.mission.discodeit.user.service.dto.CreateUserCommand;
-import com.sprint.mission.discodeit.user.service.dto.UpdateUserCommand;
-import com.sprint.mission.discodeit.user.service.dto.UserProfileCommand;
-import com.sprint.mission.discodeit.user.service.dto.UserResult;
+import com.sprint.mission.discodeit.user.controller.dto.request.UserCreateRequest;
+import com.sprint.mission.discodeit.user.controller.dto.request.UserUpdateRequest;
+import com.sprint.mission.discodeit.user.controller.dto.response.UserDto;
+import com.sprint.mission.discodeit.user.service.dto.command.CreateUserCommand;
+import com.sprint.mission.discodeit.user.service.dto.command.UpdateUserCommand;
+import com.sprint.mission.discodeit.user.service.dto.command.UserProfileCommand;
+import com.sprint.mission.discodeit.user.service.dto.result.UserResult;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;

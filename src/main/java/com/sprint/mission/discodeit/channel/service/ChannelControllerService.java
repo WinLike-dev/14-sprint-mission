@@ -1,9 +1,9 @@
 package com.sprint.mission.discodeit.channel.service;
 
-import com.sprint.mission.discodeit.channel.service.dto.ChannelResult;
-import com.sprint.mission.discodeit.channel.service.dto.CreatePrivateChannelCommand;
-import com.sprint.mission.discodeit.channel.service.dto.CreatePublicChannelCommand;
-import com.sprint.mission.discodeit.channel.service.dto.UpdatePublicChannelCommand;
+import com.sprint.mission.discodeit.channel.service.dto.result.ChannelResult;
+import com.sprint.mission.discodeit.channel.service.dto.command.CreatePrivateChannelCommand;
+import com.sprint.mission.discodeit.channel.service.dto.command.CreatePublicChannelCommand;
+import com.sprint.mission.discodeit.channel.service.dto.command.UpdatePublicChannelCommand;
 
 import java.util.List;
 import java.util.UUID;

@@ -1,7 +1,7 @@
 package com.sprint.mission.discodeit.user.service;
 
-import com.sprint.mission.discodeit.user.service.dto.LoginCommand;
-import com.sprint.mission.discodeit.user.service.dto.UserResult;
+import com.sprint.mission.discodeit.user.service.dto.command.LoginCommand;
+import com.sprint.mission.discodeit.user.service.dto.result.UserResult;
 
 /**
  * 인증(Authentication) 관련 비즈니스 로직의 애플리케이션 서비스 인터페이스.
